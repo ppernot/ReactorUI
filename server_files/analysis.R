@@ -15,7 +15,7 @@ getConc  = function(concThresh = -50) {
   species = scan(text=line, what=character(),
                  strip.white=TRUE, quiet=TRUE)[-1]
 
-  iNorm= which(species=="N2")
+  iNorm= which(species=="CH4")
 
   # Get all data
   nf   = length(files)
@@ -256,7 +256,6 @@ dcorMat <- function(C,S) {
   nC = ncol(C); nS = ncol(S)
   hMat = matrix(NA,nrow=nS,ncol=nC)
   for(j in 1:nC) {
-    cat(j,'/')
     x = C[,j]
     V = future.apply::future_apply(
       X = S, MARGIN = 2,
@@ -271,6 +270,7 @@ dcorMat <- function(C,S) {
 
   return(hMat)
 }
+
 testAna = function() {
   concList = getConc()
   for (n in names(concList))
@@ -294,14 +294,14 @@ testAna = function() {
 
   photoRates = ifelse(photoRates==0, NA, log10(photoRates))
   sdc = apply(photoRates,2,function(x) sd(x))
-  selPR = sdPR!=0 & is.finite(sdc)
+  selPR = sdc!=0 & is.finite(sdc)
 
   C = conc[,selC]
   S = cbind(photoRates[,selPR],rates[,selR])
 
-  SASpecies = 'C2H4'
-  isp = which(species == SASpecies)
-  # indRates = colSums(cor(C[,isp], S, method = "spearman")^2)
+  SASpecies = 'CH5+'
+  isp = which(species[selC] == SASpecies)
+  # indRates = as.vector(cor(C[,isp], S, method = "spearman")^2)
   # indRates = as.vector(hsicMat(C[,isp],S))
   indRates = as.vector(dcorMat(C[,isp],S))
   names(indRates) = colnames(S)
@@ -474,6 +474,7 @@ observeEvent(
     selPR = sdc!=0 & is.finite(sdc)
 
     C = conc[,selC]
+    colnames(C) = species[selC]
     S = cbind(photoRates[,selPR],rates[,selR])
 
     SASpecies = input$SASpecies
@@ -497,7 +498,7 @@ observeEvent(
         indRates = as.vector(cor(C[,isp],S, method = "spearman"))
         names(indRates) = colnames(S)
         indx = order(abs(indRates),decreasing = TRUE)[1:20]
-        MR   = sort(indRates[indx],decreasing = TRUE)
+        MR   = indRates[indx]
       }
 
     } else if (input$anaType == 'dcorr') {
@@ -552,24 +553,23 @@ output$sensitivity <- renderPlot({
      SASpecies  != ""           ) {
     # Scatterplots
     par(mfrow = c(4,5),
-        cex = cex, cex.main = 0.75*cex, mar = mar,
+        cex = cex, cex.main = 0.6*cex, mar = mar,
         mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
-    isp = which(colnames(C) == SASpecies)
-    x = C[,isp]
+    isp = which(colnames(C) == SASpecies)[1]
+    y = C[,isp]
     namesMR = names(MR)
     for (i in 1:length(MR)) {
-      irp = which(colnames(S) == namesMR[i])
-      y = S[,irp]
+      irp = which(colnames(S) == namesMR[i])[1]
+      x = S[,irp]
       plot(
         x, y,
-        xlab= 'C', xlim = range(x),
-        ylab= 'S', ylim = range(y),
+        xlab= 'log10(k)', xlim = range(x),
+        ylab= paste0('log10[',SASpecies,']'), ylim = range(y),
         type ='p', pch=20, col=cols[5],
         main = paste0(namesMR[i])
       )
       legend(
-        'topleft', bty='n',
-        legend = '',
+        'topleft', legend = '', bty='n',
         title = signif(MR[i],2),
         title.col = cols[2]
       )

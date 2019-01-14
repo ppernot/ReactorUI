@@ -1,0 +1,10 @@
+export CL_SIZE=8     # Size of cluster
+export NB_CORE=12    # Nb cores on VM
+
+RUN_BY_CORE=4  
+# Nb runs, to be divisible by CL_SIZE and NB_CORE
+export MC_RUNS=$((RUN_BY_CORE*CL_SIZE*NB_CORE))   
+
+export VM_KEY=PPkey
+export VM_FLAVOR=os.$NB_CORE
+export VM_IMAGE=titan_2018-07-04

@@ -4,3 +4,4 @@
 .Ruserdata
 outputDir/*
 *.*~
+scripts/os_lal.rc

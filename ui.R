@@ -23,10 +23,10 @@ function(request) {
       title = "Fluxes",
       source_ui("fluxes.R")
     ),
-    tabPanel(
-      title = "Downloads",
-      source_ui("downloads.R")
-    ),
+    # tabPanel(
+    #   title = "Downloads",
+    #   source_ui("downloads.R")
+    # ),
     tabPanel(
       title = "About",
       source_ui("about.R")

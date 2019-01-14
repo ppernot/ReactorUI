@@ -1,5 +1,4 @@
 # Functions ####
-
 getConc  = function(concThresh = -50) {
   # Load 1 sample files
   files = list.files(
@@ -216,7 +215,6 @@ assignColorsToSpecies <- function(colSel, species, sel, nf,
   )
 }
 hsicMat <- function(C,S) {
-
   if(is.vector(C))
     C = matrix(C,ncol=1)
   if(is.vector(S))
@@ -224,32 +222,32 @@ hsicMat <- function(C,S) {
 
   nC = ncol(C); nS = ncol(S)
   hMat = matrix(NA,nrow=nS,ncol=nC)
-
-  syy = sxx = c()
-  for (i in 1:nS) {
-    y = S[,i]
-    syy[i] = dHSIC::dhsic(y,y)$dHSIC
-  }
+  sxx = future.apply::future_apply(
+    X = C, MARGIN = 2,
+    FUN = function(x) dHSIC::dhsic(x,x)$dHSIC
+  )
+  syy = future.apply::future_apply(
+    X = S, MARGIN = 2,
+    FUN = function(x) dHSIC::dhsic(x,x)$dHSIC
+  )
   for(j in 1:nC) {
     x = C[,j]
-    sxx[j] = dHSIC::dhsic(x,x)$dHSIC
-  }
-  for(j in 1:nC) {
-    x = C[,j]
-    for (i in 1:nS) {
-      y = S[,i]
-      hMat[i,j] = dHSIC::dhsic(x,y)$dHSIC /sqrt( sxx[j] * syy[i] )
-    }
+    V = future.apply::future_apply(
+      X = S, MARGIN = 2,
+      FUN = function(y,x) dHSIC::dhsic(x,y)$dHSIC,
+      x = x
+    )
+    # Reduced Indices
+    V = V / sqrt(sxx[j]*syy)
     # Normalize
-    sel = !is.finite(hMat[,j])
-    hMat[sel,j] = 0
-    hMat[,j] = hMat[,j] / sum(hMat[,j])
+    V[!is.finite(V)] = 0
+    V = V / sum(V)
+    hMat[,j] = V
   }
 
   return(hMat)
 }
 dcorMat <- function(C,S) {
-
   if(is.vector(C))
     C = matrix(C,ncol=1)
   if(is.vector(S))
@@ -257,34 +255,18 @@ dcorMat <- function(C,S) {
 
   nC = ncol(C); nS = ncol(S)
   hMat = matrix(NA,nrow=nS,ncol=nC)
-
-  # syy = sxx = c()
-  # for (i in 1:nS) {
-  #   y = S[,i]
-  #   syy[i] = fda.usc::dcor.xy(y,y,test=FALSE)
-  # }
-  # for(j in 1:nC) {
-  #   x = C[,j]
-  #   sxx[j] = dHSIC::dhsic(x,x)$dHSIC
-  # }
   for(j in 1:nC) {
     cat(j,'/')
     x = C[,j]
-    # for (i in 1:nS) {
-    #   y = S[,i]
-    #   # hMat[i,j] = dHSIC::dhsic(x,y)$dHSIC /sqrt( sxx[j] * syy[i] )
-    #   hMat[i,j] = fda.usc::dcor.xy(x,y,test=FALSE)
-    # }
-    hMat[1:nS,j] =
-      future.apply::future_apply(
-        X = S, MARGIN = 2,
-        FUN = function(y,x) fda.usc::dcor.xy(x,y,test=FALSE),
-        x = x
-      )
+    V = future.apply::future_apply(
+      X = S, MARGIN = 2,
+      FUN = function(y,x) fda.usc::dcor.xy(x,y,test=FALSE),
+      x = x
+    )
     # Normalize
-    sel = !is.finite(hMat[,j])
-    hMat[sel,j] = 0
-    hMat[,j] = hMat[,j] / sum(hMat[,j])
+    V[!is.finite(V)] = 0
+    V = V / sum(V)
+    hMat[,j] = V
   }
 
   return(hMat)

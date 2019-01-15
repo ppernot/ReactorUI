@@ -8,12 +8,9 @@ function(input, output, session) {
   # Load Server files ####
   files <- c(
     "project.R" ,
+    "model.R",
     "analysis.R",
     "fluxes.R"
-    #
-    # "SA.R",
-    #
-    # "report.R"
   )
 
   for (f in files)

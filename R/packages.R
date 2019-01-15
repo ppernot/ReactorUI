@@ -9,10 +9,11 @@ options(
 
 # options(shiny.json.digits=32)
 
-# Libraries ####
+# CRAN Libraries ####
 libs <- c(
+  "devtools",
   "shiny", "shinyBS", "shinycssloaders", "shinyFiles",
-  "DT", "tools", "igraph","dHSIC","fda.usc",
+  "DT", "tools", "igraph", "dHSIC", "fda.usc", "rlist",
   "xtable", "inlmisc","CHNOSZ",
   "promises","future","future.apply"
 )
@@ -26,6 +27,12 @@ for (lib in libs) {
     library(lib, quietly = TRUE)
   }
 }
+
+# Github
+# if (!require("nml", character.only = TRUE, quietly = TRUE)) {
+#   devtools::install_github("jsta/nml")
+#   library("nml", quietly = TRUE)
+# }
 
 # Parallelism by future/promises
 plan(multiprocess)

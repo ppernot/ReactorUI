@@ -453,51 +453,50 @@ observeEvent(
     # Extract conc et al.
     for (n in names(concList()))
       assign(n,rlist::list.extract(concList(),n))
-    for (n in names(ratesList()))
-      assign(n,rlist::list.extract(ratesList(),n))
 
     # Concentrations at stationnary state (last snapshot)
     conc = conc[,nt,]
-    colnames(conc) = species
 
     # Filter out undesirable values
     conc = ifelse(conc==0, NA, log10(conc))
     sdc  = apply(conc,2,function(x) sd(x))
     selC = sdc!=0 & is.finite(sdc)
+    C = conc[,selC]
+    colnames(C) = species[selC]
+
+    # Reaction rates
+    for (n in names(ratesList()))
+      assign(n,rlist::list.extract(ratesList(),n))
 
     rates = ifelse(rates==0, NA, log10(rates))
     sdc = apply(rates,2,function(x) sd(x))
     selR = sdc!=0 & is.finite(sdc)
-
     photoRates = ifelse(photoRates==0, NA, log10(photoRates))
     sdc = apply(photoRates,2,function(x) sd(x))
     selPR = sdc!=0 & is.finite(sdc)
-
-    C = conc[,selC]
-    colnames(C) = species[selC]
     S = cbind(photoRates[,selPR],rates[,selR])
+
 
     SASpecies = input$SASpecies
     if(SASpecies != "") # Check validity
       validate(
-        need(SASpecies %in% species[selC], 'Invalid species !')
+        need(SASpecies %in% colnames(C), 'Invalid species !')
       )
 
-    if(input$anaType == 'spearman') {
+    if (input$anaType == 'spearman') {
       # CORR
-      if(SASpecies == "") {
+      if (SASpecies == "") {
         main = 'TOP20 most influent reactions : Sum(RCC^2)'
-        indRates = colSums(cor(C, S, method = "spearman")^2)
+        indRates = colSums(cor(C, S, method = "spearman") ^ 2)
         names(indRates) = colnames(S)
-        MR = sort(indRates,decreasing = TRUE)[1:20]
+        MR = sort(indRates, decreasing = TRUE)[1:20]
       } else {
-        main = paste0(
-          SASpecies,
-          ' / TOP20 most correlated reactions : RCC')
-        isp = which(species[selC]==SASpecies)
-        indRates = as.vector(cor(C[,isp],S, method = "spearman"))
+        main = paste0(SASpecies,
+                      ' / TOP20 most correlated reactions : RCC')
+        isp = which(colnames(C) == SASpecies)
+        indRates = as.vector(cor(C[, isp], S, method = "spearman"))
         names(indRates) = colnames(S)
-        indx = order(abs(indRates),decreasing = TRUE)[1:20]
+        indx = order(abs(indRates), decreasing = TRUE)[1:20]
         MR   = indRates[indx]
       }
 
@@ -510,7 +509,7 @@ observeEvent(
         main = paste0(
           SASpecies,
           ' / TOP20 most influent reactions : dCor')
-        isp = which(species == SASpecies)
+        isp = which(colnames(C) == SASpecies)
         indRates = as.vector(dcorMat(C[,isp],S))
       }
       names(indRates) = colnames(S)
@@ -518,18 +517,18 @@ observeEvent(
 
     } else if (input$anaType == 'hsic') {
       # HSIC
-      if(SASpecies == "") {
+      if (SASpecies == "") {
         main = 'TOP20 most influent reactions : Sum(HSIC)'
-        indRates = rowSums(hsicMat(C,S),na.rm = TRUE)
+        indRates = rowSums(hsicMat(C, S), na.rm = TRUE)
       } else {
-        main = paste0(
-          SASpecies,
-          ' / TOP20 most influent reactions : HSIC')
-        isp = which(species == SASpecies)
-        indRates = as.vector(hsicMat(C[,isp],S))
+        main = paste0(SASpecies,
+                      ' / TOP20 most influent reactions : HSIC')
+        isp = which(colnames(C) == SASpecies)
+        indRates = as.vector(hsicMat(C[, isp], S))
       }
       names(indRates) = colnames(S)
-      MR = sort(indRates,decreasing = TRUE)[1:20]
+      MR = sort(indRates, decreasing = TRUE)[1:20]
+
     } else {
       NULL
     }
@@ -541,7 +540,7 @@ output$sensitivity <- renderPlot({
   if(is.null(MRList()))
     return(NULL)
 
-  # Extract data
+  # Extract global lists
   for (n in names(MRList()))
     assign(n,rlist::list.extract(MRList(),n))
   for (n in names(gPars))
@@ -565,12 +564,15 @@ output$sensitivity <- renderPlot({
         x, y,
         xlab= 'log10(k)', xlim = range(x),
         ylab= paste0('log10[',SASpecies,']'), ylim = range(y),
-        type ='p', pch=20, col=cols[5],
+        type ='p', pch=16,
+        col = ifelse(cor(x,y) > 0, col_tr2[5], col_tr2[3]),
         main = paste0(namesMR[i])
       )
+      a = signif(MR[i],2)
       legend(
-        'topleft', legend = '', bty='n',
-        title = signif(MR[i],2),
+        ifelse(cor(x,y) > 0, 'topleft', 'topright'),
+        legend = '', bty='n',
+        title = a,
         title.col = cols[2]
       )
     }
@@ -581,16 +583,18 @@ output$sensitivity <- renderPlot({
         cex = cex, cex.main = cex, mar = c(3,20,2,1),
         mgp = mgp, tcl = tcl, pty = pty, lwd = lwd ,lend=2)
     MR = rev(MR)
-    colbr = rep(cols[5],length(MR))
-    colbr[MR<0] = cols[3]
+    colbr = rep(col_tr2[5],length(MR))
+    colbr[MR<0] = col_tr2[3]
     barplot(MR,
             horiz     = TRUE, las=1,
+            xlim      = c(-1,1),
             beside    = FALSE,
             col       = colbr,
+            border    = NA,
             names.arg = names(MR),
             main      = main
     )
-
+    grid(ny=0)
   }
 
 })

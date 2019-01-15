@@ -255,6 +255,14 @@ dcorMat <- function(C,S) {
 
   nC = ncol(C); nS = ncol(S)
   hMat = matrix(NA,nrow=nS,ncol=nC)
+  sxx = future.apply::future_apply(
+    X = C, MARGIN = 2,
+    FUN = function(x) fda.usc::dcor.xy(x,x,test=FALSE)
+  )
+  syy = future.apply::future_apply(
+    X = S, MARGIN = 2,
+    FUN = function(x) fda.usc::dcor.xy(x,x,test=FALSE)
+  )
   for(j in 1:nC) {
     x = C[,j]
     V = future.apply::future_apply(
@@ -262,6 +270,8 @@ dcorMat <- function(C,S) {
       FUN = function(y,x) fda.usc::dcor.xy(x,y,test=FALSE),
       x = x
     )
+    # Reduce
+    V = V / sqrt(sxx[j]*syy)
     # Normalize
     V[!is.finite(V)] = 0
     V = V / sum(V)
@@ -582,12 +592,19 @@ output$sensitivity <- renderPlot({
     par(mfrow = c(1,1),
         cex = cex, cex.main = cex, mar = c(3,20,2,1),
         mgp = mgp, tcl = tcl, pty = pty, lwd = lwd ,lend=2)
+
     MR = rev(MR)
+
     colbr = rep(col_tr2[5],length(MR))
     colbr[MR<0] = col_tr2[3]
+
+    xlim = c(0,1.2*max(MR))
+    if(sum(MR<0) !=0 )
+      xlim = c(-1,1)
+
     barplot(MR,
             horiz     = TRUE, las=1,
-            xlim      = c(-1,1),
+            xlim      = xlim,
             beside    = FALSE,
             col       = colbr,
             border    = NA,

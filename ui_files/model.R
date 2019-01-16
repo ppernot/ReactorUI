@@ -20,8 +20,8 @@ sidebarLayout(
           fixedRow(
             column(
               width = 4,
-              verbatimTextOutput("irradParams"),
-              uiOutput("irradUI")
+              uiOutput("irradUI"),
+              verbatimTextOutput("irradParams")
             ),
             column(
               width = 8,

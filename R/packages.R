@@ -14,7 +14,7 @@ libs <- c(
   "devtools",
   "shiny", "shinyBS", "shinycssloaders", "shinyFiles",
   "DT", "tools", "igraph", "dHSIC", "fda.usc", "rlist",
-  "xtable", "inlmisc","CHNOSZ",
+  "xtable", "inlmisc","CHNOSZ","networkD3",
   "promises","future","future.apply"
 )
 for (lib in libs) {

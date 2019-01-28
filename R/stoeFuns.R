@@ -5,9 +5,13 @@ data("thermo")
 elements    = c("H", "C", "N", "O", "S", "Ar")
 numElecElem = c( 1 ,  6 ,  7 ,  8 , 16 ,  18 )
 massElem    = mass(elements)
-spDummy     = c("E","CxHyNz+","SOOT","He",'C4H2X',
-                'SOOTC+','Products','CxHy+','CxHy',
-                'CxHyNz','SOOTC','SOOTN')
+spDummy     = c('E', 'He',
+                "SOOT",'SOOTC','SOOTN','SOOTC+','SOOTS',
+                'CxHy+','CxHy','CxHyNz+','CxHyNz',
+                'C4H2X',
+                'HC3NX','HC5NX',
+                'Products')
+
 # Functions
 filterFormula <- function(sp) {
   # Filter out non-stoechimetric notations

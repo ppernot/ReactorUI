@@ -237,10 +237,11 @@ hsicMat <- function(C,S) {
       FUN = function(y,x) dHSIC::dhsic(x,y)$dHSIC,
       x = x
     )
-    # Reduced Indices
-    V = V / sqrt(sxx[j]*syy)
-    # Normalize
+    # Filter problematic values
     V[!is.finite(V)] = 0
+    # Reduced Indices
+    V = sqrt(V / sqrt(sxx[j]*syy))
+    # Normalize
     V = V / sum(V)
     hMat[,j] = V
   }
@@ -270,14 +271,14 @@ dcorMat <- function(C,S) {
       FUN = function(y,x) fda.usc::dcor.xy(x,y,test=FALSE),
       x = x
     )
-    # Reduce
-    V = V / sqrt(sxx[j]*syy)
-    # Normalize
+    # Filter problematic values
     V[!is.finite(V)] = 0
+    # Reduce
+    V = sqrt(V / sqrt(sxx[j]*syy))
+    # Normalize
     V = V / sum(V)
     hMat[,j] = V
   }
-
   return(hMat)
 }
 

@@ -33,7 +33,42 @@ sidebarLayout(
         tabPanel(
           title=h4("Chemistry"),
           br(),
-          verbatimTextOutput("chemistryParams")
+          fixedRow(
+            column(
+              width = 3,
+              uiOutput("chemistryParams"),
+              actionButton(
+                'generateNetwork',
+                'Generate Reactions',
+                icon = icon('gear')
+              ),
+              hr(),
+              sliderInput(
+                'forceNetCharge',
+                'Nodes attraction',
+                min   = -150,
+                max   =    0,
+                step  =   10,
+                value = -100
+              ),
+              sliderInput(
+                'vlpMax',
+                'Max Volpert Index',
+                min   =  0,
+                max   = 10,
+                step  =  1,
+                value = 10
+              )
+            ),
+            column(
+              width = 9,
+              # plotOutput(
+              forceNetworkOutput(
+                "plotScheme",
+                height = plotHeight
+              )
+            )
+          )
         )
       )
     )

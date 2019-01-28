@@ -573,6 +573,27 @@ volpertLayout <- function (labels, vlpInd, mass, yMass=FALSE) {
   }
   return(layout)
 }
+volpertCircleLayout <- function (labels, vlpInd, mass) {
+  layout = matrix(NA,ncol=2,nrow=length(labels))
+  rownames(layout)=labels
+  scale = 5
+  y0  = 1 + scale*max(vlpInd)
+  for ( vI in min(vlpInd):max(vlpInd) ) {
+    spL = names(vlpInd[which(vlpInd==vI)])
+    spL = labels[labels %in% spL]
+    spL = spL[order(mass[spL])]
+    R   = 1 + scale*vI
+    del = 0
+    if(length(spL)!=1)
+      del = 0.5*pi/(length(spL)-1)
+    for (i in 1:length(spL)) {
+      p = rnorm(2) * scale / 6
+      layout[spL[i], 1] =      R * cos((i - 1) * del) + p[1]
+      layout[spL[i], 2] = y0 - R * sin((i - 1) * del) + p[2]
+    }
+  }
+  return(layout)
+}
 animVolpertGraph <- function (spList,L,R,species,
                               reacs,reacType,reacTypeNames,
                               yMean,logConc,flMean,flux,vlpInd,

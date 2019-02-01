@@ -32,40 +32,64 @@ sidebarLayout(
         ),
         tabPanel(
           title=h4("Chemistry"),
-          br(),
-          fixedRow(
-            column(
-              width = 3,
-              uiOutput("chemistryParams"),
-              actionButton(
-                'generateNetwork',
-                'Generate Reactions',
-                icon = icon('gear')
+          wellPanel(
+            tabsetPanel(
+              tabPanel(
+                title=h4("Initial mix"),
+                br(),
+                fixedRow(
+                  column(
+                    width = 3,
+                    uiOutput("chemistryParams"),
+                    actionButton(
+                      'generateNetwork',
+                      'Generate Reactions',
+                      icon = icon('gear')
+                    )
+                  ),
+                  column(
+                    width = 9,
+                    withSpinner(
+                      verbatimTextOutput(
+                        "summaryScheme"
+                      ),
+                      type=4
+                    )
+                  )
+                )
               ),
-              hr(),
-              sliderInput(
-                'forceNetCharge',
-                'Nodes attraction',
-                min   = -150,
-                max   =    0,
-                step  =   10,
-                value = -100
-              ),
-              sliderInput(
-                'vlpMax',
-                'Max Volpert Index',
-                min   =  0,
-                max   = 10,
-                step  =  1,
-                value = 10
-              )
-            ),
-            column(
-              width = 9,
-              # plotOutput(
-              forceNetworkOutput(
-                "plotScheme",
-                height = plotHeight
+              tabPanel(
+                title=h4("Network"),
+                br(),
+                fixedRow(
+                  column(
+                    width = 3,
+                    sliderInput(
+                      'forceNetCharge',
+                      'Nodes attraction',
+                      min   = -150,
+                      max   =    0,
+                      step  =   10,
+                      value = -100
+                    ),
+                    sliderInput(
+                      'vlpMax',
+                      'Max Volpert Index',
+                      min   =  0,
+                      max   = 10,
+                      step  =  1,
+                      value = 10
+                    )
+                  ),
+                  column(
+                    width = 9,
+                    # plotOutput(
+                    forceNetworkOutput(
+                      "plotScheme",
+                      height = plotHeight
+                    )
+                  )
+                )
               )
             )
           )

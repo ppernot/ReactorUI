@@ -617,6 +617,18 @@ observeEvent(
     future({generateNetwork(spInit)}) %...>% reacScheme()
   }
 )
+output$summaryScheme <- renderPrint({
+  if (is.null(reacScheme())) {
+    return(cat('Please Generate Reactions...'))
+  }
+
+  cat('Summary\n')
+  cat('-------\n\n')
+  cat('Nb species         = ', length(reacScheme()$species),'\n')
+  cat('Nb reactions       = ', length(reacScheme()$reacs)  ,'\n')
+  cat('Max. Volpert Index = ', max(reacScheme()$vlpInd)         )
+
+})
 output$plotScheme <- renderForceNetwork({
 # output$plotScheme <- renderPlot({
   if (is.null(reacScheme())) {
@@ -664,7 +676,7 @@ output$plotScheme <- renderForceNetwork({
   # V(g)$color = col_tr2[vlpInd+1]
   # V(g)$size  = 10
   # V(g)$label.cex  = 0.7
-  # E(g)$color = "#CCCCCC"
+  # E(g)$color = "#DDDDDD"
   # E(g)$width = 0.5
   #
   # plot(

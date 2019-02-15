@@ -227,7 +227,6 @@ generateNetwork <- function(spInit) {
   dummySpecies = spDummy # From global variables
   dummyMass   = round(max(mass,na.rm=TRUE)+2)
   mass[dummySpecies] = dummyMass
-print('Mass done!')
   # orderByMass=order(mass)
   # species1=species[orderByMass]
   # mass1=mass[orderByMass]
@@ -247,14 +246,13 @@ print('Mass done!')
   colnames(L)=species
   colnames(R)=species
   colnames(D)=species
-print('LR done!')
+
   # Volpert analysis
   # Build species list and reactions list
   # from initial species list by
   # iterations over the reaction network
   reacs    = 1:nbReac
   spInit0  = spInit
-  print(spInit)
   lReacs   =
     rowSums(
       as.matrix(
@@ -262,19 +260,15 @@ print('LR done!')
         ncol = length(spInit)
         )
       ) & type=='photo'
-  print(lReacs)
   reacList = reacs[lReacs]
-  print(reacList)
   spProds  = species[colSums(R[lReacs,]) != 0 ]
   spProds  = spProds[!(spProds %in% spInit)]
-  print(spProds)
 
   vlpInd  = rep(NA,length(species))
   names(vlpInd)   = species
   vlpInd[spInit]  = 0
   vlpInd[spProds] = 1
   ncount = 1
-print('VP Init done!')
   while ( length(spProds)!=0 ) {
     spInit   = c(spInit,spProds)
     lReacsU  = rowSums(L[,spInit] == 1) & type=='photo'
@@ -293,7 +287,6 @@ print('VP Init done!')
   # orphans = species[!species %in% spInit &
   #                     !reject &
   #                     !species %in% dummySpecies ]
-print('VP done!')
   # Reduce reactions and species list to accessible species
   species   = spInit
   nbSpecies = length(species)
@@ -304,11 +297,10 @@ print('VP done!')
   nbReac    = length(reacList)
   L         = L[reacList,species]
   R         = R[reacList,species]
-
-  # params    = params[[reacList]]
-  # type      = type[[reacList]]
-  # locnum    = locnum[[reacList]]
-  # orig      = orig[[reacList]]
+  params    = params[reacList]
+  type      = type[reacList]
+  locnum    = locnum[reacList]
+  orig      = orig[reacList]
 
   # Build links matrix for network plots
   linksR=matrix(0,ncol = nbSpecies, nrow = nbSpecies)
@@ -625,12 +617,53 @@ output$summaryScheme <- renderPrint({
   cat('Summary\n')
   cat('-------\n\n')
   cat('Nb species         = ', length(reacScheme()$species),'\n')
-  cat('Nb reactions       = ', length(reacScheme()$reacs)  ,'\n')
-  cat('Max. Volpert Index = ', max(reacScheme()$vlpInd)         )
+  cat('Nb reactions       = ', length(reacScheme()$reacs)  ,'\n\n')
+
+  vlpInd =reacScheme()$vlpInd
+  maxVlpInd = max(vlpInd)
+  cat('Max. Volpert Index = ', maxVlpInd,'\n\n')
+  for (i in 0:maxVlpInd)
+    cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n')
 
 })
+output$listScheme <- renderPrint({
+  if (is.null(reacScheme())) {
+    return(cat('Please Generate Reactions...'))
+  }
+
+  cat('Summary\n')
+  cat('-------\n\n')
+  cat('Nb species         = ', length(reacScheme()$species),'\n')
+  reacs = reacScheme()$reacs
+  cat('Nb reactions       = ', length(reacs)  ,'\n\n')
+  L = reacScheme()$L
+  R = reacScheme()$R
+
+  for (i in 1: length(reacs)) {
+    # Arrange reactants list
+    sel = L[i,]!=0
+    react = colnames(L)[sel]
+    stoec = L[i,][sel]
+    for (j in 1:length(react))
+      if(stoec[j] != 1)
+        react[j] = paste(rep(react[j],stoec[j]),collapse = ' + ')
+    if(reacScheme()$type[[i]] == 'photo')
+      react = c(react,'hv')
+    react = paste(react, collapse = ' + ')
+    # Arrange products list
+    sel = R[i,]!=0
+    prods = colnames(R)[sel]
+    stoec = R[i,][sel]
+    for (j in 1:length(prods))
+      prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
+    prods = paste(prods, collapse = ' + ')
+    # Print reaction
+    cat(react,' --> ',prods,'\n')
+  }
+
+})
+
 output$plotScheme <- renderForceNetwork({
-# output$plotScheme <- renderPlot({
   if (is.null(reacScheme())) {
     return(NULL)
   }
@@ -672,18 +705,6 @@ output$plotScheme <- renderForceNetwork({
     opacityNoHover = 0.5,
     charge = input$forceNetCharge
   )
-
-  # V(g)$color = col_tr2[vlpInd+1]
-  # V(g)$size  = 10
-  # V(g)$label.cex  = 0.7
-  # E(g)$color = "#DDDDDD"
-  # E(g)$width = 0.5
-  #
-  # plot(
-  #   g,
-  #   layout=volpertCircleLayout(species, vlpInd, mass)
-  # )
-
 
 })
 

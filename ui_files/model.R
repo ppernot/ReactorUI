@@ -50,8 +50,12 @@ sidebarLayout(
                   column(
                     width = 9,
                     withSpinner(
-                      verbatimTextOutput(
-                        "summaryScheme"
+                      tagAppendAttributes(
+                        verbatimTextOutput(
+                          "summaryScheme"
+                        ),
+                        style="white-space:pre-wrap; text-align: left;
+                               overflow-y:scroll; max-height: 600px;"
                       ),
                       type=4
                     )
@@ -87,6 +91,25 @@ sidebarLayout(
                     forceNetworkOutput(
                       "plotScheme",
                       height = plotHeight
+                    )
+                  )
+                )
+              ),
+              tabPanel(
+                title=h4("Reac. List"),
+                br(),
+                fixedRow(
+                  column(
+                    width = 12,
+                    withSpinner(
+                      tagAppendAttributes(
+                        verbatimTextOutput(
+                          "listScheme"
+                        ),
+                        style="white-space:pre-wrap; text-align: left;
+                        overflow-y:scroll; max-height: 600px;"
+                      ),
+                      type=4
                     )
                   )
                 )

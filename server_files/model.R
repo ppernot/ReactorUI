@@ -627,8 +627,9 @@ output$listScheme <- renderPrint({
 
   reacs   = reacScheme()$reacs
   species = reacScheme()$species
-  L = reacScheme()$L
-  R = reacScheme()$R
+  params  = reacScheme()$params
+  L       = reacScheme()$L
+  R       = reacScheme()$R
 
   formatReac <- function(i) {
     # Arrange reactants list
@@ -649,7 +650,7 @@ output$listScheme <- renderPrint({
       prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
     prods = paste(prods, collapse = ' + ')
     # Print reaction
-    cat(react,' --> ',prods,'\n')
+    cat(react,' --> ',prods,unlist(params[[i]]),'\n')
   }
 
   if(is.na(input$targetSpecies) | input$targetSpecies == "") {
@@ -685,6 +686,97 @@ output$listScheme <- renderPrint({
   }
 
 })
+
+output$tabScheme <- renderDataTable({
+  if (is.null(reacScheme())) {
+    return(cat('Please Generate Reactions...'))
+  }
+
+  reacs   = reacScheme()$reacs
+  species = reacScheme()$species
+  params  = reacScheme()$params
+  type    = reacScheme()$type
+  L       = reacScheme()$L
+  R       = reacScheme()$R
+
+  formatReac <- function(i) {
+    # Arrange reactants list
+    sel = L[i,]!=0
+    react = colnames(L)[sel]
+    stoec = L[i,][sel]
+    for (j in 1:length(react))
+      if(stoec[j] != 1)
+        react[j] = paste(rep(react[j],stoec[j]),collapse = ' + ')
+    if(reacScheme()$type[[i]] == 'photo')
+      react = c(react,'hv')
+    react = paste(react, collapse = ' + ')
+    # Arrange products list
+    sel = R[i,]!=0
+    prods = colnames(R)[sel]
+    stoec = R[i,][sel]
+    for (j in 1:length(prods))
+      prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
+    prods = paste(prods, collapse = ' + ')
+    # Print reaction
+    typ  = unlist(type[[i]])
+    pars = unlist(params[[i]])
+    if(typ != 'photo')
+      pars = pars[-length(pars)]
+
+    return(
+      data.frame(
+        Id        = i,
+        Reactants = react,
+        Products  = prods,
+        Params    = paste0(pars, collapse =', '),
+        Type      = typ
+      )
+    )
+  }
+
+  dat = data.frame(
+    Id = NA,
+    Reactants = NA,
+    Products = NA,
+    Params = NA,
+    Type = NA
+  )
+  if(is.na(input$targetSpecies) | input$targetSpecies == "") {
+    for (i in 1: length(reacs))
+      dat = rbind(dat,formatReac(i))
+
+  } else {
+    # Species-specific reaction list
+    if(! input$targetSpecies %in% species )
+      return(cat('Species not in list : ',input$targetSpecies))
+    indx = which(species == input$targetSpecies)
+    # Losses
+    sel = which(L[,indx]!=0)
+    for (i in sel)
+      dat = rbind(dat,formatReac(i))
+    # Productions
+    sel = which(R[,indx]!=0)
+    for (i in sel)
+      dat = rbind(dat,formatReac(i))
+  }
+
+  return(dat[-1,])
+},
+rownames = FALSE,
+extensions = c('Buttons','Scroller'),
+options = list(
+  dom = 'Btip',
+  buttons =
+    list('copy', list(
+      extend = 'collection',
+      buttons = c('csv', 'excel', 'pdf'),
+      text = 'Download')
+    ),
+  deferRender = TRUE,
+  scrollY = 550,
+  scroller = TRUE
+)
+)
 
 output$plotScheme <- renderForceNetwork({
   if (is.null(reacScheme())) {

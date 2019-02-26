@@ -111,13 +111,17 @@ sidebarLayout(
                   column(
                     width = 9,
                     withSpinner(
-                      tagAppendAttributes(
-                        verbatimTextOutput(
-                          "listScheme"
-                        ),
-                        style="white-space:pre-wrap; text-align: left;
-                        overflow-y:scroll; max-height: 600px;"
+                      dataTableOutput(
+                        "tabScheme",
+                        height = "auto"
                       ),
+                      # tagAppendAttributes(
+                      #   verbatimTextOutput(
+                      #     "listScheme"
+                      #   ),
+                      #   style="white-space:pre-wrap; text-align: left;
+                      #   overflow-y:scroll; max-height: 600px;"
+                      # ),
                       type=4
                     )
                   )

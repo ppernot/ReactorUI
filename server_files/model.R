@@ -1,4 +1,5 @@
 # Function  ####
+## Read Fortran Namelist
 ascii_only <- function(file) {
   response <- what_ascii(file)
 
@@ -8,13 +9,12 @@ ascii_only <- function(file) {
     return(TRUE)
   }
 }
-
 what_ascii <- function(file) {
   response <- capture.output(tools::showNonASCIIfile(file))
   return(response)
 }
 buildVal <- function(textLine, lineNum, blckName) {
-  #-----function appends nml list with new values-----
+  #  function appends nml list with new values
   # remove all text after comment string
   textLine <- strsplit(textLine, "!")[[1]][1]
   # Trim white spaces
@@ -71,11 +71,6 @@ buildVal <- function(textLine, lineNum, blckName) {
   names(lineVal) <- parNm
   return(lineVal)
 }
-#' go from glm2.nml logical vectors to R logicals
-#'
-#' @param values a vector of strings containing either .false. or .true.
-#' @return a logical vector
-#' @keywords internal
 from.glm_boolean <- function(values) {
   logicals <- sapply(values, FUN = function(x) {
     if (!isTRUE(grepl(".true.", x) || grepl(".false.", x))) {
@@ -157,8 +152,7 @@ read_nml <- function(nml_file) {
   return(nml)
 }
 
-
-
+## Chemistry
 generateNetwork <- function(spInit) {
 
   # Locations of reactions database
@@ -631,15 +625,12 @@ output$listScheme <- renderPrint({
     return(cat('Please Generate Reactions...'))
   }
 
-  cat('Summary\n')
-  cat('-------\n\n')
-  cat('Nb species         = ', length(reacScheme()$species),'\n')
-  reacs = reacScheme()$reacs
-  cat('Nb reactions       = ', length(reacs)  ,'\n\n')
+  reacs   = reacScheme()$reacs
+  species = reacScheme()$species
   L = reacScheme()$L
   R = reacScheme()$R
 
-  for (i in 1: length(reacs)) {
+  formatReac <- function(i) {
     # Arrange reactants list
     sel = L[i,]!=0
     react = colnames(L)[sel]
@@ -659,6 +650,38 @@ output$listScheme <- renderPrint({
     prods = paste(prods, collapse = ' + ')
     # Print reaction
     cat(react,' --> ',prods,'\n')
+  }
+
+  if(is.na(input$targetSpecies) | input$targetSpecies == "") {
+    # Full reaction list
+    cat('Summary\n')
+    cat('-------\n\n')
+    cat('Nb species         = ', length(species),'\n')
+    cat('Nb reactions       = ', length(reacs)  ,'\n\n')
+
+    for (i in 1: length(reacs))
+      formatReac(i)
+
+  } else {
+    # Species-specific reaction list
+    if(! input$targetSpecies %in% species )
+      return(cat('Species not in list : ',input$targetSpecies))
+
+    indx = which(species == input$targetSpecies)
+    # Reactions
+    cat('Loss\n')
+    cat('----\n')
+    sel = which(L[,indx]!=0)
+    for (i in sel)
+      formatReac(i)
+    cat('\n')
+    # Productions
+    cat('Production\n')
+    cat('----------\n')
+    sel = which(R[,indx]!=0)
+    for (i in sel)
+      formatReac(i)
+    cat('\n')
   }
 
 })

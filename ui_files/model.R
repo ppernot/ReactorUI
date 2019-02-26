@@ -100,7 +100,16 @@ sidebarLayout(
                 br(),
                 fixedRow(
                   column(
-                    width = 12,
+                    width = 3,
+                    textInput(
+                      "targetSpecies",
+                      label = NULL,
+                      value = NA,
+                      placeholder = "Target sp."
+                    )
+                  ),
+                  column(
+                    width = 9,
                     withSpinner(
                       tagAppendAttributes(
                         verbatimTextOutput(

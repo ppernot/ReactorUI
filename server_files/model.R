@@ -562,7 +562,10 @@ output$chemistryParams <- renderUI({
           numericInput(
             paste0("c0_", i),
             label = NULL,
-            value = csp[i]
+            value = csp[i],
+            min   = 0,
+            max   = 1,
+            step  = 0.1
           )
         )
       )
@@ -574,7 +577,7 @@ output$chemistryParams <- renderUI({
         column(
           width,
           textInput(
-            paste0("sp_", i),
+            paste0("sp_", length(rsp)+i),
             label = NULL,
             value = NA,
             placeholder = "New sp."
@@ -583,9 +586,12 @@ output$chemistryParams <- renderUI({
         column(
           width,
           numericInput(
-            paste0("c0_", i),
+            paste0("c0_", length(rsp)+i),
             label = NULL,
-            value = 0
+            value = 0,
+            min   = 0,
+            max   = 1,
+            step  = 0.1
           )
         )
       )

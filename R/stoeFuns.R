@@ -1,5 +1,5 @@
 # Get data from CHNOSZ package
-data("thermo")
+# data("thermo") # Obsolete
 
 # Set global variables
 elements    = c("H", "C", "N", "O", "S", "Ar")

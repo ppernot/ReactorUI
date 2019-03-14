@@ -15,7 +15,7 @@ getConc  = function(concThresh = -50) {
   species = scan(text=line, what=character(),
                  strip.white=TRUE, quiet=TRUE)[-1]
 
-  iNorm= which(species=="CH4")
+  # iNorm= which(species=="CH4") # Replaced by norm to sum in next loop
 
   # Get all data
   nf   = length(files)
@@ -27,7 +27,7 @@ getConc  = function(concThresh = -50) {
     time = tab[-1,1]
     y    = as.matrix(tab[-1,-1])
     conc[i,1:nt,1:nsp]     = y[1:nt,1:nsp]
-    moleFrac[i,1:nt,1:nsp] = y[1:nt,1:nsp] /y[1:nt,iNorm]
+    moleFrac[i,1:nt,1:nsp] = y[1:nt,1:nsp] / rowSums(y)
   }
 
   # Pretreat moleFrac for plots

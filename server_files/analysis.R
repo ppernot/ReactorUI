@@ -32,7 +32,8 @@ getConc  = function(concThresh = -50) {
 
   # Pretreat moleFrac for plots
   moleFrac = ifelse(moleFrac==0         , NA, log10(moleFrac))
-  moleFrac = ifelse(moleFrac<=concThresh, NA, moleFrac)
+  # moleFrac = ifelse(moleFrac<=concThresh, NA, moleFrac)
+  # --> Tresholding now done by plotting function
 
   yMean = apply(moleFrac,c(2,3),
                 function(x) mean(x,na.rm=TRUE))

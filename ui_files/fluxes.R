@@ -19,7 +19,7 @@ sidebarLayout(
           "flSpec",
           "Choose species",
           width = "50%",
-          value = "CH4",
+          value = "H",
           placeholder = "Type species"
         ),
         sliderInput(
@@ -29,6 +29,11 @@ sidebarLayout(
           max   = 0.5,
           step  = 0.01,
           value = 0.05
+        ),
+        checkboxInput(
+          "curvedArrow",
+          "Curved arrows",
+          value = FALSE
         )
       )
     )

@@ -407,7 +407,8 @@ addLinks = function (sp1,links,species,KL,KR,nbReacs,nbSpecies) {
 }
 
 viewFlow = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
-                    flMean,topShow=0.5,level=1,showLegend=TRUE,PDF=FALSE) {
+                    flMean,topShow=0.5,level=1,showLegend=TRUE,
+                    PDF=FALSE, curved = FALSE) {
   # Builds digraph of fluxes to and from sp1
 
   nbSpecies = length(species)
@@ -452,16 +453,15 @@ viewFlow = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
   V(g)$label.cex = c(rep(1,nbReacs),rep(1,nbSpecies))
   V(g)$label.color = "black"
   V(g)$label.font = 2
-#   V(g)$label.dist = 1
-#   V(g)$label.degree = 0
 
-  wid=abs(E(g)$weight)
-  wid=wid^0.1
-  wid=0.02+(wid-min(wid))/(max(wid)-min(wid))
+  wid = abs(E(g)$weight)
+  wid = wid^0.1 # Empirical transfo for better scaling...
+  wid = 0.12 + (wid-min(wid))/(max(wid)-min(wid))
   E(g)$width = wid*5
   E(g)$color = ifelse(E(g)$weight>0,col2tr('red',160),col2tr('blue',160))
-  E(g)$arrow.size = 1
-  E(g)$curved = TRUE
+  E(g)$arrow.size  = 0.25*max(E(g)$width)
+  E(g)$arrow.width = 0.25*max(E(g)$width)
+  E(g)$curved = curved
 
   loners=which(degree(g)==0)
   g=delete.vertices(g,loners)

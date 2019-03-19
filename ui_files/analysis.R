@@ -41,13 +41,18 @@ sidebarLayout(
                   "Fixed colors",
                   value = TRUE
                 ),
+                checkboxInput(
+                  "ppscale",
+                  "Draw PPM scale",
+                  value = FALSE
+                ),
                 checkboxGroupInput(
                   "categsPlot",
                   "Categories",
                   choices = c(
                     "Neutrals"     = "neutrals",
                     "Ions"         = "ions",
-                    "Radicals"     = "radicals",
+                    "Radicals only"= "radicals",
                     "Hydrocarbons" = "hydrocarbons",
                     "N-bearing"    = "N-bearing",
                     "O-bearing"    = "O-bearing",

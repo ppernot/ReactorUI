@@ -93,13 +93,15 @@ fluxesList <- reactiveVal()
 observeEvent(
   input$calcFlux,
   {
-    C <- concList()
-    if(is.null(C))
-      C <- concList(getConc())
+    if(is.null(concList())) {
+      C = getConc()
+      concList(C)
+    }
 
-    R <- ratesList()
-    if(is.null(R))
-      R <- ratesList(getRates())
+    if(is.null(ratesList())){
+      R = getRates()
+      ratesList(R)
+    }
 
     future({calcFluxes(C,R)}) %...>% fluxesList()
   }
@@ -137,7 +139,8 @@ output$viewFlow <- renderPlot({
     flMean,
     topShow=input$topShow,
     level=1,
-    showLegend=TRUE
+    showLegend=TRUE,
+    curved = input$curvedArrow
   )
   plot(g, layout=layout_with_gem(g))
   # legend(

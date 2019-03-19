@@ -31,7 +31,7 @@ getConc  = function(concThresh = -50) {
   }
 
   # Pretreat moleFrac for plots
-  moleFrac = ifelse(moleFrac==0         , NA, log10(moleFrac))
+  moleFrac = ifelse(moleFrac == 0, NA, log10(moleFrac))
   # moleFrac = ifelse(moleFrac<=concThresh, NA, moleFrac)
   # --> Tresholding now done by plotting function
 
@@ -390,10 +390,11 @@ output$kinetics <- renderPlot({
     xlim <- rangesKinetics$x
   }
   if (is.null(rangesKinetics$y)) {
-    ylim <- c(
-      max(-20, min(mfLow[,sel])),
-      min(0  , max(mfSup[,sel]))
-    )
+    ylim = range(c(mfLow[,sel],mfSup[,sel]))
+    # ylim <- c(
+    #   max(-30, min(mfLow[,sel])),
+    #   min(0  , max(mfSup[,sel]))
+    # )
   } else {
     ylim <- rangesKinetics$y
   }
@@ -416,6 +417,11 @@ output$kinetics <- renderPlot({
                      'Mean and 95 % Proba. Intervals'),
        xlab = 'Time / s'     , xlim = xlim,
        ylab = 'Log10(mole fraction)', ylim = ylim )
+  grid()
+  if(input$ppscale)
+    axis(side = 4,
+         labels=c("ppm", "ppb","ppt","ppq"),
+         at = -3*(2:5), las = 1, tck = 1)
   # CI
   if(input$mcPlot) {
     for(isp in (1:nsp)[sel])
@@ -432,7 +438,6 @@ output$kinetics <- renderPlot({
        labels = species[sel],
        col=colors$colsSp[sel],
        pos = 4, offset=0.2, cex=cex.leg)
-  grid()
   box()
 })
 outputOptions(output, "kinetics",

@@ -89,6 +89,61 @@ sidebarLayout(
           )
         ),
         tabPanel(
+          title=h4("Pseudo-MS"),
+          br(),
+          fluidRow(
+            column(
+              width = 3,
+              wellPanel(
+                checkboxInput(
+                  "mcPlotMS",
+                  "Show error bands",
+                  value = TRUE
+                ),
+                checkboxInput(
+                  "colSelMS",
+                  "Fixed colors",
+                  value = TRUE
+                ),
+                checkboxInput(
+                  "ppscaleMS",
+                  "Draw PPM scale",
+                  value = FALSE
+                ),
+                checkboxGroupInput(
+                  "categsPlotMS",
+                  "Categories",
+                  choices = c(
+                    "Radicals only"= "radicals",
+                    "Hydrocarbons" = "hydrocarbons",
+                    "N-bearing"    = "N-bearing",
+                    "O-bearing"    = "O-bearing",
+                    "C0"           = "C0",
+                    "C1"           = "C1",
+                    "C2"           = "C2",
+                    "C3"           = "C3",
+                    "C4"           = "C4",
+                    "C5"           = "C5",
+                    "C6"           = "C6",
+                    "C>6"          = "Cmore"
+                  ),
+                  selected = c("hydrocarbons","C0","C1","C2")
+                )
+              )
+            ),
+            column(
+              width = 9,
+              withSpinner(
+                plotOutput(
+                  "pseudoMS",
+                  height = plotHeight
+                ),
+                type=4
+              )
+            )
+          )
+        ),
+        tabPanel(
           title=h4("Sensitivity"),
           br(),
           fluidRow(

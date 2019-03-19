@@ -390,7 +390,7 @@ output$kinetics <- renderPlot({
     xlim <- rangesKinetics$x
   }
   if (is.null(rangesKinetics$y)) {
-    ylim = range(c(mfLow[,sel],mfSup[,sel]))
+    ylim = range(c(mfLow[,sel],mfSup[,sel])); print(ylim)
     # ylim <- c(
     #   max(-30, min(mfLow[,sel])),
     #   min(0  , max(mfSup[,sel]))
@@ -405,7 +405,7 @@ output$kinetics <- renderPlot({
 
   # Generate colors per species
   colors = assignColorsToSpecies(
-    input$colSel, species, sel, nf,
+    input$colSel, species, sel, nf=1,
     cols, col_tr, col_tr2)
 
   # Plot
@@ -455,6 +455,88 @@ observeEvent(
     }
   }
 )
+
+# Pseudo MS ####
+output$pseudoMS <- renderPlot({
+  if(is.null(concList()))
+    return(NULL)
+
+  # Extract conc et al.
+  for (n in names(concList()))
+    assign(n,rlist::list.extract(concList(),n))
+
+  # Species list to plot
+  selNeu = selectSpecies(species, c("neutrals",input$categsPlotMS))
+  selIon = selectSpecies(species, c("ions",input$categsPlotMS))
+
+  # Stoechiometry & Mass
+  compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
+  colnames(compo)=elements
+  mass  = apply(compo,1,massFormula)
+  names(mass) = species
+  ## Attribute mass to dummy species
+  # dummySpecies = spDummy # From global variables
+  # dummyMass   = round(max(mass,na.rm=TRUE)+2)
+  # mass[dummySpecies] = dummyMass
+
+  # Extract graphical params
+  for (n in names(gPars))
+    assign(n,rlist::list.extract(gPars,n))
+
+  # Generate colors per species
+  colors = assignColorsToSpecies(
+    input$colSelMS, species, c(selNeu,selIon), nf=1,
+    cols, col_tr, col_tr2)
+
+  # Plot
+  xlim = c(1,max(c(mass[selNeu],mass[selIon])))
+
+  par(mfrow = c(2, 1),
+      cex = cex, cex.main = cex, mar = c(3.2, 3, 3, 2),
+      mgp = mgp, tcl = tcl, pty = 'm', lwd = lwd, lend = 2)
+
+  thresh = -15
+  x = mass[selNeu]
+  y = mfMean[nt, selNeu]
+  w = ifelse(y < -15, y/y, 4000/abs(y+30)^2)
+  plot(
+    x, y,
+    type = 'n',
+    xlim = xlim,
+    ylim = c(thresh, 0),
+    Main = 'Neutrals'
+  )
+  grid()
+  segments(
+    x, y, x, rep(-30, length(selNeu)),
+    lwd = w,
+    col = colors$col_trSp[selNeu])
+  box()
+
+  # text(x = time[nt], y= mfMean[nt,sel],
+  #      labels = species[sel],
+  #      col=colors$colsSp[sel],
+  #      pos = 4, offset=0.2, cex=cex.leg)
+
+  x = mass[selIon]
+  y = mfMean[nt, selIon]
+  w = ifelse(y < -15, y/y, 4000/abs(y+30)^2)
+  plot(
+    x, y,
+    type = 'n',
+    xlim = xlim,
+    ylim = c(thresh, 0),
+    main = 'Ions'
+  )
+  grid()
+  segments(
+    x, y, x, rep(-30, length(selIon)),
+    lwd = w,
+    col=colors$col_trSp[selIon]
+  )
+  box()
+
+  })
 
 # Sensitivity ####
 MRList <- reactiveVal()

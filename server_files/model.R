@@ -170,19 +170,21 @@ generateNetwork <- function(spInit) {
     paste0(ctrlPars$projectDir,photoSourceDir,'PhotoIonScheme.dat')
   )
   for (filename in photoData) {
-    scheme  = read.fwf(file=filename, widths= rep(11,12))
-    scheme  = t(apply(scheme,1,function(x) gsub(" ","",x)))
-    for (i in 1:nrow(scheme)) {
-      nbReac = nbReac + 1
-      terms=scheme[i,1:2]
-      reactants[[nbReac]] = terms[!is.na(terms) & terms!="" & terms!="HV"]
-      terms=scheme[i,3:6]
-      products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
-      terms=scheme[i,7:12]
-      params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
-      type[[nbReac]]      = 'photo'
-      locnum[[nbReac]]    = i
-      orig[[nbReac]]      = filename
+    if(file.exists(filename)){ # PhotoIonScheme.dat is optional
+      scheme  = read.fwf(file=filename, widths= rep(11,12))
+      scheme  = t(apply(scheme,1,function(x) gsub(" ","",x)))
+      for (i in 1:nrow(scheme)) {
+        nbReac = nbReac + 1
+        terms=scheme[i,1:2]
+        reactants[[nbReac]] = terms[!is.na(terms) & terms!="" & terms!="HV"]
+        terms=scheme[i,3:6]
+        products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
+        terms=scheme[i,7:12]
+        params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
+        type[[nbReac]]      = 'photo'
+        locnum[[nbReac]]    = i
+        orig[[nbReac]]      = filename
+      }
     }
   }
 

@@ -128,6 +128,14 @@ sidebarLayout(
                     "C>6"          = "Cmore"
                   ),
                   selected = c("hydrocarbons","C0","C1","C2")
+                ),
+                sliderInput(
+                  "threshMS",
+                  "MS Amplitude Range",
+                  min = -30,
+                  max = 0,
+                  step = 1,
+                  value = c(-15, 0)
                 )
               )
             ),

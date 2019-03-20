@@ -198,13 +198,13 @@ assignColorsToSpecies <- function(colSel, species, sel, nf,
 
   if(colSel) {
     # Assign colors to species to avoid changes
-    nrep = ceiling(length(species)/length(cols))
+    nrep     = ceiling(length(species)/length(cols))
     colsSp   = rep(cols  ,times = nrep)
     col_trSp = rep(col_tr,times = nrep)
   } else {
     # Use sequential colors for selection
     colsSp = col_trSp = rep(NA,length(species))
-    nrep = ceiling(length(species[sel])/length(cols))
+    nrep          = ceiling(length(species[sel])/length(cols))
     colsSp[sel]   = rep(cols  ,times = nrep)
     col_trSp[sel] = rep(col_tr,times = nrep)
   }
@@ -466,74 +466,101 @@ output$pseudoMS <- renderPlot({
     assign(n,rlist::list.extract(concList(),n))
 
   # Species list to plot
-  selNeu = selectSpecies(species, c("neutrals",input$categsPlotMS))
-  selIon = selectSpecies(species, c("ions",input$categsPlotMS))
+  selNeu = selectSpecies(species,
+                         c("neutrals", input$categsPlotMS))
+  selIon = selectSpecies(species,
+                         c("ions",    input$categsPlotMS))
 
   # Stoechiometry & Mass
   compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
   colnames(compo)=elements
   mass  = apply(compo,1,massFormula)
   names(mass) = species
-  ## Attribute mass to dummy species
-  # dummySpecies = spDummy # From global variables
-  # dummyMass   = round(max(mass,na.rm=TRUE)+2)
-  # mass[dummySpecies] = dummyMass
 
   # Extract graphical params
   for (n in names(gPars))
     assign(n,rlist::list.extract(gPars,n))
 
   # Generate colors per species
-  colors = assignColorsToSpecies(
-    input$colSelMS, species, c(selNeu,selIon), nf=1,
-    cols, col_tr, col_tr2)
+  colorsNeu = assignColorsToSpecies(
+    input$colSelMS, species, selNeu,
+    nf=1, cols, col_tr, col_tr2)
+  colorsIon = assignColorsToSpecies(
+    input$colSelMS, species, selIon,
+    nf=1, cols, col_tr, col_tr2)
+
+  # Function to define bars width
+  # (width decreases as mole fraction increases)
+  lineWidth = function(y,threshMS) {
+    ymin = threshMS[1]
+    w    = ifelse(y < ymin, y/y, 3000/abs(y+35)^2)
+    return( pmin(w,12) )
+  }
 
   # Plot
-  xlim = c(1,max(c(mass[selNeu],mass[selIon])))
+  xlim = range(c(mass[selNeu],mass[selIon]))
+  ylim = c(input$threshMS[1],input$threshMS[2]+2)
 
   par(mfrow = c(2, 1),
       cex = cex, cex.main = cex, mar = c(3.2, 3, 3, 2),
       mgp = mgp, tcl = tcl, pty = 'm', lwd = lwd, lend = 2)
 
-  thresh = -15
-  x = mass[selNeu]
-  y = mfMean[nt, selNeu]
-  w = ifelse(y < -15, y/y, 4000/abs(y+30)^2)
+  # Neutrals
+  x   = mass[selNeu]
+  y   = mfMean[nt, selNeu]
+  w   = lineWidth(y,input$threshMS)
+  col = colorsNeu$colsSp[selNeu]
+  colt= colorsNeu$col_trSp[selNeu]
   plot(
     x, y,
     type = 'n',
-    xlim = xlim,
-    ylim = c(thresh, 0),
-    Main = 'Neutrals'
-  )
+    xlim = xlim, xlab = 'm',
+    ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
+    main = 'Neutrals')
   grid()
   segments(
-    x, y, x, rep(-30, length(selNeu)),
+    x, y, x, rep(-30, length(y)),
     lwd = w,
-    col = colors$col_trSp[selNeu])
+    col = colt)
+  segments(
+    x, y, x, rep(-30, length(y)),
+    lwd = w,
+    col = colt)
+  text(
+    x, y,
+    labels = species[selNeu],
+    col = col,
+    pos = 4, offset = 0.2, cex = cex.leg,
+    font = 2)
   box()
 
-  # text(x = time[nt], y= mfMean[nt,sel],
-  #      labels = species[sel],
-  #      col=colors$colsSp[sel],
-  #      pos = 4, offset=0.2, cex=cex.leg)
-
-  x = mass[selIon]
-  y = mfMean[nt, selIon]
-  w = ifelse(y < -15, y/y, 4000/abs(y+30)^2)
+  #Ions
+  x   = mass[selIon]
+  y   = mfMean[nt, selIon]
+  w   = lineWidth(y,input$threshMS)
+  col = colorsNeu$colsSp[selIon]
+  colt= colorsNeu$col_trSp[selIon]
   plot(
     x, y,
     type = 'n',
-    xlim = xlim,
-    ylim = c(thresh, 0),
-    main = 'Ions'
-  )
+    xlim = xlim, xlab = 'm',
+    ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
+    main = 'Ions')
   grid()
   segments(
-    x, y, x, rep(-30, length(selIon)),
+    x, y, x, rep(-30, length(y)),
     lwd = w,
-    col=colors$col_trSp[selIon]
-  )
+    col = colt)
+  segments(
+    x, y, x, rep(-30, length(y)),
+    lwd = w,
+    col = colt)
+  text(
+    x,  y,
+    labels = species[selIon],
+    col = col,
+    pos = 4, offset = 0.2,cex = cex.leg,
+    font = 2)
   box()
 
   })

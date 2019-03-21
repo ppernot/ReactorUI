@@ -11,7 +11,7 @@ options(
 
 # CRAN Libraries ####
 libs <- c(
-  "devtools",
+  "devtools","Hmisc",
   "shiny", "shinyBS", "shinycssloaders", "shinyFiles",
   "DT", "tools", "igraph", "dHSIC", "fda.usc", "rlist",
   "xtable", "inlmisc","CHNOSZ","networkD3",

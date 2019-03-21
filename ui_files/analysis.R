@@ -65,9 +65,8 @@ sidebarLayout(
                     "C6"           = "C6",
                     "C>6"          = "Cmore"
                   ),
-                  # selected = c("neutrals","ions","hydrocarbons","N-bearing",
-                  #              "C0","C1","C2","C3","C4","C5","C6","Cmore")
-                  selected = c("neutrals","hydrocarbons","C0","C1","C2")
+                  selected = c("neutrals","hydrocarbons","N-bearing",
+                               "C0","C1","C2")
                 )
               )
             ),
@@ -97,16 +96,16 @@ sidebarLayout(
               wellPanel(
                 checkboxInput(
                   "mcPlotMS",
-                  "Show error bands",
+                  "Show error bars",
                   value = TRUE
                 ),
+                # checkboxInput(
+                #   "colSelMS",
+                #   "Fixed colors",
+                #   value = TRUE
+                # ),
                 checkboxInput(
-                  "colSelMS",
-                  "Fixed colors",
-                  value = TRUE
-                ),
-                checkboxInput(
-                  "ppscaleMS",
+                  "ppScaleMS",
                   "Draw PPM scale",
                   value = FALSE
                 ),
@@ -127,7 +126,15 @@ sidebarLayout(
                     "C6"           = "C6",
                     "C>6"          = "Cmore"
                   ),
-                  selected = c("hydrocarbons","C0","C1","C2")
+                  selected = c("hydrocarbons","N-bearing","C0","C1","C2")
+                ),
+                sliderInput(
+                  "timeMS",
+                  "Log sampling time",
+                  min = -10,
+                  max =   5,
+                  step =  1,
+                  value = 5
                 ),
                 sliderInput(
                   "threshMS",
@@ -136,6 +143,14 @@ sidebarLayout(
                   max = 0,
                   step = 1,
                   value = c(-15, 0)
+                ),
+                sliderInput(
+                  "widthMS",
+                  "Adjust bar width",
+                  min = 1,
+                  max = 10,
+                  step = 1,
+                  value = 3
                 )
               )
             ),

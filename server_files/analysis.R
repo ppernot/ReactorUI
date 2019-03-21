@@ -483,87 +483,63 @@ output$pseudoMS <- renderPlot({
 
   # Generate colors per species
   colorsNeu = assignColorsToSpecies(
-    input$colSelMS, species, selNeu,
+    TRUE, species, selNeu,
     nf=1, cols, col_tr, col_tr2)
   colorsIon = assignColorsToSpecies(
-    input$colSelMS, species, selIon,
+    TRUE, species, selIon,
     nf=1, cols, col_tr, col_tr2)
 
   # Function to define bars width
   # (width decreases as mole fraction increases)
   lineWidth = function(y,threshMS) {
     ymin = threshMS[1]
-    w    = ifelse(y < ymin, y/y, 3000/abs(y+35)^2)
+    w    = ifelse(y < ymin, y/y, 2000/abs(y+35)^2)
     return( pmin(w,12) )
   }
+
+  # MS sampling time
+  t0 = max(min(time),min(max(time),10^input$timeMS))
+  nt = which(time >= t0)[1]
 
   # Plot
   xlim = range(c(mass[selNeu],mass[selIon]))
   ylim = c(input$threshMS[1],input$threshMS[2]+2)
 
   par(mfrow = c(2, 1),
-      cex = cex, cex.main = cex, mar = c(3.2, 3, 3, 2),
+      cex = cex, cex.main = cex, mar = c(3.2, 3, 3, 3),
       mgp = mgp, tcl = tcl, pty = 'm', lwd = lwd, lend = 2)
 
   # Neutrals
-  x   = mass[selNeu]
-  y   = mfMean[nt, selNeu]
-  w   = lineWidth(y,input$threshMS)
-  col = colorsNeu$colsSp[selNeu]
-  colt= colorsNeu$col_trSp[selNeu]
-  plot(
-    x, y,
-    type = 'n',
-    xlim = xlim, xlab = 'm',
-    ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
-    main = 'Neutrals')
-  grid()
-  segments(
-    x, y, x, rep(-30, length(y)),
-    lwd = w,
-    col = colt)
-  segments(
-    x, y, x, rep(-30, length(y)),
-    lwd = w,
-    col = colt)
-  text(
-    x, y,
-    labels = species[selNeu],
-    col = col,
-    pos = 4, offset = 0.2, cex = cex.leg,
-    font = 2)
-  box()
+  x    = mass[selNeu]
+  y    = mfMean[nt, selNeu]
+  yLow = mfLow[nt, selNeu]
+  ySup = mfSup[nt, selNeu]
+  w    = lineWidth(y,input$threshMS) * input$widthMS
+  col  = colorsNeu$colsSp[selNeu]
+  colt = colorsNeu$col_trSp[selNeu]
+
+  plotMS( x, y, yLow, ySup, xlim, ylim, w, col, colt,
+          species[selNeu],xlab ='mass',
+          ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
+          main = paste0('Neutrals / Time = 10^',
+                        round(log10(t0)),' s' ) )
 
   #Ions
-  x   = mass[selIon]
-  y   = mfMean[nt, selIon]
-  w   = lineWidth(y,input$threshMS)
-  col = colorsNeu$colsSp[selIon]
-  colt= colorsNeu$col_trSp[selIon]
-  plot(
-    x, y,
-    type = 'n',
-    xlim = xlim, xlab = 'm',
-    ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
-    main = 'Ions')
-  grid()
-  segments(
-    x, y, x, rep(-30, length(y)),
-    lwd = w,
-    col = colt)
-  segments(
-    x, y, x, rep(-30, length(y)),
-    lwd = w,
-    col = colt)
-  text(
-    x,  y,
-    labels = species[selIon],
-    col = col,
-    pos = 4, offset = 0.2,cex = cex.leg,
-    font = 2)
-  box()
+  x    = mass[selIon]
+  y    = mfMean[nt, selIon]
+  yLow = mfLow[nt, selIon]
+  ySup = mfSup[nt, selIon]
+  w    = lineWidth(y,input$threshMS) * input$widthMS
+  col  = colorsIon$colsSp[selIon]
+  colt = colorsIon$col_trSp[selIon]
 
-  })
+  plotMS( x, y, yLow, ySup, xlim, ylim,
+          w, col, colt, species[selIon],
+          ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
+          main = paste0('Ions / Time = 10^',
+                        round(log10(t0)),' s' ) )
+
+})
 
 # Sensitivity ####
 MRList <- reactiveVal()

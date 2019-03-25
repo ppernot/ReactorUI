@@ -33,7 +33,7 @@ ctrlFile = 'ctrlParams.yaml'
 if (file.exists(ctrlFile)) {
   ## Get from file
   lPars = rlist::list.load(ctrlFile)
-  ## Expose parameters
+  ## Store in local list
   for (n in names(lPars))
     ctrlPars[[n]] = lPars[[n]]
 }

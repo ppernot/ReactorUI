@@ -218,7 +218,7 @@ output$viewTarget <- renderPrint({
 
   traceBack(
     flSpec,
-    LR, RR, spec,
+    LR, RR, spec, spInit,
     names(flMean),
     flMean
   )

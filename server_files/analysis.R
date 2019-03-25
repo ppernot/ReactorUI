@@ -1,5 +1,13 @@
 # Functions ####
 getConc  = function(concThresh = -50) {
+  # Read Ctrl file to get spInit
+  ctrlList = readCtrl(ctrlPars$projectDir)
+  csp = ctrlList$reactantsComposition
+  sel = which(is.finite(csp))
+  rsp = ctrlList$reactantsSpecies
+  rsp = strsplit(rsp,',')[[1]][sel]
+  spInit = rsp
+
   # Load 1 sample files
   files = list.files(
     path=paste0(ctrlPars$projectDir,'/MC_Output'),
@@ -14,8 +22,6 @@ getConc  = function(concThresh = -50) {
   line  = readLines(con=files[1], n=1)
   species = scan(text=line, what=character(),
                  strip.white=TRUE, quiet=TRUE)[-1]
-
-  # iNorm= which(species=="CH4") # Replaced by norm to sum in next loop
 
   # Get all data
   nf   = length(files)
@@ -52,6 +58,7 @@ getConc  = function(concThresh = -50) {
       time     = time,
       conc     = conc,
       species  = species,
+      spInit   = spInit,
       mfMean   = yMean,
       mfSd     = ySd,
       mfLow    = yLow95,
@@ -282,7 +289,6 @@ dcorMat <- function(C,S) {
   }
   return(hMat)
 }
-
 testAna = function() {
   concList = getConc()
   for (n in names(concList))

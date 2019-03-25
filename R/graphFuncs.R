@@ -947,7 +947,7 @@ viewFlowClust = function(clust,L,R,species,colSp,
   dev.off()
 }
 
-traceBack = function(sp1,L,R,species,reacTags,flMean) {
+traceBack = function(sp1,L,R,species,spInit,reacTags,flMean) {
 
   # Builds digraph of fluxes to and from sp1
 
@@ -958,24 +958,29 @@ traceBack = function(sp1,L,R,species,reacTags,flMean) {
   KL = L * Fl
   KR = R * Fl
 
-  cat(paste('Main prod path for ',sp1,'\n'))
-  start=sp1
-  path=start
-  stoppers=c('N2','CH4')
-  while ( !(start %in% stoppers) ) {
-    center = which(species==start)
-    if(center==0) break
-    prods  = which(KR[,center]!=0)
-    mainReac=prods[which.max(flMean[prods])]
-    wgt = flMean[mainReac]/sum(flMean[prods])
-    cat(paste0('  ',reacTags[mainReac],' : ',signif(wgt,2),'\n'))
-    # start=species[which(KL[mainReac,]!=0)]
-    start=species[which.max(KL[mainReac,])]
-    start=start[!(start %in% stoppers)]
+  cat(paste('Main prod path for ', sp1, '\n'))
+  start = sp1
+  path = start
+  stoppers = spInit
+  while (!(start %in% stoppers)) {
+    center = which(species == start)
+    if (center == 0)
+      break
+    prods  = which(KR[, center] != 0)
+    mainReac = prods[which.max(flMean[prods])]
+    wgt = flMean[mainReac] / sum(flMean[prods])
+    cat(paste0('  ', reacTags[mainReac], ' : ', signif(wgt, 2), '\n'))
+    io = order(KL[mainReac, ], decreasing = TRUE)
+    start = species[io[1]]
+    if(start %in% stoppers)
+      start = species[io[2]]
+    start = start[!(start %in% stoppers)]
 
-    if(length(start)==0) break
-    if( start %in% path ) break
-    path=c(path,start)
+    if (length(start) == 0)
+      break
+    if (start %in% path)
+      break
+    path = c(path, start)
   }
 }
 budget = function(sp1,L,R,species,reacTags,flMean,weightThresh=0.01) {
@@ -1052,9 +1057,11 @@ plotMS <- function(x, y, yLow, ySup, xlim, ylim,
                    w, col, colt=col, species, xlab= 'm/z',
                    main='', ppScale=FALSE, errBar = FALSE) {
   plot(x, y, type = 'n',
-       xlim = xlim, xlab = xlab,
+       xlim = xlim, xlab = xlab, cex.axis=0.75,
        ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
        main = main)
+  ti = seq(floor(xlim[1]), ceiling(xlim[2]), by=1)
+  axis(side = 1, at = ti, labels = ti, cex.axis=0.75)
   grid()
   if(ppScale)
     axis(side = 4,

@@ -142,7 +142,13 @@ output$viewFlow <- renderPlot({
     showLegend=TRUE,
     curved = input$curvedArrow
   )
-  plot(g, layout=layout_with_gem(g))
+  layout = switch(
+    input$fluxGraphAlgo,
+    FR  = layout_with_fr(g),
+    LGL = layout_with_lgl(g, root = input$flSpec),
+    layout_with_gem(g) # Default
+  )
+  plot(g, layout=layout)
   # legend(
   #   'topright',cex=1,bty='n',
   #   legend=reacTypeNames,

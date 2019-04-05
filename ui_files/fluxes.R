@@ -34,6 +34,19 @@ sidebarLayout(
           "curvedArrow",
           "Curved arrows",
           value = FALSE
+        ),
+        selectInput(
+          "fluxGraphAlgo",
+          "Graph Algorithm",
+          choices = list(
+            "GEM"        = "GEM",
+            "FR"         = "FR",
+            # "DrL"        = "DrL",
+            "LGL"        = "LGL"
+            # "Bipartite"  = "Bipartite"
+            ),
+          selected = "GEM",
+          width = "50%"
         )
       )
     )

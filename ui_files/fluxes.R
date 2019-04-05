@@ -26,7 +26,7 @@ sidebarLayout(
           "topShow",
           "Threshold",
           min   = 0.001,
-          max   = 0.5,
+          max   = 1.00,
           step  = 0.01,
           value = 0.05
         ),
@@ -42,8 +42,8 @@ sidebarLayout(
             "GEM"        = "GEM",
             "FR"         = "FR",
             # "DrL"        = "DrL",
-            "LGL"        = "LGL"
-            # "Bipartite"  = "Bipartite"
+            "LGL"        = "LGL",
+            "Bipartite"  = "Bipartite"
             ),
           selected = "GEM",
           width = "50%"

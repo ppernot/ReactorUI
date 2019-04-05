@@ -145,7 +145,10 @@ output$viewFlow <- renderPlot({
   layout = switch(
     input$fluxGraphAlgo,
     FR  = layout_with_fr(g),
-    LGL = layout_with_lgl(g, root = input$flSpec),
+    LGL = layout_with_lgl(g,
+                          root = input$flSpec,
+                          repulserad = vcount(g)^3*input$topShow),
+    Bipartite = layout_as_bipartite(g,vgap = 100 * input$topShow),
     layout_with_gem(g) # Default
   )
   plot(g, layout=layout)

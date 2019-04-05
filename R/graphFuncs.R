@@ -453,6 +453,7 @@ viewFlow = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
   V(g)$label.cex = c(rep(1,nbReacs),rep(1,nbSpecies))
   V(g)$label.color = "black"
   V(g)$label.font = 2
+  V(g)$type = c(rep(0,nbReacs),rep(1,nbSpecies))
 
   wid = abs(E(g)$weight)
   wid = wid^0.1 # Empirical transfo for better scaling...

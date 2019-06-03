@@ -103,7 +103,7 @@ observeEvent(
       ratesList(R)
     }
 
-    future({calcFluxes(C,R)}) %...>% fluxesList()
+    future({calcFluxes(concList(),ratesList())}) %...>% fluxesList()
   }
 )
 

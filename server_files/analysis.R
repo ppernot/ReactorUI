@@ -391,12 +391,12 @@ output$kinetics <- renderPlot({
 
   # Define zoom range
   if (is.null(rangesKinetics$x)) {
-    xlim <- range(time)*10 # expand for labels
+    xlim <- range(time) * 10 # expand for labels
   } else {
     xlim <- rangesKinetics$x
   }
   if (is.null(rangesKinetics$y)) {
-    ylim = range(c(mfLow[,sel],mfSup[,sel])); print(ylim)
+    ylim = range(c(mfLow[, sel], mfSup[, sel]), na.rm = TRUE)
     # ylim <- c(
     #   max(-30, min(mfLow[,sel])),
     #   min(0  , max(mfSup[,sel]))
@@ -508,7 +508,7 @@ output$pseudoMS <- renderPlot({
   nt = which(time >= t0)[1]
 
   # Plot
-  xlim = range(c(mass[selNeu],mass[selIon]))
+  xlim = range(c(mass[selNeu],mass[selIon]), na.rm=TRUE)
   ylim = c(input$threshMS[1],input$threshMS[2]+2)
 
   par(mfrow = c(2, 1),

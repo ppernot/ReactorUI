@@ -97,13 +97,15 @@ observeEvent(
       C = getConc()
       concList(C)
     }
+    C = concList()
 
     if(is.null(ratesList())){
       R = getRates()
       ratesList(R)
     }
+    R = ratesList()
 
-    future({calcFluxes(concList(),ratesList())}) %...>% fluxesList()
+    future({calcFluxes(C,R)}) %...>% fluxesList()
   }
 )
 
@@ -138,7 +140,7 @@ output$viewFlow <- renderPlot({
     reacTypeNames= reacTypeNames,
     flMean,
     topShow=input$topShow,
-    level=1,
+    level = ifelse(input$level,2,1),
     showLegend=TRUE,
     curved = input$curvedArrow
   )

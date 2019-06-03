@@ -385,23 +385,29 @@ viewFlowOld = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
 
 }
 
-addLinks = function (sp1,links,species,KL,KR,nbReacs,nbSpecies) {
+addLinks = function (sp1,
+                     links,
+                     species,
+                     KL,
+                     KR,
+                     nbReacs,
+                     nbSpecies) {
   # Update flow digraph
-  lSpecies=(nbReacs+1):(nbReacs+nbSpecies)
+  lSpecies = (nbReacs + 1):(nbReacs + nbSpecies)
   n1 = which (species == sp1)
-  reacSel= which(KL[,n1]!=0)
-  if(length(reacSel)!=0) {
-    links[lSpecies,reacSel]=
-      links[lSpecies,reacSel]-t(KL)[1:nbSpecies,reacSel]
-    links[reacSel,lSpecies]=
-      links[reacSel,lSpecies]-KR[reacSel,1:nbSpecies]
+  reacSel = which(KL[, n1] != 0)
+  if (length(reacSel) != 0) {
+    links[lSpecies, reacSel] =
+      links[lSpecies, reacSel] - t(KL)[1:nbSpecies, reacSel]
+    links[reacSel, lSpecies] =
+      links[reacSel, lSpecies] - KR[reacSel, 1:nbSpecies]
   }
-  reacSel=which(KR[,n1]!=0)
-  if(length(reacSel)!=0) {
-    links[lSpecies,reacSel]=
-      links[lSpecies,reacSel]+t(KL)[1:nbSpecies,reacSel]
-    links[reacSel,lSpecies]=
-      links[reacSel,lSpecies]+KR[reacSel,1:nbSpecies]
+  reacSel = which(KR[, n1] != 0)
+  if (length(reacSel) != 0) {
+    links[lSpecies, reacSel] =
+      links[lSpecies, reacSel] + t(KL)[1:nbSpecies, reacSel]
+    links[reacSel, lSpecies] =
+      links[reacSel, lSpecies] + KR[reacSel, 1:nbSpecies]
   }
   return(links)
 }
@@ -414,31 +420,42 @@ viewFlow = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
   nbSpecies = length(species)
   nbReacs   = length(reacs)
 
-  nedges=nbReacs+nbSpecies
-  links=matrix(0,ncol=nedges,nrow=nedges)
-  dimnames(links)[[1]]=c(reacs,species)
-  dimnames(links)[[2]]=c(reacs,species)
+  nedges = nbReacs + nbSpecies
+  lspecies = (nbReacs+1):nedges
+  links = matrix(0, ncol = nedges, nrow = nedges)
+  dimnames(links)[[1]] = c(reacs, species)
+  dimnames(links)[[2]] = c(reacs, species)
 
-  KL=L*matrix(flMean,nrow=nbReacs,ncol=nbSpecies,byrow=FALSE)
-  KR=R*matrix(flMean,nrow=nbReacs,ncol=nbSpecies,byrow=FALSE)
+  KL = L * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
+  KR = R * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
 
+  # Build link matrix with first neighbors (reactants and products)
   links = addLinks(sp1,links,species,KL,KR,nbReacs,nbSpecies)
 
   if (level==2) {
-    select = colSums(links[,(nbReacs+1):nedges]) !=0 |
-             rowSums(links[(nbReacs+1):nedges,]) !=0
+    # Add 2nd neighnors to link matrix
+    select = colSums(links[, lspecies]) != 0 |
+             rowSums(links[lspecies, ]) != 0
     listSp = species[select]
     for (sp2 in listSp)
-      links = addLinks(sp2,links,species,KL,KR,nbReacs,nbSpecies)
+      links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies)
   }
 
-  linksThresh=links
-  if(sum(links!=0) > 50) {
-    lnkThresh = quantile(abs(links)[abs(links)>0], probs=1-topShow, na.rm=TRUE)
-    linksThresh[abs(links)<lnkThresh]=0
+  linksThresh = links
+  if (sum(links != 0) > 50) {
+    lnkThresh = quantile(abs(links)[abs(links) > 0],
+                         probs = 1 - topShow,
+                         na.rm = TRUE)
+    linksThresh[abs(links) < lnkThresh] = 0
   }
 
-  g = graph.adjacency(linksThresh, mode = "directed",weighted=TRUE)
+  g = graph.adjacency(linksThresh, mode = "directed", weighted=TRUE)
   g = simplify(g)
 
   cols=brewer.pal(9,"Set3")

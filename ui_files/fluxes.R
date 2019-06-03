@@ -35,6 +35,11 @@ sidebarLayout(
           "Curved arrows",
           value = FALSE
         ),
+        checkboxInput(
+          "level",
+          "Level = 2 (WIP)",
+          value = FALSE
+        ),
         selectInput(
           "fluxGraphAlgo",
           "Graph Algorithm",

@@ -133,15 +133,18 @@ output$viewFlow <- renderPlot({
   reacTypeNames=c("Ph","R")
   g = viewFlow(
     input$flSpec,
-    LR,RR,spec,
+    LR,
+    RR,
+    spec,
     reacs    = names(flMean),
-    reacType = c(rep(1,ncol(photoRates)),
-                 rep(2,ncol(rates))),
-    reacTypeNames= reacTypeNames,
-    flMean,
-    topShow=input$topShow,
-    level = ifelse(input$level,2,1),
-    showLegend=TRUE,
+    reacType = c(rep(1, ncol(photoRates)),
+                 rep(2, ncol(rates))),
+    reacTypeNames = reacTypeNames,
+    flMean = flMean,
+    spInit = spInit,
+    topShow = input$topShow,
+    level = ifelse(input$level, 2, 1),
+    showLegend = TRUE,
     curved = input$curvedArrow
   )
   layout = switch(
@@ -149,7 +152,7 @@ output$viewFlow <- renderPlot({
     FR  = layout_with_fr(g),
     LGL = layout_with_lgl(g,
                           root = input$flSpec,
-                          repulserad = vcount(g)^3*input$topShow),
+                          repulserad = vcount(g)^3 * input$topShow),
     Bipartite = layout_as_bipartite(g,vgap = 100 * input$topShow),
     layout_with_gem(g) # Default
   )

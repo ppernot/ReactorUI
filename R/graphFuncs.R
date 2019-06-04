@@ -391,30 +391,50 @@ addLinks = function (sp1,
                      KL,
                      KR,
                      nbReacs,
-                     nbSpecies) {
+                     nbSpecies,
+                     wght = 1) {
   # Update flow digraph
   lSpecies = (nbReacs + 1):(nbReacs + nbSpecies)
+
+  # Losses as negative links
   n1 = which (species == sp1)
   reacSel = which(KL[, n1] != 0)
   if (length(reacSel) != 0) {
+    # Loss Reactions
     links[lSpecies, reacSel] =
-      links[lSpecies, reacSel] - t(KL)[1:nbSpecies, reacSel]
+      links[lSpecies, reacSel] - wght * t(KL)[1:nbSpecies, reacSel]
+    # Products of loss reactions
     links[reacSel, lSpecies] =
-      links[reacSel, lSpecies] - KR[reacSel, 1:nbSpecies]
+      links[reacSel, lSpecies] - wght * KR[reacSel, 1:nbSpecies]
   }
+
+  # Productions as positive links
   reacSel = which(KR[, n1] != 0)
   if (length(reacSel) != 0) {
+    # Prod Reactions
     links[lSpecies, reacSel] =
-      links[lSpecies, reacSel] + t(KL)[1:nbSpecies, reacSel]
+      links[lSpecies, reacSel] + wght * t(KL)[1:nbSpecies, reacSel]
+    # Reactants of prod. reacs
     links[reacSel, lSpecies] =
-      links[reacSel, lSpecies] + KR[reacSel, 1:nbSpecies]
+      links[reacSel, lSpecies] + wght * KR[reacSel, 1:nbSpecies]
   }
   return(links)
 }
 
-viewFlow = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
-                    flMean,topShow=0.5,level=1,showLegend=TRUE,
-                    PDF=FALSE, curved = FALSE) {
+viewFlow = function(sp1,
+                    L,
+                    R,
+                    species,
+                    reacs,
+                    reacType,
+                    reacTypeNames,
+                    flMean,
+                    spInit,
+                    topShow = 0.5,
+                    level = 1,
+                    showLegend = TRUE,
+                    PDF = FALSE,
+                    curved = FALSE) {
   # Builds digraph of fluxes to and from sp1
 
   nbSpecies = length(species)
@@ -436,17 +456,20 @@ viewFlow = function(sp1,L,R,species,reacs,reacType,reacTypeNames,
                   byrow = FALSE)
 
   # Build link matrix with first neighbors (reactants and products)
-  links = addLinks(sp1,links,species,KL,KR,nbReacs,nbSpecies)
+  links = addLinks(sp1, links, species, KL, KR, nbReacs, nbSpecies)
 
   if (level==2) {
-    # Add 2nd neighnors to link matrix
+    # Add 2nd neighnors to link matrix ### DOES NOT WORK AS IS !!!
     select = colSums(links[, lspecies]) != 0 |
              rowSums(links[lspecies, ]) != 0
     listSp = species[select]
     for (sp2 in listSp)
-      links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies)
+      if (!(sp2 %in% spInit))
+        links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies,
+                         wght = 1e-6)
   }
 
+  # Select most important links if there are too many
   linksThresh = links
   if (sum(links != 0) > 50) {
     lnkThresh = quantile(abs(links)[abs(links) > 0],

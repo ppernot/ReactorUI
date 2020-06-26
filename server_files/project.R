@@ -5,38 +5,45 @@ shinyFiles::shinyDirChoose(
 )
 
 output$selectMsg <- renderPrint({
-  if(is.null(input$projectDir))
-    return(NULL)
+  if (!"path" %in% names(input$projectDir)) {
+    cat('Select a project directory\n')
 
-  # Get selection
-  ctrlPars[['projectDir']] <<- shinyFiles::parseDirPath(
-    roots = roots,
-    input$projectDir
-  )
+  } else {
 
-  # Save selection to file
-  if(!is.null(ctrlPars$projectDir) &
-     is.character(ctrlPars$projectDir))
-    rlist::list.save(ctrlPars,'ctrlParams.yaml')
+    # Get selection
+    ctrlPars[['projectDir']] <<- shinyFiles::parseDirPath(
+      roots = roots,
+      input$projectDir
+    )
 
-  cat('Selected: ', ctrlPars$projectDir)
+    # Save selection to file
+    if(!is.null(ctrlPars$projectDir) &
+       is.character(ctrlPars$projectDir))
+      rlist::list.save(ctrlPars,'ctrlParams.yaml')
+
+    cat('Selected: ', ctrlPars$projectDir)
+
+  }
 
 })
 
 output$contentsMsg <- renderPrint({
-  if(is.null(input$projectDir))
-    return(NULL)
+  if (!"path" %in% names(input$projectDir)) {
+    cat('')
 
-  # Count MC outputs
-  mcf = list.files(
-    path = paste0(ctrlPars$projectDir,'/MC_Output'),
-    pattern = 'fracmol_'
-  )
-  nmc = length(mcf)
+  } else {
+    # Count MC outputs
+    mcf = list.files(
+      path = paste0(ctrlPars$projectDir,'/MC_Output'),
+      pattern = 'fracmol_'
+    )
+    nmc = length(mcf)
 
-  if (nmc==0)
-    cat('The project has not been run yet !')
-  else
-    cat('Contents: ', nmc,' MC runs')
+    if (nmc==0)
+      cat('The project has not been run yet !')
+    else
+      cat('Contents: ', nmc,' MC runs')
+
+  }
 
 })

@@ -44,3 +44,11 @@ if (!is.null(ctrlPars$projectDir) &
     is.character(ctrlPars$projectDir))
   roots = c(wd = dirname(ctrlPars$projectDir))
 
+# Defaults for MC-ChemDB
+DB_DATA_default = list(
+  nMC = 100,
+  photoVersion = 0,
+  spectralResolution = 1,
+  neutralsVersion = 0,
+  ionsVersion = 0
+)

@@ -9,6 +9,7 @@ function(input, output, session) {
   files <- c(
     "project.R" ,
     "model.R",
+    "run.R",
     "analysis.R",
     "fluxes.R"
   )

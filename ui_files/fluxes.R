@@ -63,28 +63,28 @@ sidebarLayout(
         tabPanel(
           title=h4("ViewFlow"),
           br(),
-          withSpinner(
+          # withSpinner(
             plotOutput(
               "viewFlow",
               height = 700
-            ),
-            type=4
+            # ),
+            # type=4
           )
         ),
         tabPanel(
           title=h4("Budget/Target"),
           br(),
-          withSpinner(
+          # withSpinner(
             verbatimTextOutput(
               "viewBudget"
-            ),
-            type=4
+            # ),
+            # type=4
           ),
-          withSpinner(
+          # withSpinner(
             verbatimTextOutput(
               "viewTarget"
-            ),
-            type=4
+            # ),
+            # type=4
           )
         ),
         id="fluxesTabset"

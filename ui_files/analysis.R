@@ -11,11 +11,11 @@ sidebarLayout(
         ),
         br(),
         h4("Summary"),
-        withSpinner(
+        # withSpinner(
           verbatimTextOutput(
             "loadMsg"
-          ),
-          type=4
+          # ),
+          # type=4
         )
       )
     )
@@ -72,7 +72,7 @@ sidebarLayout(
             ),
             column(
               width = 9,
-              withSpinner(
+              # withSpinner(
                 plotOutput(
                   "kinetics",
                   height = plotHeight,
@@ -81,8 +81,8 @@ sidebarLayout(
                     id = "kinetics_brush",
                     resetOnNew = TRUE
                   )
-                ),
-                type=4
+                # ),
+                # type=4
               )
             )
           )
@@ -156,12 +156,12 @@ sidebarLayout(
             ),
             column(
               width = 9,
-              withSpinner(
+              # withSpinner(
                 plotOutput(
                   "pseudoMS",
                   height = plotHeight
-                ),
-                type=4
+                # ),
+                # type=4
               )
             )
           )
@@ -207,12 +207,12 @@ sidebarLayout(
             ),
             column(
               width = 9,
-              withSpinner(
+              # withSpinner(
                 plotOutput(
                   "sensitivity",
                   height = plotHeight
-                ),
-                type=4
+                # ),
+                # type=4
               )
             )
           )

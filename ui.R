@@ -20,14 +20,9 @@ function(request) {
       source_ui("model.R")
     ),
     tabPanel(
-      title = "Sample",
-      source_ui("sample.R")
-    ),
-    tabPanel(
       title = "Run",
       source_ui("run.R")
     ),
-
     tabPanel(
       title = "Analysis",
       source_ui("analysis.R")

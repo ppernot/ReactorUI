@@ -1,7 +1,7 @@
 sidebarLayout(
   sidebarPanel(
     width = sideWidth,
-    h4("Model controle"),
+    h4("Model control"),
     hr( style="border-color: #666;"),
     verbatimTextOutput("contentsNmlMsg")
   ),
@@ -35,7 +35,12 @@ sidebarLayout(
           wellPanel(
             tabsetPanel(
               tabPanel(
-                title=h4("Initial mix"),
+                title=h4("ChemDB Versions"),
+                br(),
+                uiOutput("chemDBVersions"),
+              ),
+              tabPanel(
+                title=h4("Generate Network"),
                 br(),
                 fixedRow(
                   column(
@@ -49,21 +54,21 @@ sidebarLayout(
                   ),
                   column(
                     width = 9,
-                    withSpinner(
+                    # withSpinner(
                       tagAppendAttributes(
                         verbatimTextOutput(
                           "summaryScheme"
                         ),
                         style="white-space:pre-wrap; text-align: left;
                                overflow-y:scroll; max-height: 600px;"
-                      ),
-                      type=4
+                      # ),
+                      # type=4
                     )
                   )
                 )
               ),
               tabPanel(
-                title=h4("Network"),
+                title=h4("View Network"),
                 br(),
                 fixedRow(
                   column(
@@ -96,7 +101,7 @@ sidebarLayout(
                 )
               ),
               tabPanel(
-                title=h4("Reac. List"),
+                title=h4("Reactions List"),
                 br(),
                 fixedRow(
                   column(
@@ -110,11 +115,11 @@ sidebarLayout(
                   ),
                   column(
                     width = 9,
-                    withSpinner(
+                    # withSpinner(
                       dataTableOutput(
                         "tabScheme",
                         height = "auto"
-                      ),
+                      ) #,
                       # tagAppendAttributes(
                       #   verbatimTextOutput(
                       #     "listScheme"
@@ -122,7 +127,22 @@ sidebarLayout(
                       #   style="white-space:pre-wrap; text-align: left;
                       #   overflow-y:scroll; max-height: 600px;"
                       # ),
-                      type=4
+                    #   type=4
+                    # )
+                  )
+                )
+              ),
+              tabPanel(
+                title=h4("MC Sample"),
+                br(),
+                fixedRow(
+                  column(
+                    width = 3,
+                    uiOutput("nMCButton"),
+                    actionButton(
+                      'sampleChem',
+                      'Generate Samples',
+                      icon = icon('gear')
                     )
                   )
                 )

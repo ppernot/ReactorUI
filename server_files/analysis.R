@@ -215,6 +215,7 @@ assignColorsToSpecies <- function(colSel, species, sel, nf,
     colsSp[sel]   = rep(cols  ,times = nrep)
     col_trSp[sel] = rep(col_tr,times = nrep)
   }
+
   return (
     list(
      colsSp   = colsSp,
@@ -253,7 +254,7 @@ hsicMat <- function(C,S) {
     V = V / sum(V)
     hMat[,j] = V
   }
-
+  print('hsicMat OK')
   return(hMat)
 }
 dcorMat <- function(C,S) {
@@ -287,6 +288,7 @@ dcorMat <- function(C,S) {
     V = V / sum(V)
     hMat[,j] = V
   }
+  print('dcorMat OK')
   return(hMat)
 }
 testAna = function() {
@@ -341,13 +343,13 @@ testAna = function() {
 }
 # Interactive ####
 
-concList <- reactiveVal()
+concList <- reactiveVal(NULL)
 observeEvent(
   input$loadMC,
   future({getConc()}) %...>% concList()
 )
 
-ratesList <- reactiveVal()
+ratesList <- reactiveVal(NULL)
 observeEvent(
   input$loadMC,
   future({getRates()}) %...>% ratesList()
@@ -416,7 +418,7 @@ output$kinetics <- renderPlot({
 
   # Plot
   par(mfrow = c(1, 1),
-      cex = cex, cex.main = cex, mar = mar,
+      cex = cex, cex.main = cex, mar = c(mar[1:3],3),
       mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
   plot(time, time, type='n', log='x',
        main = ifelse(!input$mcPlot, 'Mean values',
@@ -445,6 +447,7 @@ output$kinetics <- renderPlot({
        col=colors$colsSp[sel],
        pos = 4, offset=0.2, cex=cex.leg)
   box()
+
 })
 outputOptions(output, "kinetics",
               suspendWhenHidden = FALSE)
@@ -562,7 +565,7 @@ observeEvent(
     for (n in names(concList()))
       assign(n,rlist::list.extract(concList(),n))
 
-    # Concentrations at stationnary state (last snapshot)
+    # Concentrations at stationary state (last snapshot)
     conc = conc[,nt,]
 
     # Filter out undesirable values

@@ -1,19 +1,20 @@
 # Function  ####
 ## Chemistry
-generateNetwork <- function(
-  spInit,
-  photoSourceDir    = '/../../ChemDBPublic/PhotoProcs_latest/1nm/',
-  neutralsSourceDir = '/../../ChemDBPublic/Neutrals_latest/',
-  ionsSourceDir     = '/../../ChemDBPublic/Ions_latest/') {
+generateNetwork <- function(spInit) {
+
+  # Locations of reactions database
+  reacSourceDirs = c('/../../ChemDBPublic/Neutrals/',
+                     '/../../ChemDBPublic/Ions/')
+  photoSourceDir = '/../../ChemDBPublic/PhotoProcs/'
 
   # Kinetic Parser
   nbReac=0
-  reactants = products = params = type = orig = locnum = reacTag = list()
+  reactants = products = params = type = orig = locnum = list()
 
   ## Photo processes
   photoData = c(
-    paste0(ctrlPars$projectDir,photoSourceDir,'../PhotoScheme.dat'),
-    paste0(ctrlPars$projectDir,photoSourceDir,'../PhotoIonScheme.dat')
+    paste0(ctrlPars$projectDir,photoSourceDir,'PhotoScheme.dat'),
+    paste0(ctrlPars$projectDir,photoSourceDir,'PhotoIonScheme.dat')
   )
   for (filename in photoData) {
     if(file.exists(filename)){ # PhotoIonScheme.dat is optional
@@ -30,15 +31,12 @@ generateNetwork <- function(
         type[[nbReac]]      = 'photo'
         locnum[[nbReac]]    = i
         orig[[nbReac]]      = filename
-        rr = paste(reactants[[nbReac]],collapse = ' + ')
-        pp = paste(products[[nbReac]],collapse = ' + ')
-        reacTag[[nbReac]]   = paste0(rr,' --> ',pp)
       }
     }
   }
 
   ## Reactions
-  for (sourceDir in c(neutralsSourceDir, ionsSourceDir)) {
+  for (sourceDir in reacSourceDirs) {
     filename=paste0(ctrlPars$projectDir,sourceDir,'run_0000.csv')
     scheme  = read.csv(file=filename,header=FALSE,sep=';')
     scheme  = t(apply(scheme,1,function(x) gsub(" ","",x)))
@@ -53,9 +51,6 @@ generateNetwork <- function(
       type[[nbReac]]      = terms[length(terms)]
       locnum[[nbReac]]    = i
       orig[[nbReac]]      = sourceDir
-      rr = paste(reactants[[nbReac]],collapse = ' + ')
-      pp = paste(products[[nbReac]],collapse = ' + ')
-      reacTag[[nbReac]]   = paste0(rr,' --> ',pp)
     }
   }
 
@@ -166,61 +161,32 @@ generateNetwork <- function(
       spInit  = spInit0,
       species = species,
       reacs   = reacList,
-      nbReac  = nbReac,
-      nbSpecies = nbSpecies,
       L       = L,
       R       = R,
-      D       = D,
       linksR  = linksR,
       params  = params,
       type    = type,
       locnum  = locnum,
       orig    = orig,
       mass    = mass,
-      vlpInd  = vlpInd,
-      reacTag = reacTag
+      vlpInd  = vlpInd
     )
   )
 }
 
 # Interactive ####
 
-reacData   <- reactiveVal()
-chemDBData <- reactiveVal()
-reacProc   <- reactiveValues()
+reacData <- reactiveVal()
+reacProc <- reactiveValues()
 
-# Load control.dat ####
 output$contentsNmlMsg <- renderPrint({
-  if (!"path" %in% names(input$projectDir)) {
+  if (is.null(input$projectDir)) {
     return(NULL)
   }
-
   ctrlList = readCtrl(ctrlPars$projectDir)
-
-  # Populate/Update reactive values
-
-  reacData(ctrlList$REAC_DATA)
-  cat('_ REAC_DATA:\n')
-  for (n in names(reacData())) {
-    assign(n, rlist::list.extract(reacData(), n))
-    cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
-  }
-
-  if(!is.null(ctrlList$DB_DATA)) {
-    chemDBData(ctrlList$DB_DATA)
-    cat('_ DB_DATA:\n')
-  } else {
-    chemDBData(DB_DATA_default)
-    cat('_ DB_DATA_Default:\n')
-  }
-  for (n in names(chemDBData())) {
-    assign(n, rlist::list.extract(chemDBData(), n))
-    cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
-  }
-
+  # Update reactive value
+  reacData(ctrlList)
 })
-
-# Reactor ####
 output$reactorParams <- renderPrint({
   if (is.null(reacData())) {
     return(NULL)
@@ -244,7 +210,7 @@ output$reactorParams <- renderPrint({
     cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
 })
 
-# Irrad. ####
+# Load spectrum file
 spectrumData <- reactive({
   if (is.null(reacData())) {
     return(NULL)
@@ -280,8 +246,7 @@ output$irradUI <- renderUI({
     fileInput(
       "beamSpectrumFileName",
       label = "Beam spectrum file",
-      placeholder = paste0(ctrlPars$projectDir, "/Run/",
-                           beamSpectrumFile)
+      placeholder = paste0(ctrlPars$projectDir, "/Run/", beamSpectrumFile)
     ),
     sliderInput(
       "spectrumRange",
@@ -386,106 +351,6 @@ output$irradSpectrum <- renderPlot({
   box()
 })
 
-# ChemDB ####
-output$chemDBVersions <- renderUI({
-  if (is.null(chemDBData())) {
-    return(NULL)
-  }
-
-  for (n in names(chemDBData()))
-    assign(n, rlist::list.extract(chemDBData(), n))
-
-  chemDBDir    = paste0(
-    ctrlPars$projectDir,
-    '/../../ChemDBPublic')
-  allAvailable = list.dirs(
-    path = chemDBDir,
-    recursive = FALSE)
-  allVersions  = basename(allAvailable)
-
-  photoDir = paste0(
-    ctrlPars$projectDir,
-    '/../../ChemDBPublic/PhotoProcs_latest')
-  allReso  = list.dirs(
-    path = photoDir,
-    recursive = FALSE)
-  allReso  = basename(allReso)
-
-  phoVers = photoVersion
-  if(is.null(phoVers))
-    phoVers = DB_DATA_default$photoVersion
-  phoVers = ifelse(phoVers == 0,
-                   'latest',
-                   paste0('v_',phoVers))
-  phoVers = paste0('PhotoProcs_',phoVers)
-
-  speReso = spectralResolution
-  if(is.null(speReso) |
-     !speReso  %in% c(0.1,1))
-    speReso = DB_DATA_default$spectralResolution
-  speReso = paste0(speReso,'nm')
-
-  neuVers = neutralsVersion
-  if(is.null(neuVers))
-    neuVers = DB_DATA_default$neutralsVersion
-  neuVers = ifelse(neuVers == 0,
-                   'latest',
-                   paste0('v_',neuVers))
-  neuVers = paste0('Neutrals_',neuVers)
-
-  ionVers = ionsVersion
-  if(is.null(ionVers))
-    ionVers = DB_DATA_default$ionsVersion
-  ionVers = ifelse(ionVers == 0,
-                   'latest',
-                   paste0('v_',ionVers))
-  ionVers = paste0('Ions_',ionVers)
-
-  ui <- list(
-    fixedRow(
-      column(
-        width = 3,
-        selectInput(
-          'phoVers',
-          label    = 'PhotoProcs',
-          choices  = allVersions[grepl('PhotoProcs',
-                                       allVersions)],
-          selected = phoVers,
-          width    = '200px'
-        ),
-        selectInput(
-          'neuVers',
-          label    = 'Neutrals',
-          choices  = allVersions[grepl('Neutrals',
-                                       allVersions)],
-          selected = neuVers,
-          width    = '200px'
-        ),
-        selectInput(
-          'ionVers',
-          label    = 'Ions',
-          choices  = allVersions[grepl('Ions',
-                                       allVersions)],
-          selected = ionVers,
-          width    = '200px'
-        )
-      ),
-      column(
-        width = 3,
-        selectInput(
-          'speReso',
-          label    = 'Spectral Resolution',
-          choices  = allReso,
-          selected = speReso,
-          width    = '200px'
-        )
-      )
-    )
-  )
-  ui
-})
-
-# Generate Reacs ####
 output$chemistryParams <- renderUI({
   if (is.null(reacData())) {
     return(NULL)
@@ -571,36 +436,16 @@ output$chemistryParams <- renderUI({
 reacScheme <- reactiveVal()
 observeEvent(
   input$generateNetwork, {
-
-    # Initial mixture
     spInit = c()
     for(sp in 1:5)
       spInit = c(spInit, input[[paste0('sp_',sp)]])
     spInit = spInit[!is.na(spInit) & spInit != ""]
-
-    # Databases
-    chemDBDir    = '/../../ChemDBPublic/'
-    photoSourceDir = paste0(
-      chemDBDir,input$phoVers,'/',input$speReso,'/')
-    neutralsSourceDir = paste0(
-      chemDBDir,input$neuVers,'/')
-    ionsSourceDir = paste0(
-      chemDBDir,input$ionVers,'/')
-
-    future({
-      generateNetwork(
-        spInit = spInit,
-        photoSourceDir = photoSourceDir,
-        neutralsSourceDir = neutralsSourceDir,
-        ionsSourceDir = ionsSourceDir
-      )
-    }) %...>% reacScheme()
+    future({generateNetwork(spInit)}) %...>% reacScheme()
   }
 )
 output$summaryScheme <- renderPrint({
   if (is.null(reacScheme())) {
-    cat('Please Generate Reactions...')
-    return()
+    return(cat('Please Generate Reactions...'))
   }
 
   cat('Summary\n')
@@ -617,8 +462,7 @@ output$summaryScheme <- renderPrint({
 })
 output$listScheme <- renderPrint({
   if (is.null(reacScheme())) {
-    cat('Please Generate Reactions...')
-    return()
+    return(cat('Please Generate Reactions...'))
   }
 
   reacs   = reacScheme()$reacs
@@ -682,10 +526,10 @@ output$listScheme <- renderPrint({
   }
 
 })
+
 output$tabScheme <- renderDataTable({
   if (is.null(reacScheme())) {
-    cat('Please Generate Reactions...')
-    return()
+    return(cat('Please Generate Reactions...'))
   }
 
   reacs   = reacScheme()$reacs
@@ -737,8 +581,7 @@ output$tabScheme <- renderDataTable({
     Params = NA,
     Type = NA
   )
-  if(is.na(input$targetSpecies) |
-     input$targetSpecies == "") {
+  if(is.na(input$targetSpecies) | input$targetSpecies == "") {
     for (i in 1: length(reacs))
       dat = rbind(dat,formatReac(i))
 
@@ -774,9 +617,9 @@ options = list(
   scroller = TRUE
 )
 )
+
 output$plotScheme <- renderForceNetwork({
   if (is.null(reacScheme())) {
-    cat('Please Generate Reactions...')
     return(NULL)
   }
 
@@ -820,264 +663,4 @@ output$plotScheme <- renderForceNetwork({
 
 })
 
-# Sample ####
-output$nMCButton <- renderUI({
-  if (is.null(chemDBData())) {
-    return(NULL)
-  }
-
-  # Get max number of samples
-  projectDir  = ctrlPars$projectDir
-  chemDBDir   = '/../../ChemDBPublic/'
-  photoSourceDir = paste0(ctrlPars$projectDir,
-    chemDBDir,input$phoVers,'/',input$speReso,'/')
-  neutralsSourceDir = paste0(ctrlPars$projectDir,
-    chemDBDir,input$neuVers,'/')
-  ionsSourceDir = paste0(ctrlPars$projectDir,
-    chemDBDir,input$ionVers,'/')
-
-  maxNeutrals = length(
-    list.files(path = neutralsSourceDir, pattern = '.csv'))
-  maxIons = length(
-    list.files(path = ionsSourceDir, pattern = '.csv'))
-  files = list.files(path = photoSourceDir, pattern = '.dat')
-  nFiles = length(files)
-  maxPhoto = as.numeric(substr(files[nFiles],1,4))
-  maxMC = min(maxNeutrals, maxIons, maxPhoto)
-
-  ui <- list(
-    selectInput(
-      'nMC',
-      label    = '# MC samples',
-      choices  = c(10,seq(100,maxMC,by=100)),
-      selected = chemDBData()$nMC,
-      width    = '200px'
-    )
-  )
-  ui
-})
-observeEvent(
-  input$sampleChem, {
-
-    # Nb MC samples
-    nMC = as.numeric(input$nMC)
-
-    # Where to save files
-    outputDir   = ctrlPars$projectDir
-    targetMCDir = paste0(outputDir,'/MC_Input/')
-
-    # Network params
-    for (n in names(reacScheme()))
-      assign(n, rlist::list.extract(reacScheme(), n))
-
-    # Databases
-    chemDBDir    = '/../../ChemDBPublic/'
-    photoSourceDir = paste0(
-      chemDBDir,input$phoVers,'/',input$speReso,'/')
-    neutralsSourceDir = paste0(
-      chemDBDir,input$neuVers,'/')
-    ionsSourceDir = paste0(
-      chemDBDir,input$ionVers,'/')
-
-    # Generate data files for reactor code ###
-
-    sp_aux =paste(
-      nbSpecies,'\n',
-      paste(species,collapse = ' '), '\n',
-      paste(mass,   collapse =  ' '), '\n',
-      paste(rep(0,nbSpecies), collapse = ' ')
-    )
-    writeLines(
-      sp_aux,
-      paste0(outputDir,'/Run/species_aux.dat')
-    )
-
-    # Split photodissociations and reactions
-    photo = type == 'photo'
-    Dphoto = matrix(D[ photo,],nrow=sum(photo), ncol=nbSpecies)
-    D      = matrix(D[!photo,],nrow=sum(!photo),ncol=nbSpecies)
-    Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
-    L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
-
-    # Treat Reactions ###
-    # 1/ Convert D & L to triplets (sparse matrices)
-    Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
-    Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
-
-    reac_DL = paste(nrow(Dsp),'\n',
-                    paste(Dsp, collapse = " "),'\n',
-                    nrow(Lsp),'\n',
-                    paste(Lsp, collapse = " "))
-    writeLines(
-      reac_DL,
-      paste0(outputDir,'/Run/reac_DL.dat')
-    )
-
-    # Reactions list
-    reac_list = ''
-    for (i in (1:nbReac)[!photo])
-      reac_list = paste(reac_list, reacTag[[reacs[i]]], '\n')
-    writeLines(
-      reac_list,
-      paste0(outputDir,'/Run/reac_list.dat')
-    )
-
-    # Single output file from nominal data
-    reac_params = ''
-    for (i in (1:nbReac)[!photo])
-      reac_params = paste0(
-        reac_params,
-        paste(params[[i]], collapse = " "),
-        '\n')
-    writeLines(
-      reac_params,
-      paste0(outputDir,'/Run/reac_params.dat')
-    )
-
-    if(nMC > 1) {
-      # Clean target dir
-      files = list.files(
-        path = paste0(targetMCDir,'/Reactions'),
-        pattern = 'run_',
-        full.names = TRUE
-      )
-      if(!is.null(files))
-        file.remove(files)
-
-      withProgress(message = 'Reactions', {
-        sel = !photo
-        origs = unique(unlist(orig[sel]))
-        for (iMC in 0:nMC) {
-          sampleFile = paste0(
-            'run_', sprintf('%04i', iMC), '.csv')
-          data = ''
-          for (io in origs) {
-            sourceDir = io
-            filename = paste0(outputDir, sourceDir, sampleFile)
-            scheme  = read.csv(file = filename,
-                               header = FALSE,
-                               sep = ';')
-            scheme  = t(apply(scheme, 1, function(x)
-              gsub(" ", "", x)))
-            paramsLoc = list()
-            ii = 0
-            for (i in 1:nrow(scheme)) {
-              ii = ii + 1
-              terms = scheme[i, 8:ncol(scheme)]
-              paramsLoc[[ii]] = terms[!is.na(terms) & terms != '']
-            }
-            selOrig = which (orig == io)
-            paramsLoc = paramsLoc[unlist(locnum[selOrig])]
-            for (j in 1:length(paramsLoc))
-              data = paste0(
-                data,
-                paste(paramsLoc[[j]], collapse = ' '),
-                '\n')
-          }
-          writeLines(
-            data,
-            paste0(targetMCDir, 'Reactions/', sampleFile)
-          )
-
-          incProgress(1/nMC, detail = paste('Sample', iMC))
-        }
-      })
-    }
-
-    # Treat Nominal Photo-processes ###
-
-    # Reactions list
-    reac_list = ''
-    for (i in (1:nbReac)[photo])
-      reac_list = paste(reac_list, reacTag[[reacs[i]]], '\n')
-    writeLines(
-      reac_list,
-      paste0(outputDir,'/Run/photo_list.dat')
-    )
-
-    if (dim(Dphoto)[1]!=0) {
-      # Convert D & L to triplets (sparse matrices)
-      Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
-      Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
-
-      reac_DL = paste(nrow(Dsp),'\n',
-                      paste(Dsp, collapse = " "),'\n',
-                      nrow(Lsp),'\n',
-                      paste(Lsp, collapse = " "))
-      writeLines(
-        reac_DL,
-        paste0(outputDir,'/Run/photo_DL.dat')
-      )
-
-      reac_params = ''
-      for (i in (1:nbReac)[photo]) {
-        sp=species[which(Lphoto[i,]!=0)]
-        if( params[[i]][1] == 0 )
-          reac_params = paste0(
-            reac_params,
-            'se',sp,'.dat','\n')
-        else
-          reac_params = paste(
-            reac_params,
-            paste0('se',sp,'.dat'),
-            paste0('qy',sp,'_',params[[i]][1],'.dat'),
-            '\n')
-      }
-      writeLines(
-        reac_params,
-        paste0(outputDir,'/Run/photo_params.dat')
-      )
-
-      if(nMC > 1) {
-        # Clean target dir
-        files = list.files(
-          path = paste0(targetMCDir,'/Photoprocs'),
-          pattern = '.dat',
-          full.names = TRUE
-        )
-        if(!is.null(files))
-          file.remove(files)
-
-        withProgress(message = 'PhotoProcs', {
-          for (iMC in 0:nMC) {
-            prefix=paste0(sprintf('%04i',iMC),'_')
-            for (i in (1:nbReac)[photo]) {
-              sp=species[which(Lphoto[i,]!=0)]
-              file = paste0(prefix,'se',sp,'.dat')
-              fromFile = paste0(outputDir, photoSourceDir, file)
-              toFile   = paste0(targetMCDir, 'Photoprocs/', file)
-              file.copy(from = fromFile, to = toFile)
-              if( params[[i]][1] != 0 ) {
-                file = paste0(prefix,'qy',sp,'_',params[[i]][1],'.dat')
-                fromFile = paste0(outputDir, photoSourceDir, file)
-                toFile   = paste0(targetMCDir, 'Photoprocs/', file)
-                file.copy(from = fromFile, to = toFile)
-              }
-            }
-            incProgress(1/nMC, detail = paste('Sample', iMC))
-          }
-        })
-
-        # WIP ####
-        # Copy of nominal values in ./Photo for standalone test run
-        # + Remove run prefix
-        iMC = 0
-        prefix=paste0(sprintf('%04i',iMC),'_')
-        for (i in (1:nbReac)[photo]) {
-          sp=species[which(Lphoto[i,]!=0)]
-          file = paste0('se',sp,'.dat')
-          fromFile = paste0(outputDir, photoSourceDir, prefix, file)
-          toFile   = paste0(outputDir, '/Run/Photo/', file)
-          file.copy(from = fromFile, to = toFile)
-          if( params[[i]][1] != 0 ) {
-            file = paste0('qy',sp,'_',params[[i]][1],'.dat')
-            fromFile = paste0(outputDir, photoSourceDir, prefix, file)
-            toFile   = paste0(outputDir, '/Run/Photo/', file)
-            file.copy(from = fromFile, to = toFile)
-          }
-        }
-      }
-    }
-  }
-)
 # Bottom ####

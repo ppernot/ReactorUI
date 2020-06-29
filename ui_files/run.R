@@ -4,13 +4,39 @@ sidebarLayout(
     h4("Run Reactor"),
     hr( style="border-color: #666;"),
     uiOutput("nMCRunSelect"),
-    actionButton(
-      'reactorRun',
-      'Start',
-      icon = icon('gear')
+    fluidRow(
+      column(
+        width=12,
+        actionButton(
+          'reactorRun',
+          'Start',
+          icon = icon('gear')
+        )#,
+        # actionButton(
+        #   'updateOut',
+        #   'Update',
+        #   icon = icon('file')
+        # )
+      )
     )
   ),
   mainPanel(
-    width = mainWidth
+    width = mainWidth,
+    wellPanel(
+      tagAppendAttributes(
+        verbatimTextOutput(
+          "reactorErrors"
+        ),
+        style="white-space:pre-wrap; text-align: left;
+               overflow-y:scroll; max-height: 100px;"
+      ),
+      tagAppendAttributes(
+        verbatimTextOutput(
+          "reactorOutput"
+        ),
+        style="white-space:pre-wrap; text-align: left;
+               overflow-y:scroll; max-height: 400px;"
+      )
+    )
   )
 )

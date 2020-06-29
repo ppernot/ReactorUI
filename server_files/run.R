@@ -24,11 +24,67 @@ output$nMCRunSelect <- renderUI({
   ui
 })
 
+running = reactiveVal(NULL)
 observeEvent(
   input$reactorRun, {
 
+    projectDir  = ctrlPars$projectDir
+
+    # Clean standard outputs
+    stdout = paste0(projectDir,'/Run/runOut.txt')
+    if(file.exists(stdout))
+      file.remove(stdout)
+    stderr = paste0(projectDir,'/Run/runErr.txt')
+    if(file.exists(stderr))
+      file.remove(stderr)
+
     # Nb MC runs
     nMC = as.numeric(input$nMCRun)
-    print(nMC)
+
+    # Nominal run
+    running(
+      try(
+        system2(
+          command = paste0(projectDir,'/Scripts/OneRun_Loc.sh'),
+          args    = c('0',projectDir),
+          stdout  = stdout,
+          stderr  = stderr,
+          wait    = FALSE ),
+        silent = TRUE
+      )
+    )
+
   }
 )
+stdErr = reactiveFileReader(
+  500, session,
+  paste0(ctrlPars$projectDir,'/Run/runErr.txt'),
+  readLines
+)
+output$reactorErrors <- renderPrint({
+  if (is.null(running())) {
+    cat('Please run code ...')
+    return()
+  }
+  cat('Error messages:\n')
+  runMsg =''
+  if(running() != 0)
+    runMsg = cat(running(),'\n')
+  cat(
+    runMsg,
+    paste(stdErr(),collapse ='\n')
+  )
+})
+stdOut = reactiveFileReader(
+  500, session,
+  paste0(ctrlPars$projectDir,'/Run/runOut.txt'),
+  readLines
+)
+output$reactorOutput <- renderPrint({
+  if (is.null(running())) {
+    cat('Please run code ...')
+    return()
+  }
+  stdOut()
+})
+

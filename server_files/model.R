@@ -1058,7 +1058,6 @@ observeEvent(
           }
         })
 
-        # WIP ####
         # Copy of nominal values in ./Photo for standalone test run
         # + Remove run prefix
         iMC = 0

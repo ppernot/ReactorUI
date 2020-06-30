@@ -25,17 +25,17 @@ sidebarLayout(
     wellPanel(
       tagAppendAttributes(
         verbatimTextOutput(
-          "reactorErrors"
-        ),
-        style="white-space:pre-wrap; text-align: left;
-               overflow-y:scroll; max-height: 100px;"
-      ),
-      tagAppendAttributes(
-        verbatimTextOutput(
           "reactorOutput"
         ),
         style="white-space:pre-wrap; text-align: left;
                overflow-y:scroll; max-height: 400px;"
+      ),
+      tagAppendAttributes(
+        verbatimTextOutput(
+          "reactorErrors"
+        ),
+        style="white-space:pre-wrap; text-align: left;
+               overflow-y:scroll; max-height: 100px;"
       )
     )
   )

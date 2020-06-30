@@ -1,10 +1,11 @@
 # Functions ####
 getConc  = function(concThresh = -50) {
+
   # Read Ctrl file to get spInit
   ctrlList = readCtrl(ctrlPars$projectDir)
-  csp = ctrlList$reactantsComposition
+  csp = ctrlList$REAC_DATA$reactantsComposition
   sel = which(is.finite(csp))
-  rsp = ctrlList$reactantsSpecies
+  rsp = ctrlList$REAC_DATA$reactantsSpecies
   rsp = strsplit(rsp,',')[[1]][sel]
   spInit = rsp
 
@@ -106,6 +107,7 @@ getRates = function() {
     )
     photoRates[i,] = t(tab)
   }
+
   ## Get reac names
   reacs = readLines(
     paste0(ctrlPars$projectDir,'/Run/photo_list.dat'))

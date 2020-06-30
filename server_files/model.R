@@ -135,6 +135,7 @@ generateNetwork <- function(
   # orphans = species[!species %in% spInit &
   #                     !reject &
   #                     !species %in% dummySpecies ]
+
   # Reduce reactions and species list to accessible species
   species   = spInit
   nbSpecies = length(species)
@@ -639,7 +640,7 @@ output$quality <- renderPrint({
     ind = io[i]
     s = sp[ind]
     prods = which(R[,s] != 0)
-    cat(ms[ind],s,'\n  Productions :\n')
+    cat(round(ms[ind],digits=4),s,'\n  Productions :\n')
     for(j in 1:length(prods))
       cat('    ',unlist(reacTag)[reacs[prods[j]]],'\n')
     cat('\n')
@@ -946,8 +947,12 @@ observeEvent(
 
     # Reactions list
     reac_list = ''
-    for (i in (1:nbReac)[!photo])
-      reac_list = paste(reac_list, reacTag[[reacs[i]]], '\n')
+    sel = (1:nbReac)[!photo]
+    for (i in sel) {
+      reac_list = paste(reac_list, reacTag[[reacs[i]]])
+      if( i < sel)
+      reac_list = paste(reac_list, '\n')
+    }
     writeLines(
       reac_list,
       paste0(outputDir,'/Run/reac_list.dat')
@@ -955,11 +960,13 @@ observeEvent(
 
     # Single output file from nominal data
     reac_params = ''
-    for (i in (1:nbReac)[!photo])
-      reac_params = paste0(
+    for (i in sel) {
+      reac_params = paste(
         reac_params,
-        paste(params[[i]], collapse = " "),
-        '\n')
+        paste(params[[i]], collapse = " "))
+      if (i < sel)
+        reac_params = paste(reac_params,'\n')
+    }
     writeLines(
       reac_params,
       paste0(outputDir,'/Run/reac_params.dat')
@@ -1019,8 +1026,12 @@ observeEvent(
 
     # Reactions list
     reac_list = ''
-    for (i in (1:nbReac)[photo])
-      reac_list = paste(reac_list, reacTag[[reacs[i]]], '\n')
+    sel = (1:nbReac)[photo]
+    for (i in sel) {
+      reac_list = paste(reac_list, reacTag[[reacs[i]]])
+      if( i < sel)
+        reac_list = paste(reac_list, '\n')
+    }
     writeLines(
       reac_list,
       paste0(outputDir,'/Run/photo_list.dat')
@@ -1041,18 +1052,17 @@ observeEvent(
       )
 
       reac_params = ''
-      for (i in (1:nbReac)[photo]) {
+      for (i in sel) {
         sp=species[which(Lphoto[i,]!=0)]
         if( params[[i]][1] == 0 )
-          reac_params = paste0(
-            reac_params,
-            'se',sp,'.dat','\n')
+          reac_params = paste0(reac_params,'se',sp,'.dat')
         else
           reac_params = paste(
             reac_params,
             paste0('se',sp,'.dat'),
-            paste0('qy',sp,'_',params[[i]][1],'.dat'),
-            '\n')
+            paste0('qy',sp,'_',params[[i]][1],'.dat'))
+        if( i < sel)
+          reac_params = paste(reac_params, '\n')
       }
       writeLines(
         reac_params,

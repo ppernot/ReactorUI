@@ -41,18 +41,30 @@ observeEvent(
     # Nb MC runs
     nMC = as.numeric(input$nMCRun)
 
-    # Nominal run
-    running(
-      try(
-        system2(
-          command = paste0(projectDir,'/Scripts/OneRun_Loc.sh'),
-          args    = c('0',projectDir),
-          stdout  = stdout,
-          stderr  = stderr,
-          wait    = FALSE ),
-        silent = TRUE
+    if (nMC == 0) # Nominal run
+      running(
+        try(
+          system2(
+            command = paste0(projectDir,'/Scripts/OneRun_Loc.sh'),
+            args    = c('0',projectDir),
+            stdout  = stdout,
+            stderr  = stderr,
+            wait    = FALSE ),
+          silent = TRUE
+        )
       )
-    )
+    else
+      running(
+        try(
+          system2(
+            command = paste0(projectDir,'/Scripts/MCRun_Loc.sh'),
+            args    = c(nMC,projectDir),
+            stdout  = stdout,
+            stderr  = stderr,
+            wait    = FALSE ),
+          silent = TRUE
+        )
+      )
 
   }
 )

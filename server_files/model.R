@@ -937,9 +937,9 @@ observeEvent(
     Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
 
     reac_DL = paste(nrow(Dsp),'\n',
-                    paste(Dsp, collapse = " "),'\n',
+                    trimws(paste(Dsp, collapse = " ")),'\n',
                     nrow(Lsp),'\n',
-                    paste(Lsp, collapse = " "))
+                    trimws(paste(Lsp, collapse = " ")))
     writeLines(
       reac_DL,
       paste0(outputDir,'/Run/reac_DL.dat')
@@ -950,7 +950,7 @@ observeEvent(
     sel = (1:nbReac)[!photo]
     for (i in sel) {
       reac_list = paste(reac_list, reacTag[[reacs[i]]])
-      if( i < sel)
+      if( i != sel[length(sel)])
       reac_list = paste(reac_list, '\n')
     }
     writeLines(
@@ -964,7 +964,7 @@ observeEvent(
       reac_params = paste(
         reac_params,
         paste(params[[i]], collapse = " "))
-      if (i < sel)
+      if( i != sel[length(sel)])
         reac_params = paste(reac_params,'\n')
     }
     writeLines(
@@ -1029,7 +1029,7 @@ observeEvent(
     sel = (1:nbReac)[photo]
     for (i in sel) {
       reac_list = paste(reac_list, reacTag[[reacs[i]]])
-      if( i < sel)
+      if( i != sel[length(sel)])
         reac_list = paste(reac_list, '\n')
     }
     writeLines(
@@ -1043,9 +1043,9 @@ observeEvent(
       Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
 
       reac_DL = paste(nrow(Dsp),'\n',
-                      paste(Dsp, collapse = " "),'\n',
+                      trimws(paste(Dsp, collapse = " ")),'\n',
                       nrow(Lsp),'\n',
-                      paste(Lsp, collapse = " "))
+                      trimws(paste(Lsp, collapse = " ")))
       writeLines(
         reac_DL,
         paste0(outputDir,'/Run/photo_DL.dat')
@@ -1061,7 +1061,7 @@ observeEvent(
             reac_params,
             paste0('se',sp,'.dat'),
             paste0('qy',sp,'_',params[[i]][1],'.dat'))
-        if( i < sel)
+        if( i != sel[length(sel)])
           reac_params = paste(reac_params, '\n')
       }
       writeLines(

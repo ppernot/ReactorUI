@@ -26,15 +26,15 @@ calcFluxes = function(C,R) {
     n   = 4
   )
   nnz = as.numeric(DL[1])
-  Dsp = as.numeric(unlist(strsplit(DL[2],split=' ')))
-  Dsp = matrix(Dsp,nrow=nnz, ncol=3)
+  Dsp = as.numeric(unlist(strsplit(trimws(DL[2]), split = ' ')))
+  Dsp = matrix(Dsp, nrow = nnz, ncol = 3)
   for (i in 1:nrow(Dsp))
-    D[Dsp[i,1],Dsp[i,2]]=Dsp[i,3]
+    D[Dsp[i, 1], Dsp[i, 2]] = Dsp[i, 3]
   nnz = as.numeric(DL[3])
-  Lsp = as.numeric(unlist(strsplit(DL[4],split=' ')))
-  Lsp = matrix(Lsp,nrow=nnz, ncol=3)
+  Lsp = as.numeric(unlist(strsplit(trimws(DL[4]), split = ' ')))
+  Lsp = matrix(Lsp, nrow = nnz, ncol = 3)
   for (i in 1:nrow(Lsp))
-    L[Lsp[i,1],Lsp[i,2]]=Lsp[i,3]
+    L[Lsp[i, 1], Lsp[i, 2]] = Lsp[i, 3]
   nPh = ncol(photoRates)
 
   DL  = readLines(
@@ -42,15 +42,15 @@ calcFluxes = function(C,R) {
     n   = 4
   )
   nnz = as.numeric(DL[1])
-  Dsp = as.numeric(unlist(strsplit(DL[2],split=' ')))
-  Dsp = matrix(Dsp,nrow=nnz, ncol=3)
+  Dsp = as.numeric(unlist(strsplit(trimws(DL[2]), split = ' ')))
+  Dsp = matrix(Dsp, nrow = nnz, ncol = 3)
   for (i in 1:nrow(Dsp))
-    D[nPh+Dsp[i,1],Dsp[i,2]]=Dsp[i,3]
+    D[nPh + Dsp[i, 1], Dsp[i, 2]] = Dsp[i, 3]
   nnz = as.numeric(DL[3])
-  Lsp = as.numeric(unlist(strsplit(DL[4],split=' ')))
-  Lsp = matrix(Lsp,nrow=nnz, ncol=3)
+  Lsp = as.numeric(unlist(strsplit(trimws(DL[4]), split = ' ')))
+  Lsp = matrix(Lsp, nrow = nnz, ncol = 3)
   for (i in 1:nrow(Lsp))
-    L[nPh+Lsp[i,1],Lsp[i,2]]=Lsp[i,3]
+    L[nPh + Lsp[i, 1], Lsp[i, 2]] = Lsp[i, 3]
 
   R = D + L
 

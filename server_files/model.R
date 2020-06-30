@@ -12,8 +12,8 @@ generateNetwork <- function(
 
   ## Photo processes
   photoData = c(
-    paste0(ctrlPars$projectDir,photoSourceDir,'../PhotoScheme.dat'),
-    paste0(ctrlPars$projectDir,photoSourceDir,'../PhotoIonScheme.dat')
+    paste0(ctrlPars$projectDir,photoSourceDir,'../PhotoScheme.dat') #,
+    # paste0(ctrlPars$projectDir,photoSourceDir,'../PhotoIonScheme.dat')
   )
   for (filename in photoData) {
     if(file.exists(filename)){ # PhotoIonScheme.dat is optional
@@ -71,13 +71,11 @@ generateNetwork <- function(
   colnames(compo)=elements
   mass  = apply(compo,1,massFormula)
   names(mass) = species
+
   ## Attribute mass to dummy species
   dummySpecies = spDummy # From global variables
   dummyMass   = round(max(mass,na.rm=TRUE)+2)
   mass[dummySpecies] = dummyMass
-  # orderByMass=order(mass)
-  # species1=species[orderByMass]
-  # mass1=mass[orderByMass]
 
   # Full R, L, D matrices
   L = R = D = matrix(0,ncol=nbSpecies,nrow=nbReac)
@@ -107,8 +105,9 @@ generateNetwork <- function(
         L[,spInit] == 1,
         ncol = length(spInit)
         )
-      ) & type=='photo'
+      ) & type == 'photo'
   reacList = reacs[lReacs]
+
   spProds  = species[colSums(R[lReacs,]) != 0 ]
   spProds  = spProds[!(spProds %in% spInit)]
 
@@ -117,10 +116,11 @@ generateNetwork <- function(
   vlpInd[spInit]  = 0
   vlpInd[spProds] = 1
   ncount = 1
-  while ( length(spProds)!=0 ) {
+  while ( length(spProds) != 0 ) {
     spInit   = c(spInit,spProds)
-    lReacsU  = rowSums(L[,spInit] == 1) & type=='photo'
-    lReacsB  = rowSums(L[,! colnames(L) %in% spInit]) == 0 & type!='photo'
+    lReacsU  = rowSums(L[,spInit] == 1) & type == 'photo'
+    lReacsB  = rowSums(L[,! colnames(L) %in% spInit]) == 0 &
+      type != 'photo'
     lReacs   = lReacsU | lReacsB
     reacList = c(reacList,reacs[lReacs])
     spProds  = species[colSums(R[lReacs,]) != 0]
@@ -143,8 +143,9 @@ generateNetwork <- function(
 
   reacList  = sort(unique(reacList))
   nbReac    = length(reacList)
-  L         = L[reacList,species]
-  R         = R[reacList,species]
+  L         = L[reacList, species]
+  R         = R[reacList, species]
+  D         = D[reacList, species]
   params    = params[reacList]
   type      = type[reacList]
   locnum    = locnum[reacList]
@@ -484,6 +485,8 @@ output$chemDBVersions <- renderUI({
   )
   ui
 })
+outputOptions(output, "chemDBVersions",
+              suspendWhenHidden = FALSE)
 
 # Generate Reacs ####
 output$chemistryParams <- renderUI({
@@ -603,85 +606,113 @@ output$summaryScheme <- renderPrint({
     return()
   }
 
+  for (n in names(reacScheme()))
+    assign(n, rlist::list.extract(reacScheme(), n))
+
   cat('Summary\n')
   cat('-------\n\n')
-  cat('Nb species         = ', length(reacScheme()$species),'\n')
-  cat('Nb reactions       = ', length(reacScheme()$reacs)  ,'\n\n')
+  cat('Nb species         = ', length(species),'\n')
+  cat('Nb reactions       = ', length(reacs)  ,'\n\n')
 
-  vlpInd =reacScheme()$vlpInd
   maxVlpInd = max(vlpInd)
   cat('Max. Volpert Index = ', maxVlpInd,'\n\n')
   for (i in 0:maxVlpInd)
     cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n')
 
 })
-output$listScheme <- renderPrint({
+output$quality <- renderPrint({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
     return()
   }
 
-  reacs   = reacScheme()$reacs
-  species = reacScheme()$species
-  params  = reacScheme()$params
-  L       = reacScheme()$L
-  R       = reacScheme()$R
+  for (n in names(reacScheme()))
+    assign(n, rlist::list.extract(reacScheme(), n))
 
-  formatReac <- function(i) {
-    # Arrange reactants list
-    sel = L[i,]!=0
-    react = colnames(L)[sel]
-    stoec = L[i,][sel]
-    for (j in 1:length(react))
-      if(stoec[j] != 1)
-        react[j] = paste(rep(react[j],stoec[j]),collapse = ' + ')
-    if(reacScheme()$type[[i]] == 'photo')
-      react = c(react,'hv')
-    react = paste(react, collapse = ' + ')
-    # Arrange products list
-    sel = R[i,]!=0
-    prods = colnames(R)[sel]
-    stoec = R[i,][sel]
-    for (j in 1:length(prods))
-      prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
-    prods = paste(prods, collapse = ' + ')
-    # Print reaction
-    cat(react,' --> ',prods,unlist(params[[i]]),'\n')
-  }
-
-  if(is.na(input$targetSpecies) | input$targetSpecies == "") {
-    # Full reaction list
-    cat('Summary\n')
-    cat('-------\n\n')
-    cat('Nb species         = ', length(species),'\n')
-    cat('Nb reactions       = ', length(reacs)  ,'\n\n')
-
-    for (i in 1: length(reacs))
-      formatReac(i)
-
-  } else {
-    # Species-specific reaction list
-    if(! input$targetSpecies %in% species )
-      return(cat('Species not in list : ',input$targetSpecies))
-
-    indx = which(species == input$targetSpecies)
-    # Reactions
-    cat('Loss\n')
-    cat('----\n')
-    sel = which(L[,indx]!=0)
-    for (i in sel)
-      formatReac(i)
-    cat('\n')
-    # Productions
-    cat('Production\n')
-    cat('----------\n')
-    sel = which(R[,indx]!=0)
-    for (i in sel)
-      formatReac(i)
+  cat('Sinks / Species with no loss:')
+  cat('\n\n')
+  sel = colSums(L) == 0
+  sp = species[sel]
+  ms = mass[sel]
+  io = order(ms)
+  for (i in 1:length(sp)) {
+    ind = io[i]
+    s = sp[ind]
+    prods = which(R[,s] != 0)
+    cat(ms[ind],s,'\n  Productions :\n')
+    for(j in 1:length(prods))
+      cat('    ',unlist(reacTag)[reacs[prods[j]]],'\n')
     cat('\n')
   }
-
+  cat('\n')
 })
+# output$listScheme <- renderPrint({
+#   if (is.null(reacScheme())) {
+#     cat('Please Generate Reactions...')
+#     return()
+#   }
+#
+#   reacs   = reacScheme()$reacs
+#   species = reacScheme()$species
+#   params  = reacScheme()$params
+#   L       = reacScheme()$L
+#   R       = reacScheme()$R
+#
+#   formatReac <- function(i) {
+#     # Arrange reactants list
+#     sel = L[i,]!=0
+#     react = colnames(L)[sel]
+#     stoec = L[i,][sel]
+#     for (j in 1:length(react))
+#       if(stoec[j] != 1)
+#         react[j] = paste(rep(react[j],stoec[j]),collapse = ' + ')
+#     if(reacScheme()$type[[i]] == 'photo')
+#       react = c(react,'hv')
+#     react = paste(react, collapse = ' + ')
+#     # Arrange products list
+#     sel = R[i,]!=0
+#     prods = colnames(R)[sel]
+#     stoec = R[i,][sel]
+#     for (j in 1:length(prods))
+#       prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
+#     prods = paste(prods, collapse = ' + ')
+#     # Print reaction
+#     cat(react,' --> ',prods,unlist(params[[i]]),'\n')
+#   }
+#
+#   if(is.na(input$targetSpecies) | input$targetSpecies == "") {
+#     # Full reaction list
+#     cat('Summary\n')
+#     cat('-------\n\n')
+#     cat('Nb species         = ', length(species),'\n')
+#     cat('Nb reactions       = ', length(reacs)  ,'\n\n')
+#
+#     for (i in 1: length(reacs))
+#       formatReac(i)
+#
+#   } else {
+#     # Species-specific reaction list
+#     if(! input$targetSpecies %in% species )
+#       return(cat('Species not in list : ',input$targetSpecies))
+#
+#     indx = which(species == input$targetSpecies)
+#     # Reactions
+#     cat('Loss\n')
+#     cat('----\n')
+#     sel = which(L[,indx]!=0)
+#     for (i in sel)
+#       formatReac(i)
+#     cat('\n')
+#     # Productions
+#     cat('Production\n')
+#     cat('----------\n')
+#     sel = which(R[,indx]!=0)
+#     for (i in sel)
+#       formatReac(i)
+#     cat('\n')
+#   }
+#
+# })
 output$tabScheme <- renderDataTable({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -697,37 +728,35 @@ output$tabScheme <- renderDataTable({
 
   formatReac <- function(i) {
     # Arrange reactants list
-    sel = L[i,]!=0
+    sel = L[i, ] != 0
     react = colnames(L)[sel]
-    stoec = L[i,][sel]
+    stoec = L[i, ][sel]
     for (j in 1:length(react))
-      if(stoec[j] != 1)
-        react[j] = paste(rep(react[j],stoec[j]),collapse = ' + ')
-    if(reacScheme()$type[[i]] == 'photo')
-      react = c(react,'hv')
+      if (stoec[j] != 1)
+        react[j] = paste(rep(react[j], stoec[j]), collapse = ' + ')
+    if (reacScheme()$type[[i]] == 'photo')
+      react = c(react, 'hv')
     react = paste(react, collapse = ' + ')
     # Arrange products list
-    sel = R[i,]!=0
+    sel = R[i, ] != 0
     prods = colnames(R)[sel]
-    stoec = R[i,][sel]
+    stoec = R[i, ][sel]
     for (j in 1:length(prods))
-      prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
+      prods[j] = paste(rep(prods[j], stoec[j]), collapse = ' + ')
     prods = paste(prods, collapse = ' + ')
     # Print reaction
     typ  = unlist(type[[i]])
     pars = unlist(params[[i]])
-    if(typ != 'photo')
+    if (typ != 'photo')
       pars = pars[-length(pars)]
 
-    return(
-      data.frame(
-        Id        = i,
-        Reactants = react,
-        Products  = prods,
-        Params    = paste0(pars, collapse =', '),
-        Type      = typ
-      )
-    )
+    return(data.frame(
+      Id        = i,
+      Reactants = react,
+      Products  = prods,
+      Params    = paste0(pars, collapse = ', '),
+      Type      = typ
+    ))
   }
 
   dat = data.frame(
@@ -737,43 +766,45 @@ output$tabScheme <- renderDataTable({
     Params = NA,
     Type = NA
   )
-  if(is.na(input$targetSpecies) |
-     input$targetSpecies == "") {
-    for (i in 1: length(reacs))
-      dat = rbind(dat,formatReac(i))
+  if (is.na(input$targetSpecies) |
+      input$targetSpecies == "") {
+    for (i in 1:length(reacs))
+      dat = rbind(dat, formatReac(i))
 
   } else {
     # Species-specific reaction list
-    if(! input$targetSpecies %in% species )
-      return(cat('Species not in list : ',input$targetSpecies))
+    if (!input$targetSpecies %in% species)
+      return(cat('Species not in list : ', input$targetSpecies))
     indx = which(species == input$targetSpecies)
     # Losses
-    sel = which(L[,indx]!=0)
+    sel = which(L[, indx] != 0)
     for (i in sel)
-      dat = rbind(dat,formatReac(i))
+      dat = rbind(dat, formatReac(i))
     # Productions
-    sel = which(R[,indx]!=0)
+    sel = which(R[, indx] != 0)
     for (i in sel)
-      dat = rbind(dat,formatReac(i))
+      dat = rbind(dat, formatReac(i))
   }
 
-  return(dat[-1,])
+  return(dat[-1, ])
 },
 rownames = FALSE,
-extensions = c('Buttons','Scroller'),
+extensions = c('Buttons', 'Scroller'),
 options = list(
   dom = 'Btip',
   buttons =
-    list('copy', list(
-      extend = 'collection',
-      buttons = c('csv', 'excel', 'pdf'),
-      text = 'Download')
+    list(
+      'copy',
+      list(
+        extend = 'collection',
+        buttons = c('csv', 'excel', 'pdf'),
+        text = 'Download'
+      )
     ),
   deferRender = TRUE,
   scrollY = 550,
   scroller = TRUE
-)
-)
+))
 output$plotScheme <- renderForceNetwork({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')

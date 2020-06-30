@@ -35,12 +35,7 @@ sidebarLayout(
           wellPanel(
             tabsetPanel(
               tabPanel(
-                title=h4("ChemDB Versions"),
-                br(),
-                uiOutput("chemDBVersions"),
-              ),
-              tabPanel(
-                title=h4("Generate Network"),
+                title=h4("Generate"),
                 br(),
                 fixedRow(
                   column(
@@ -60,7 +55,7 @@ sidebarLayout(
                           "summaryScheme"
                         ),
                         style="white-space:pre-wrap; text-align: left;
-                               overflow-y:scroll; max-height: 600px;"
+                               overflow-y:scroll; max-height: 450px;"
                       # ),
                       # type=4
                     )
@@ -68,7 +63,7 @@ sidebarLayout(
                 )
               ),
               tabPanel(
-                title=h4("View Network"),
+                title=h4("Network"),
                 br(),
                 fixedRow(
                   column(
@@ -101,7 +96,7 @@ sidebarLayout(
                 )
               ),
               tabPanel(
-                title=h4("Reactions List"),
+                title=h4("Reactions"),
                 br(),
                 fixedRow(
                   column(
@@ -120,20 +115,29 @@ sidebarLayout(
                         "tabScheme",
                         height = "auto"
                       ) #,
-                      # tagAppendAttributes(
-                      #   verbatimTextOutput(
-                      #     "listScheme"
-                      #   ),
-                      #   style="white-space:pre-wrap; text-align: left;
-                      #   overflow-y:scroll; max-height: 600px;"
-                      # ),
                     #   type=4
                     # )
                   )
                 )
               ),
               tabPanel(
-                title=h4("MC Sample"),
+                title=h4("Checks"),
+                br(),
+                fixedRow(
+                  column(
+                    width = 12,
+                    tagAppendAttributes(
+                      verbatimTextOutput(
+                        "quality"
+                      ),
+                      style="white-space:pre-wrap; text-align: left;
+                               overflow-y:scroll; max-height: 450px;"
+                    )
+                  )
+                )
+              ),
+              tabPanel(
+                title=h4("Sample"),
                 br(),
                 fixedRow(
                   column(
@@ -146,6 +150,11 @@ sidebarLayout(
                     )
                   )
                 )
+              ),
+              tabPanel(
+                title=h4("ChemDB Versions"),
+                br(),
+                uiOutput("chemDBVersions"),
               )
             )
           )

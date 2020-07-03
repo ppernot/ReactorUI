@@ -186,35 +186,19 @@ generateNetwork <- function(
 }
 
 # Interactive ####
-
-reacData   <- reactiveVal()
-chemDBData <- reactiveVal()
-reacProc   <- reactiveValues()
-
-# Load control.dat ####
 output$contentsNmlMsg <- renderPrint({
-  if (!"path" %in% names(input$projectDir)) {
+  if (is.null(reacData()) |
+      is.null(chemDBData())) {
     return(NULL)
   }
 
-  ctrlList = readCtrl(ctrlPars$projectDir)
-
-  # Populate/Update reactive values
-
-  reacData(ctrlList$REAC_DATA)
+  # Printout
   cat('_ REAC_DATA:\n')
   for (n in names(reacData())) {
     assign(n, rlist::list.extract(reacData(), n))
     cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
   }
-
-  if(!is.null(ctrlList$DB_DATA)) {
-    chemDBData(ctrlList$DB_DATA)
-    cat('_ DB_DATA:\n')
-  } else {
-    chemDBData(DB_DATA_default)
-    cat('_ DB_DATA_Default:\n')
-  }
+  cat('_ DB_DATA:\n')
   for (n in names(chemDBData())) {
     assign(n, rlist::list.extract(chemDBData(), n))
     cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
@@ -222,177 +206,15 @@ output$contentsNmlMsg <- renderPrint({
 
 })
 
-# Reactor ####
-output$reactorParams <- renderPrint({
-  if (is.null(reacData())) {
-    return(NULL)
-  }
-
-  listPars <- c(
-    "reactorLength",
-    "reactorSection",
-    "gasTemperature",
-    "electronsTemperature",
-    "totalPressure",
-    "reactantsPressure",
-    "reactantsFlux",
-    "reactionTime"
-  )
-
-  for (n in names(reacData()))
-    assign(n, rlist::list.extract(reacData(), n))
-
-  for (n in listPars)
-    cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
-})
-
-# Irrad. ####
-spectrumData <- reactive({
-  if (is.null(reacData())) {
-    return(NULL)
-  }
-
-  for (n in names(reacData()))
-    assign(n, rlist::list.extract(reacData(), n))
-
-  # Get spectrum data
-  sp <- read.csv(
-    file = paste0(ctrlPars$projectDir, "/Run/", beamSpectrumFile),
-    header = FALSE,
-    sep = "",
-    stringsAsFactors = FALSE
-  )
-
-  list(
-    wavelength = sp[, 1],
-    photonFlux = sp[, 2]
-  )
-})
-output$irradUI <- renderUI({
-  if (is.null(spectrumData())) {
-    return(NULL)
-  }
-
-  for (n in names(reacData()))
-    assign(n, rlist::list.extract(reacData(), n))
-  for (n in names(spectrumData()))
-    assign(n, rlist::list.extract(spectrumData(), n))
-
-  tagList(
-    fileInput(
-      "beamSpectrumFileName",
-      label = "Beam spectrum file",
-      placeholder = paste0(ctrlPars$projectDir, "/Run/",
-                           beamSpectrumFile)
-    ),
-    sliderInput(
-      "spectrumRange",
-      "Spectrum Range (nm)",
-      min = min(wavelength), max = max(wavelength),
-      value = range(wavelength),
-      step = 10
-    ),
-    numericInput(
-      "beamIntensity",
-      "Beam Intensity (ph.cm^-2.s^-1)",
-      value = beamIntensity,
-      width = "75%",
-      step  = beamIntensity/10
-    ),
-    numericInput(
-      "beamSection",
-      "Beam Section (cm^2)",
-      value = beamSection,
-      min   = 0,
-      step  = 0.01,
-      width = "75%"
-    )
-  )
-})
-output$irradParams <- renderPrint({
-  if (is.null(spectrumData())) {
-    return(NULL)
-  }
-
-  for (n in names(reacData()))
-    assign(n, rlist::list.extract(reacData(), n))
-  for (n in names(spectrumData()))
-    assign(n, rlist::list.extract(spectrumData(), n))
-
-  # Select in range
-  selw <- wavelength >= input$spectrumRange[1] &
-          wavelength <= input$spectrumRange[2]
-
-  # Rescale if adequate
-  if (input$beamIntensity >= 0) {
-    photonFlux <- photonFlux / sum(photonFlux[selw]) *
-                  input$beamIntensity
-  }
-  # Spread beam over full reactor cross-section
-  photonFlux <- photonFlux * (input$beamSection / reactorSection)
-
-  cat("\n")
-  cat("Statistics:\n")
-  cat("Photons **************************\n")
-  cat(
-    "flux  / ph.cm^-2.s^-1 =",
-    signif(sum(photonFlux), 2), "\n"
-  )
-  cat(
-    "flux  / ph.s^-1       =",
-    signif(sum(photonFlux) * reactorSection, 2), "\n"
-  )
-  cat(
-    "integ / ph            =",
-    signif(sum(photonFlux) * reactorSection * reactionTime, 2), "\n"
-  )
-  cat("**********************************")
-
-})
-output$irradSpectrum <- renderPlot({
-  if (is.null(spectrumData())) {
-    return(NULL)
-  }
-
-  for (n in names(reacData()))
-    assign(n, rlist::list.extract(reacData(), n))
-  for (n in names(spectrumData()))
-    assign(n, rlist::list.extract(spectrumData(), n))
-  for (n in names(gPars))
-    assign(n, rlist::list.extract(gPars, n))
-
-  selw <- wavelength >= input$spectrumRange[1] &
-          wavelength <= input$spectrumRange[2]
-
-  # Rescale if adequate
-  if (input$beamIntensity >= 0) {
-    photonFlux <- photonFlux /
-      sum(photonFlux[selw]) * input$beamIntensity
-  }
-  # Spread beam over full reactor cross-section
-  photonFlux <- photonFlux * (input$beamSection / reactorSection)
-
-  par(
-    mfrow = c(1, 1),
-    cex = cex, cex.main = cex, mar = mar,
-    mgp = mgp, tcl = tcl, pty = pty, lwd = lwd
-  )
-  plot(
-    wavelength[selw], photonFlux[selw],
-    type = "l", col = cols[5],
-    xlab = "Wavelength / nm",
-    ylab = "Intensity / ph.cm^-2.s^-1.nm^-1",
-    main = "Photon flux"
-  )
-  grid()
-  box()
-})
-
 # ChemDB ####
 output$chemDBVersions <- renderUI({
-  if (is.null(chemDBData())) {
+  if (is.null(chemDBData()) |
+      is.null(reacData())) {
     return(NULL)
   }
+
+  for (n in names(reacData()))
+    assign(n, rlist::list.extract(reacData(), n))
 
   for (n in names(chemDBData()))
     assign(n, rlist::list.extract(chemDBData(), n))
@@ -422,9 +244,12 @@ output$chemDBVersions <- renderUI({
   phoVers = paste0('PhotoProcs_',phoVers)
 
   speReso = spectralResolution
-  if(is.null(speReso) |
-     !speReso  %in% c(0.1,1))
-    speReso = DB_DATA_default$spectralResolution
+  if(is.null(speReso) | !speReso  %in% c(0.1,1)) {
+    speReso = REAC_DATA_default$spectralResolution
+    ll = reacData()
+    ll$spectralResolution = speReso
+    reacData(ll)
+  }
   speReso = paste0(speReso,'nm')
 
   neuVers = neutralsVersion
@@ -488,6 +313,20 @@ output$chemDBVersions <- renderUI({
 })
 outputOptions(output, "chemDBVersions",
               suspendWhenHidden = FALSE)
+
+updateVersions = reactive({
+  print(input$speReso)
+  if(!is.null(reacData())) {
+    print(reacData()$spectralResolution)
+    numReso = as.numeric(gsub(input$speReso,'nm',''))
+    if(reacData()$spectralResolution != numReso) {
+      ll = reacData()
+      ll$spectralResolution =
+      reacData(ll)
+      print('update !!!')
+    }
+  }
+})
 
 # Generate Reacs ####
 output$chemistryParams <- renderUI({
@@ -647,73 +486,6 @@ output$quality <- renderPrint({
   }
   cat('\n')
 })
-# output$listScheme <- renderPrint({
-#   if (is.null(reacScheme())) {
-#     cat('Please Generate Reactions...')
-#     return()
-#   }
-#
-#   reacs   = reacScheme()$reacs
-#   species = reacScheme()$species
-#   params  = reacScheme()$params
-#   L       = reacScheme()$L
-#   R       = reacScheme()$R
-#
-#   formatReac <- function(i) {
-#     # Arrange reactants list
-#     sel = L[i,]!=0
-#     react = colnames(L)[sel]
-#     stoec = L[i,][sel]
-#     for (j in 1:length(react))
-#       if(stoec[j] != 1)
-#         react[j] = paste(rep(react[j],stoec[j]),collapse = ' + ')
-#     if(reacScheme()$type[[i]] == 'photo')
-#       react = c(react,'hv')
-#     react = paste(react, collapse = ' + ')
-#     # Arrange products list
-#     sel = R[i,]!=0
-#     prods = colnames(R)[sel]
-#     stoec = R[i,][sel]
-#     for (j in 1:length(prods))
-#       prods[j] = paste(rep(prods[j],stoec[j]),collapse = ' + ')
-#     prods = paste(prods, collapse = ' + ')
-#     # Print reaction
-#     cat(react,' --> ',prods,unlist(params[[i]]),'\n')
-#   }
-#
-#   if(is.na(input$targetSpecies) | input$targetSpecies == "") {
-#     # Full reaction list
-#     cat('Summary\n')
-#     cat('-------\n\n')
-#     cat('Nb species         = ', length(species),'\n')
-#     cat('Nb reactions       = ', length(reacs)  ,'\n\n')
-#
-#     for (i in 1: length(reacs))
-#       formatReac(i)
-#
-#   } else {
-#     # Species-specific reaction list
-#     if(! input$targetSpecies %in% species )
-#       return(cat('Species not in list : ',input$targetSpecies))
-#
-#     indx = which(species == input$targetSpecies)
-#     # Reactions
-#     cat('Loss\n')
-#     cat('----\n')
-#     sel = which(L[,indx]!=0)
-#     for (i in sel)
-#       formatReac(i)
-#     cat('\n')
-#     # Productions
-#     cat('Production\n')
-#     cat('----------\n')
-#     sel = which(R[,indx]!=0)
-#     for (i in sel)
-#       formatReac(i)
-#     cat('\n')
-#   }
-#
-# })
 output$tabScheme <- renderDataTable({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -859,13 +631,12 @@ output$nMCButton <- renderUI({
   }
 
   # Get max number of samples
-  projectDir  = ctrlPars$projectDir
   chemDBDir   = '/../../ChemDBPublic/'
-  photoSourceDir = paste0(ctrlPars$projectDir,
+  photoSourceDir = paste0(projectDir(),
     chemDBDir,input$phoVers,'/',input$speReso,'/')
-  neutralsSourceDir = paste0(ctrlPars$projectDir,
+  neutralsSourceDir = paste0(projectDir(),
     chemDBDir,input$neuVers,'/')
-  ionsSourceDir = paste0(ctrlPars$projectDir,
+  ionsSourceDir = paste0(projectDir(),
     chemDBDir,input$ionVers,'/')
 
   maxNeutrals = length(
@@ -877,12 +648,16 @@ output$nMCButton <- renderUI({
   maxPhoto = as.numeric(substr(files[nFiles],1,4))
   maxMC = min(maxNeutrals, maxIons, maxPhoto)
 
+  nMC = chemDBData()$nMC
+  if(is.null(nMC))
+    nMC = DB_DATA_default$nMC
+
   ui <- list(
     selectInput(
       'nMC',
       label    = '# MC samples',
       choices  = c(10,seq(100,maxMC,by=100)),
-      selected = chemDBData()$nMC,
+      selected = nMC,
       width    = '200px'
     )
   )
@@ -895,7 +670,7 @@ observeEvent(
     nMC = as.numeric(input$nMC)
 
     # Where to save files
-    outputDir   = ctrlPars$projectDir
+    outputDir   = projectDir()
     targetMCDir = paste0(outputDir,'/MC_Input/')
 
     # Network params
@@ -1120,4 +895,318 @@ observeEvent(
     }
   }
 )
+# Irradiation ####
+
+output$irradUI <- renderUI({
+  if ( is.null(reacData()) ) {
+    return(NULL)
+  }
+
+  for (n in names(reacData()))
+    assign(n, rlist::list.extract(reacData(), n))
+
+  speReso = spectralResolution
+  if( is.null(speReso) | !speReso  %in% c(0.1,1) )
+    speReso = REAC_DATA_default$spectralResolution
+
+  # Process spectrum file
+  # & Check compatibility with resolution
+  if(!is.null(beamSpectrumFile)) {
+    bsf = paste0(projectDir(),"/Run/",beamSpectrumFile)
+    if(file.exists(bsf)) {
+      # Get data and check resolution
+      sp <- read.csv(
+        file = bsf,
+        header = FALSE,
+        sep = "",
+        stringsAsFactors = FALSE
+      )
+
+      reso = abs(sp[2,1]-sp[1,1])
+
+      if ( abs((reso-speReso)/speReso) > 0.01) {
+        source =  paste0(projectDir(),
+                         '/../../ChemDBPublic/BeamSpectrumFiles/',
+                         speReso,'nm/',beamSpectrumFile
+        )
+        if(file.exists(source)) {
+          showModal(modalDialog(
+            title = ">>>> Spectrum problem <<<< ",
+            paste0('Local file: ',beamSpectrumFile,
+                   ' inconsistent with declared
+                   spectral resolution.',
+                   '\nCopying valid version fom database...'),
+            easyClose = TRUE,
+            footer = modalButton("OK"),
+            size = 's'
+          ))
+          file.copy(from = source,
+                    to   = paste0(projectDir(),'/Run'))
+          bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
+
+        } else {
+          showModal(modalDialog(
+            title = ">>>> Spectrum problem <<<< ",
+            paste0('Local file: ',beamSpectrumFile,
+                   ' inconsistent with declared
+                   spectral resolution.',
+                   '\nNo alt. version found. ',
+                   '\nPlease choose a file...'),
+            easyClose = TRUE,
+            footer = modalButton("OK"),
+            size = 's'
+          ))
+          bsf = NULL
+
+        }
+      }
+
+    } else {
+      # Attempt to get it from BSF repertory
+      source =  paste0(projectDir(),
+        '/../../ChemDBPublic/BeamSpectrumFiles/',
+        speReso,'nm/',beamSpectrumFile
+        )
+      if(file.exists(source)) {
+        showModal(modalDialog(
+          title = ">>>> Spectrum problem <<<< ",
+          paste0('Missing local file: ',beamSpectrumFile,
+                 '\nCopying it fom database...'),
+          easyClose = TRUE,
+          footer = modalButton("OK"),
+          size = 's'
+        ))
+        file.copy(from = source,
+                  to   = paste0(projectDir(),'/Run'))
+        bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
+
+      } else {
+        showModal(modalDialog(
+          title = ">>>> Spectrum problem <<<< ",
+          paste0('Missing local file: ',beamSpectrumFile,
+                 '\nNo alt. version found. ',
+                 '\nPlease choose a file...'),
+          easyClose = TRUE,
+          footer = modalButton("OK"),
+          size = 's'
+        ))
+        bsf = NULL
+
+      }
+
+    }
+
+  } else {
+    beamSpectrumFile = REAC_DATA_default$beamSpectrumFile
+    bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
+    showModal(modalDialog(
+      title = ">>>> Spectrum problem <<<< ",
+      paste0('No beamSpectrumFile in control.dat',
+             '\nA default file is installed :',beamSpectrumFile,
+             '\nPlease choose another file if necessary...'),
+      easyClose = TRUE,
+      footer = modalButton("OK"),
+      size = 's'
+    ))
+  }
+
+  if( !is.null(bsf) ) {
+    sp <- read.csv(
+      file = bsf,
+      header = FALSE,
+      sep = "",
+      stringsAsFactors = FALSE
+    )
+    wavelength = sp[, 1]
+    photonflux = sp[, 2]
+
+    spectrumData(
+      list(
+        beamSpectrumFileName = bsf,
+        wavelength = sp[, 1],
+        photonFlux = sp[, 2]
+      )
+    )
+  }
+
+  tagList(
+    fileInput(
+      "beamSpectrumFileName",
+      label = "Beam spectrum file",
+      placeholder = paste0(projectDir(),
+                           '/../../ChemDBPublic/BeamSpectrumFiles/',
+                           speReso,'nm/')
+    )
+  )
+
+})
+observeEvent(
+  input$beamSpectrumFileName, {
+
+    # Get spectrum data
+    sp <- read.csv(
+      file = input$beamSpectrumFileName[1,'datapath'],
+      header = FALSE,
+      sep = "",
+      stringsAsFactors = FALSE
+    )
+
+    fName = input$beamSpectrumFileName[1,'name']
+    spectrumData(
+      list(
+        beamSpectrumFileName = fName,
+        wavelength = sp[, 1],
+        photonFlux = sp[, 2]
+      )
+    )
+
+    # Update data
+    ll = reacData()
+    ll$beamSpectrumFile = fName
+    reacData(ll)
+
+  }
+)
+output$irradUI2 <- renderUI({
+  if( is.null(reacData()) | is.null(spectrumData()) ) {
+    return(NULL)
+  }
+
+  for (n in names(reacData()))
+    assign(n, rlist::list.extract(reacData(), n))
+
+  for (n in names(spectrumData()))
+    assign(n, rlist::list.extract(spectrumData(), n))
+
+  tagList(
+    sliderInput(
+      "spectrumRange",
+      "Spectrum Range (nm)",
+      min   = min(wavelength),
+      max   = max(wavelength),
+      value = range(wavelength),
+      step  = 10
+    ),
+    numericInput(
+      "beamIntensity",
+      "Beam Intensity (ph.cm^-2.s^-1)",
+      value = beamIntensity,
+      width = "75%",
+      step  = beamIntensity/10
+    ),
+    numericInput(
+      "beamSection",
+      "Beam Section (cm^2)",
+      value = beamSection,
+      min   = 0,
+      step  = 0.01,
+      width = "75%"
+    )
+  )
+})
+output$irradParams <- renderPrint({
+  if ( is.null(reacData()) | is.null(spectrumData()) ) {
+    return(NULL)
+  }
+
+  for (n in names(reacData()))
+    assign(n, rlist::list.extract(reacData(), n))
+
+  for (n in names(spectrumData()))
+    assign(n, rlist::list.extract(spectrumData(), n))
+
+  # Select in range
+  selw <- wavelength >= input$spectrumRange[1] &
+    wavelength <= input$spectrumRange[2]
+
+  # Rescale if adequate
+  if (input$beamIntensity >= 0) {
+    photonFlux <- photonFlux / sum(photonFlux[selw]) *
+      input$beamIntensity
+  }
+  # Spread beam over full reactor cross-section
+  photonFlux <- photonFlux * (input$beamSection / reactorSection)
+
+  cat("\n")
+  cat("Statistics:\n")
+  cat("Photons **************************\n")
+  cat(
+    "flux  / ph.cm^-2.s^-1 =",
+    signif(sum(photonFlux), 2), "\n"
+  )
+  cat(
+    "flux  / ph.s^-1       =",
+    signif(sum(photonFlux) * reactorSection, 2), "\n"
+  )
+  cat(
+    "integ / ph            =",
+    signif(sum(photonFlux) * reactorSection * reactionTime, 2), "\n"
+  )
+  cat("**********************************")
+
+})
+output$irradSpectrum <- renderPlot({
+  if ( is.null(reacData()) | is.null(spectrumData()) ) {
+    return(NULL)
+  }
+
+  for (n in names(reacData()))
+    assign(n, rlist::list.extract(reacData(), n))
+  for (n in names(spectrumData()))
+    assign(n, rlist::list.extract(spectrumData(), n))
+  for (n in names(gPars))
+    assign(n, rlist::list.extract(gPars, n))
+
+  selw <- wavelength >= input$spectrumRange[1] &
+    wavelength <= input$spectrumRange[2]
+
+  # Rescale if adequate
+  if (input$beamIntensity >= 0) {
+    photonFlux <- photonFlux /
+      sum(photonFlux[selw]) * input$beamIntensity
+  }
+  # Spread beam over full reactor cross-section
+  photonFlux <- photonFlux * (input$beamSection / reactorSection)
+
+  par(
+    mfrow = c(1, 1),
+    cex = cex, cex.main = cex, mar = mar,
+    mgp = mgp, tcl = tcl, pty = pty, lwd = lwd
+  )
+  plot(
+    wavelength[selw], photonFlux[selw],
+    type = "l", col = cols[5],
+    xlab = "Wavelength / nm",
+    ylab = "Intensity / ph.cm^-2.s^-1.nm^-1",
+    main = paste0(
+      "Photon flux :",
+      basename(beamSpectrumFileName),
+      " / ", spectralResolution, ' nm')
+  )
+  grid()
+  box()
+})
+# Reactor ####
+output$reactorParams <- renderPrint({
+  if (is.null(reacData())) {
+    return(NULL)
+  }
+
+  listPars <- c(
+    "reactorLength",
+    "reactorSection",
+    "gasTemperature",
+    "electronsTemperature",
+    "totalPressure",
+    "reactantsPressure",
+    "reactantsFlux",
+    "reactionTime"
+  )
+
+  for (n in names(reacData()))
+    assign(n, rlist::list.extract(reacData(), n))
+
+  for (n in listPars)
+    cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
+})
 # Bottom ####

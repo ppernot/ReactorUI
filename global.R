@@ -48,7 +48,33 @@ if (!is.null(ctrlPars$projectDir) &
 DB_DATA_default = list(
   nMC = 100,
   photoVersion = 0,
-  spectralResolution = 1,
   neutralsVersion = 0,
   ionsVersion = 0
+)
+
+REAC_DATA_default = list(
+  runId                = "apsis",
+  ifRestart            = FALSE,
+  debug                = FALSE,
+  reactorLength        = 50,
+  reactorSection       = 105,
+  beamSpectrumFile     = "surf73.txt",
+  spectralResolution   = 1,
+  spectrumRange        = c(50,200),
+  beamIntensity        = 5e+16,
+  beamSection          = 0.78,
+  gasTemperature       = 300,
+  electronsTemperature = 300,
+  totalPressure        = 700,
+  reactantsPressure    = 700,
+  reactantsFlux        = 7,
+  reactantsSpecies     = c("N2","CH4"),
+  reactantsComposition = c(0.9,0.1),
+  reactionTime         = 3600,
+  nbSnapshots          = 100
+)
+
+spectrumData_default = list(
+  beamSpectrumFileName =
+    '../../ChemDBPublic/BeamSpectrumFiles/1nm/stellarflux.txt'
 )

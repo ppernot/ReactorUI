@@ -153,19 +153,19 @@ read_nml <- function(nml_file) {
 # Read ctrl file
 readCtrl <- function(dir) {
   # Get ctrl file
-  mcf <- list.files(
+  mcf = list.files(
     path = paste0(dir, "/Run"),
     pattern = "control",
     full.names = TRUE
   )
   nmc <- length(mcf)
   if (nmc == 0) {
-    cat("The project has not control file, using defaults !")
-    source("R/default_ctrlData.R")
+    # cat("The project has not control file, using defaults !")
+    ctrlList = NULL
   } else {
-    ctrlList <- read_nml(mcf[1])
+    # cat('>> Got control.dat << \n')
+    ctrlList = read_nml(mcf[1])
   }
-  cat('>> Got control.dat << \n')
 
   return(ctrlList)
 }

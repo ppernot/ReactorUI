@@ -129,11 +129,6 @@ sidebarLayout(
                     )
                   )
                 )
-              ),
-              tabPanel(
-                title=h4("ChemDB Versions"),
-                br(),
-                uiOutput("chemDBVersions"),
               )
             )
           )
@@ -151,14 +146,21 @@ sidebarLayout(
             column(
               width = 8,
               plotOutput("irradSpectrum",
-                         height = plotHeight)
+                         height = 600)
             )
           )
         ),
         tabPanel(
           title=h4("Reactor"),
           br(),
+          uiOutput("reactorUI"),
           verbatimTextOutput("reactorParams")
+        ),
+        tabPanel(
+          title=h4("ChemDB Versions"),
+          br(),
+          uiOutput("chemDBVersions"),
+          verbatimTextOutput("checkChanges")
         )
       )
     )

@@ -87,8 +87,8 @@ output$contentsMsg <- renderPrint({
       samp = paste0(projectDir(),'/MC_Output/',mcf[1])
       ctrl = paste0(projectDir(),'/Run/control.dat')
       if( file.mtime(samp) < file.mtime(ctrl) )
-        cat('WARNING : MC runs anterior to control.dat\n',
-            '          might be outdated...')
+        cat('WARNING : MC runs older than control.dat. \n',
+            '          Might be outdated...')
     }
 
   }

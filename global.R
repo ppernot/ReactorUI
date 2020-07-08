@@ -1,4 +1,16 @@
+# Options ####
+Sys.setlocale(
+  category = "LC_NUMERIC",
+  locale = "C")
+options(
+  shiny.maxRequestSize = 20 * 1024^2,
+  width = 60,
+  warn = 0,
+  stringsAsFactors = FALSE)
+
+# options(shiny.json.digits=32)
 # enableBookmarking("server")
+
 source("R/packages.R")
 source("R/functions.R")
 source("R/stoeFuns.R")
@@ -72,6 +84,27 @@ REAC_DATA_default = list(
   reactantsComposition = c(0.9,0.1),
   reactionTime         = 3600,
   nbSnapshots          = 100
+)
+
+listParsReac <- c(
+  "reactorLength",
+  "reactorSection",
+  "gasTemperature",
+  "electronsTemperature",
+  "totalPressure",
+  "reactantsPressure",
+  "reactantsFlux",
+  "reactionTime"
+)
+listParsReacUnits <- c(
+  reactorLength = 'cm',
+  reactorSection = 'cm^2',
+  gasTemperature = 'K',
+  electronsTemperature = 'K',
+  totalPressure = 'Pa',
+  reactantsPressure = 'Pa',
+  reactantsFlux = 'sccm',
+  reactionTime = 's'
 )
 
 spectrumData_default = list(

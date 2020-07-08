@@ -1,8 +1,7 @@
 output$nMCRunSelect <- renderUI({
 
   # Max runs to max MC data samples
-  projectDir  = ctrlPars$projectDir
-  InputMCDir = paste0(projectDir,'/MC_Input/Reactions')
+  InputMCDir = paste0(projectDir(),'/MC_Input/Reactions')
   maxMC = length(
     list.files(path = InputMCDir, pattern = '.csv'))
   maxMC = maxMC - 1 # Do not count nominal run
@@ -19,10 +18,23 @@ output$nMCRunSelect <- renderUI({
       label    = '# MC Runs (0: nominal)',
       choices  = choices,
       width    = '200px'
+    ),
+    numericInput(
+      'nbSnap',
+      label = '# snapshots per run ',
+      value = reacData()$nbSnapshots
     )
   )
   ui
 })
+observeEvent(
+  # Update nb snapshots
+  input$nbSnap, ({
+    ll = reacData()
+    ll$nbSnapshots = input$nbSnap
+    reacData(ll)
+  })
+)
 
 running = reactiveVal(NULL)
 observeEvent(

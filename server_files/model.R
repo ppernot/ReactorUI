@@ -208,6 +208,7 @@ output$contentsNmlMsg <- renderPrint({
 
 # ChemDB ####
 output$chemDBVersions <- renderUI({
+  # Generate UI to display and select database versions
   if (is.null(chemDBData()) |
       is.null(reacData())) {
     return(NULL)
@@ -314,18 +315,22 @@ output$chemDBVersions <- renderUI({
 outputOptions(output, "chemDBVersions",
               suspendWhenHidden = FALSE)
 
-updateVersions = reactive({
-  print(input$speReso)
+output$checkChanges <- renderPrint({
+
+  req(input$speReso)
+
   if(!is.null(reacData())) {
-    print(reacData()$spectralResolution)
-    numReso = as.numeric(gsub(input$speReso,'nm',''))
+
+    numReso = as.numeric(sub('nm','',input$speReso))
+
     if(reacData()$spectralResolution != numReso) {
       ll = reacData()
-      ll$spectralResolution =
+      ll$spectralResolution = numReso
       reacData(ll)
-      print('update !!!')
     }
+
   }
+
 })
 
 # Generate Reacs ####
@@ -897,176 +902,301 @@ observeEvent(
 )
 # Irradiation ####
 
-output$irradUI <- renderUI({
-  if ( is.null(reacData()) ) {
-    return(NULL)
+# output$irradUI <- renderUI({
+#   if ( is.null(reacData()) ) {
+#     return(NULL)
+#   }
+#
+#   for (n in names(reacData()))
+#     assign(n, rlist::list.extract(reacData(), n))
+#
+#   speReso = spectralResolution
+#   if( is.null(speReso) | !speReso %in% c(0.1,1) )
+#     speReso = REAC_DATA_default$spectralResolution
+#
+#   # Process spectrum file
+#   # & Check compatibility with resolution
+#   if(!is.null(beamSpectrumFile)) {
+#     bsf = paste0(projectDir(),"/Run/",beamSpectrumFile)
+#     if(file.exists(bsf)) {
+#       # Get data and check resolution
+#       sp <- read.csv(
+#         file = bsf,
+#         header = FALSE,
+#         sep = "",
+#         stringsAsFactors = FALSE
+#       )
+#
+#       reso = abs(sp[2,1]-sp[1,1])
+#
+#       if ( abs((reso-speReso)/speReso) > 0.01) {
+#         source =  paste0(projectDir(),
+#                          '/../../ChemDBPublic/BeamSpectrumFiles/',
+#                          speReso,'nm/',beamSpectrumFile
+#         )
+#         if(file.exists(source)) {
+#           showModal(modalDialog(
+#             title = ">>>> Spectrum problem <<<< ",
+#             paste0('Local file: ',beamSpectrumFile,
+#                    ' inconsistent with declared
+#                    spectral resolution.',
+#                    '\nCopying valid version fom database...'),
+#             easyClose = TRUE,
+#             footer = modalButton("OK"),
+#             size = 's'
+#           ))
+#           file.copy(from = source,
+#                     to   = paste0(projectDir(),'/Run'))
+#           bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
+#
+#         } else {
+#           showModal(modalDialog(
+#             title = ">>>> Spectrum problem <<<< ",
+#             paste0('Local file: ',beamSpectrumFile,
+#                    ' inconsistent with declared
+#                    spectral resolution.',
+#                    '\nNo alt. version found. ',
+#                    '\nPlease choose a file...'),
+#             easyClose = TRUE,
+#             footer = modalButton("OK"),
+#             size = 's'
+#           ))
+#           bsf = NULL
+#
+#         }
+#       }
+#
+#     } else {
+#       # Attempt to get it from BSF repertory
+#       source =  paste0(projectDir(),
+#         '/../../ChemDBPublic/BeamSpectrumFiles/',
+#         speReso,'nm/',beamSpectrumFile
+#         )
+#       if(file.exists(source)) {
+#         showModal(modalDialog(
+#           title = ">>>> Spectrum problem <<<< ",
+#           paste0('Missing local file: ',beamSpectrumFile,
+#                  '\nCopying it fom database...'),
+#           easyClose = TRUE,
+#           footer = modalButton("OK"),
+#           size = 's'
+#         ))
+#         file.copy(from = source,
+#                   to   = paste0(projectDir(),'/Run'))
+#         bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
+#
+#       } else {
+#         showModal(modalDialog(
+#           title = ">>>> Spectrum problem <<<< ",
+#           paste0('Missing local file: ',beamSpectrumFile,
+#                  '\nNo alt. version found. ',
+#                  '\nPlease choose a file...'),
+#           easyClose = TRUE,
+#           footer = modalButton("OK"),
+#           size = 's'
+#         ))
+#         bsf = NULL
+#
+#       }
+#
+#     }
+#
+#   } else {
+#     beamSpectrumFile = REAC_DATA_default$beamSpectrumFile
+#     bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
+#     showModal(modalDialog(
+#       title = ">>>> Spectrum problem <<<< ",
+#       paste0('No beamSpectrumFile in control.dat',
+#              '\nA default file is installed :',beamSpectrumFile,
+#              '\nPlease choose another file if necessary...'),
+#       easyClose = TRUE,
+#       footer = modalButton("OK"),
+#       size = 's'
+#     ))
+#   }
+#
+#   if( !is.null(bsf) ) {
+#     sp <- read.csv(
+#       file = bsf,
+#       header = FALSE,
+#       sep = "",
+#       stringsAsFactors = FALSE
+#     )
+#     wavelength = sp[, 1]
+#     photonflux = sp[, 2]
+#
+#     spectrumData(
+#       list(
+#         beamSpectrumFileName = bsf,
+#         wavelength = sp[, 1],
+#         photonFlux = sp[, 2]
+#       )
+#     )
+#
+#     ll = reacData()
+#     ll$beamSpectrumFile = basename(bsf)
+#     # ll$spectralResolution = sp[2,1]-sp[1,1]
+#     reacData(ll)
+#   }
+#
+#   tagList(
+#     fileInput(
+#       "beamSpectrumFileName",
+#       label = "Beam spectrum file",
+#       # placeholder = paste0(projectDir(),
+#       #                      '/../../ChemDBPublic/BeamSpectrumFiles/',
+#       #                      speReso,'nm/')
+#       placeholder = ifelse(
+#         !is.null(bsf),
+#         basename(bsf),
+#         'Choose file...')
+#
+#     )
+#   )
+#
+# })
+getSpectrumReso = function(file) {
+  # Get data and check resolution
+  sp <- read.csv(file = file, header = FALSE, sep = "")
+  reso = abs(sp[2,1]-sp[1,1])
+  return(reso)
+}
+loadSpectrumFile = function(source, path, checkReso = TRUE) {
+
+  if(checkReso) {
+    # Check resolution
+    speReso = reacData()$spectralResolution
+    reso = getSpectrumReso(path)
+    check = abs((reso-speReso)/speReso) < 0.01
+    if ( !check ) {
+      showModal(modalDialog(
+        title = ">>>> Spectrum problem <<<< ",
+        paste0('File: ',source,
+               ' is inconsistent with declared
+                   spectral resolution.',
+               '\nPlease choose another file...'),
+        easyClose = TRUE,
+        footer = modalButton("OK"),
+        size = 's'
+      ))
+    }
+    req(check)
   }
 
-  for (n in names(reacData()))
-    assign(n, rlist::list.extract(reacData(), n))
+  fName  = basename(source)
+  target = paste0(projectDir(),'/Run/',fName)
+  if(path != target)
+    file.copy(from = path, to = target, overwrite = TRUE)
 
-  speReso = spectralResolution
-  if( is.null(speReso) | !speReso  %in% c(0.1,1) )
+  # Get spectrum data and store in in memory
+  sp = read.csv(file = target, header = FALSE, sep = "")
+  spectrumData(
+    list(
+      beamSpectrumFileName = fName,
+      wavelength = sp[, 1],
+      photonFlux = sp[, 2]
+    )
+  )
+
+  # Update data
+  ll = reacData()
+  ll$beamSpectrumFile = fName
+  reacData(ll)
+}
+output$irradUI <- renderUI({
+  if (is.null(reacData()))
+    return(NULL)
+
+  speReso = reacData()$spectralResolution
+  if (is.null(speReso) | !speReso %in% c(0.1, 1))
     speReso = REAC_DATA_default$spectralResolution
 
   # Process spectrum file
   # & Check compatibility with resolution
+  beamSpectrumFile = reacData()$beamSpectrumFile
   if(!is.null(beamSpectrumFile)) {
     bsf = paste0(projectDir(),"/Run/",beamSpectrumFile)
     if(file.exists(bsf)) {
-      # Get data and check resolution
-      sp <- read.csv(
-        file = bsf,
-        header = FALSE,
-        sep = "",
-        stringsAsFactors = FALSE
-      )
-
-      reso = abs(sp[2,1]-sp[1,1])
-
+      reso = getSpectrumReso(bsf)
       if ( abs((reso-speReso)/speReso) > 0.01) {
-        source =  paste0(projectDir(),
-                         '/../../ChemDBPublic/BeamSpectrumFiles/',
-                         speReso,'nm/',beamSpectrumFile
-        )
-        if(file.exists(source)) {
-          showModal(modalDialog(
-            title = ">>>> Spectrum problem <<<< ",
-            paste0('Local file: ',beamSpectrumFile,
-                   ' inconsistent with declared
-                   spectral resolution.',
-                   '\nCopying valid version fom database...'),
-            easyClose = TRUE,
-            footer = modalButton("OK"),
-            size = 's'
-          ))
-          file.copy(from = source,
-                    to   = paste0(projectDir(),'/Run'))
-          bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
-
-        } else {
-          showModal(modalDialog(
-            title = ">>>> Spectrum problem <<<< ",
-            paste0('Local file: ',beamSpectrumFile,
-                   ' inconsistent with declared
-                   spectral resolution.',
-                   '\nNo alt. version found. ',
-                   '\nPlease choose a file...'),
-            easyClose = TRUE,
-            footer = modalButton("OK"),
-            size = 's'
-          ))
-          bsf = NULL
-
-        }
-      }
-
-    } else {
-      # Attempt to get it from BSF repertory
-      source =  paste0(projectDir(),
-        '/../../ChemDBPublic/BeamSpectrumFiles/',
-        speReso,'nm/',beamSpectrumFile
-        )
-      if(file.exists(source)) {
         showModal(modalDialog(
           title = ">>>> Spectrum problem <<<< ",
-          paste0('Missing local file: ',beamSpectrumFile,
-                 '\nCopying it fom database...'),
-          easyClose = TRUE,
-          footer = modalButton("OK"),
-          size = 's'
-        ))
-        file.copy(from = source,
-                  to   = paste0(projectDir(),'/Run'))
-        bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
-
-      } else {
-        showModal(modalDialog(
-          title = ">>>> Spectrum problem <<<< ",
-          paste0('Missing local file: ',beamSpectrumFile,
-                 '\nNo alt. version found. ',
-                 '\nPlease choose a file...'),
+          paste0('Local file: ',beamSpectrumFile,
+                 ' inconsistent with declared
+                   spectral resolution.',
+                 '\nPlease choose another file...'),
           easyClose = TRUE,
           footer = modalButton("OK"),
           size = 's'
         ))
         bsf = NULL
-
+      } else {
+        loadSpectrumFile(
+          source    = bsf,
+          path      = bsf,
+          checkReso = FALSE)
       }
-
+    } else {
+      showModal(modalDialog(
+        title = ">>>> Spectrum problem <<<< ",
+        paste0('File: ',beamSpectrumFile,
+               ' does not exist in local repertory.',
+               '\nPlease add it or choose a file...'),
+        easyClose = TRUE,
+        footer = modalButton("OK"),
+        size = 's'
+      ))
+      bsf = NULL
     }
-
-  } else {
-    beamSpectrumFile = REAC_DATA_default$beamSpectrumFile
-    bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
-    showModal(modalDialog(
-      title = ">>>> Spectrum problem <<<< ",
-      paste0('No beamSpectrumFile in control.dat',
-             '\nA default file is installed :',beamSpectrumFile,
-             '\nPlease choose another file if necessary...'),
-      easyClose = TRUE,
-      footer = modalButton("OK"),
-      size = 's'
-    ))
   }
 
-  if( !is.null(bsf) ) {
-    sp <- read.csv(
-      file = bsf,
-      header = FALSE,
-      sep = "",
-      stringsAsFactors = FALSE
-    )
-    wavelength = sp[, 1]
-    photonflux = sp[, 2]
-
-    spectrumData(
-      list(
-        beamSpectrumFileName = bsf,
-        wavelength = sp[, 1],
-        photonFlux = sp[, 2]
-      )
-    )
-  }
+  # List of existing spectrum files with correct resolution
+  source =  paste0(
+    projectDir(),
+    '/../../ChemDBPublic/BeamSpectrumFiles/',
+    speReso,'nm/'
+  )
+  files =  list.files(
+    path = source,
+    pattern = '.txt',
+    full.names = TRUE
+  )
+  names(files)= paste0(speReso,'nm/',basename(files))
 
   tagList(
     fileInput(
       "beamSpectrumFileName",
       label = "Beam spectrum file",
-      placeholder = paste0(projectDir(),
-                           '/../../ChemDBPublic/BeamSpectrumFiles/',
-                           speReso,'nm/')
+      placeholder = ifelse(
+        !is.null(bsf),
+        basename(bsf),
+        'Choose file...')
+    ),
+    selectizeInput(
+      "bsfSelect",
+      label = "Predefined files",
+      choices =c(
+        "Choose one:" = "",
+        files)
     )
   )
 
 })
-observeEvent(
-  input$beamSpectrumFileName, {
-
-    # Get spectrum data
-    sp <- read.csv(
-      file = input$beamSpectrumFileName[1,'datapath'],
-      header = FALSE,
-      sep = "",
-      stringsAsFactors = FALSE
-    )
-
-    fName = input$beamSpectrumFileName[1,'name']
-    spectrumData(
-      list(
-        beamSpectrumFileName = fName,
-        wavelength = sp[, 1],
-        photonFlux = sp[, 2]
-      )
-    )
-
-    # Update data
-    ll = reacData()
-    ll$beamSpectrumFile = fName
-    reacData(ll)
-
-  }
-)
+observeEvent(input$beamSpectrumFileName, {
+  source = input$beamSpectrumFileName
+  loadSpectrumFile(
+    source    = source$name,
+    path      = source$datapath,
+    checkReso = TRUE)
+})
+observeEvent(input$bsfSelect, {
+  req(input$bsfSelect)
+  source = input$bsfSelect
+  loadSpectrumFile(
+    source    = source,
+    path      = source,
+    checkReso = FALSE)
+})
 output$irradUI2 <- renderUI({
   if( is.null(reacData()) | is.null(spectrumData()) ) {
     return(NULL)
@@ -1105,9 +1235,11 @@ output$irradUI2 <- renderUI({
   )
 })
 output$irradParams <- renderPrint({
-  if ( is.null(reacData()) | is.null(spectrumData()) ) {
+  if ( is.null(reacData()) |
+       is.null(spectrumData()) ) {
     return(NULL)
   }
+  req(input$beamIntensity)
 
   for (n in names(reacData()))
     assign(n, rlist::list.extract(reacData(), n))
@@ -1129,7 +1261,7 @@ output$irradParams <- renderPrint({
 
   cat("\n")
   cat("Statistics:\n")
-  cat("Photons **************************\n")
+  cat("Photons ***********************\n")
   cat(
     "flux  / ph.cm^-2.s^-1 =",
     signif(sum(photonFlux), 2), "\n"
@@ -1142,13 +1274,15 @@ output$irradParams <- renderPrint({
     "integ / ph            =",
     signif(sum(photonFlux) * reactorSection * reactionTime, 2), "\n"
   )
-  cat("**********************************")
+  cat("*******************************")
 
 })
 output$irradSpectrum <- renderPlot({
-  if ( is.null(reacData()) | is.null(spectrumData()) ) {
+  if ( is.null(reacData()) |
+       is.null(spectrumData()) ) {
     return(NULL)
   }
+  req(input$beamIntensity) # Ensure that full UI is defined
 
   for (n in names(reacData()))
     assign(n, rlist::list.extract(reacData(), n))
@@ -1156,6 +1290,11 @@ output$irradSpectrum <- renderPlot({
     assign(n, rlist::list.extract(spectrumData(), n))
   for (n in names(gPars))
     assign(n, rlist::list.extract(gPars, n))
+
+  # reso = abs(wavelength[2]-wavelength[1])
+  # if ( abs((reso-spectralResolution)/spectralResolution) > 0.01)
+  #   return(NULL)
+  # WIP ####
 
   selw <- wavelength >= input$spectrumRange[1] &
     wavelength <= input$spectrumRange[2]
@@ -1187,26 +1326,46 @@ output$irradSpectrum <- renderPlot({
   box()
 })
 # Reactor ####
-output$reactorParams <- renderPrint({
-  if (is.null(reacData())) {
-    return(NULL)
-  }
-
-  listPars <- c(
-    "reactorLength",
-    "reactorSection",
-    "gasTemperature",
-    "electronsTemperature",
-    "totalPressure",
-    "reactantsPressure",
-    "reactantsFlux",
-    "reactionTime"
-  )
+output$reactorUI <- renderUI({
+  req( reacData() )
 
   for (n in names(reacData()))
     assign(n, rlist::list.extract(reacData(), n))
 
-  for (n in listPars)
-    cat(n, " = ", unlist(mget(n, ifnotfound = NA)), "\n")
+  ui = list()
+  for (n in listParsReac) {
+    ui[[n]] = numericInput(
+      n,
+      label = paste0(n,' (',listParsReacUnits[n],')'),
+      value = unlist(mget(n, ifnotfound = NA)),
+      width = '200px'
+    )
+  }
+
+  tagList(
+    fixedRow(
+      column(
+        width = 4,
+        ui[[1]],ui[[2]],ui[[3]],ui[[4]],
+      ),
+      column(
+        width = 4,
+        ui[[5]],ui[[6]],ui[[7]],ui[[8]],
+      )
+    )
+  )
+})
+output$reactorParams <- renderPrint({
+  req( input$reactorLength )
+
+  for (n in listParsReac)
+    cat(n, " = ", input[[n]], "\n")
+
+  # Update data
+  ll = reacData()
+  for (n in listParsReac)
+    ll[[n]] = input[[n]]
+  reacData(ll)
+
 })
 # Bottom ####

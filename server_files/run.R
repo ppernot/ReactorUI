@@ -1,3 +1,46 @@
+form = function(x) {
+
+  if(is.logical(x)){
+    val = '.false.'
+    if(x)
+      val = '.true.'
+    return(val)
+  }
+
+  if(is.vector(x) & length(x) > 1) {
+    if(is.numeric(x[1])) {
+      sel = !is.na(x)
+      count = 10 - sum(sel)
+      val = paste(
+        paste(signif(x[sel],5),collapse=','),
+        ',',
+        paste0(count,'*0')
+      )
+    } else {
+       val = paste(x,collapse=',')
+    }
+    return(val)
+  }
+
+  if(is.numeric(x) | is.character(x))
+    return(x)
+
+
+
+}
+generateUpdatedControl = function(ll) {
+  namelist = '&REAC_DATA\n'
+  for(n in names(reacData()) )
+    namelist = paste(
+      namelist,
+      n, '=',  form( reacData()[[n]] ), ',\n'
+    )
+  namelist = paste(namelist,'/')
+print(namelist)
+}
+
+
+
 output$nMCRunSelect <- renderUI({
 
   # Max runs to max MC data samples
@@ -40,13 +83,14 @@ running = reactiveVal(NULL)
 observeEvent(
   input$reactorRun, {
 
-    projectDir  = ctrlPars$projectDir
+    # Generate updated control.dat
+    generateUpdatedControl(reacData()); stop()
 
     # Clean standard outputs
-    stdout = paste0(projectDir,'/Run/runOut.txt')
+    stdout = paste0(projectDir(),'/Run/runOut.txt')
     if(file.exists(stdout))
       file.remove(stdout)
-    stderr = paste0(projectDir,'/Run/runErr.txt')
+    stderr = paste0(projectDir(),'/Run/runErr.txt')
     if(file.exists(stderr))
       file.remove(stderr)
 
@@ -57,8 +101,8 @@ observeEvent(
       running(
         try(
           system2(
-            command = paste0(projectDir,'/Scripts/OneRun_Loc.sh'),
-            args    = c('0',projectDir),
+            command = paste0(projectDir(),'/Scripts/OneRun_Loc.sh'),
+            args    = c('0',projectDir()),
             stdout  = stdout,
             stderr  = stderr,
             wait    = FALSE ),
@@ -69,8 +113,8 @@ observeEvent(
       running(
         try(
           system2(
-            command = paste0(projectDir,'/Scripts/MCRun_Loc.sh'),
-            args    = c(nMC,projectDir),
+            command = paste0(projectDir(),'/Scripts/MCRun_Loc.sh'),
+            args    = c(nMC,projectDir()),
             stdout  = stdout,
             stderr  = stderr,
             wait    = FALSE ),
@@ -82,7 +126,7 @@ observeEvent(
 )
 stdErr = reactiveFileReader(
   500, session,
-  paste0(ctrlPars$projectDir,'/Run/runErr.txt'),
+  paste0(ctrlPars$ProjectDir,'/Run/runErr.txt'),
   readLines
 )
 output$reactorErrors <- renderPrint({
@@ -101,7 +145,7 @@ output$reactorErrors <- renderPrint({
 })
 stdOut = reactiveFileReader(
   500, session,
-  paste0(ctrlPars$projectDir,'/Run/runOut.txt'),
+  paste0(ctrlPars$ProjectDir,'/Run/runOut.txt'),
   readLines
 )
 output$reactorOutput <- renderPrint({

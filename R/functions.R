@@ -118,7 +118,8 @@ read_nml <- function(nml_file) {
 
   nml <- list()
   for (i in 1:length(blckOpen)) {
-    blckName <- substr(fileLines[blckOpen[i]], 2, nchar(fileLines[blckOpen[i]]))
+    blckName <- substr(
+      fileLines[blckOpen[i]], 2, nchar(fileLines[blckOpen[i]]))
     blckName <- gsub("\\s", "", blckName)
     oldNms <- names(nml)
     nml[[i]] <- list()
@@ -126,7 +127,9 @@ read_nml <- function(nml_file) {
 
     carryover <- ""
     for (j in (blckOpen[i] + 1):(blckClse[i] - 1)) {
-      textLine <- paste0(carryover, gsub("\t", "", gsub(" ", "", fileLines[j])))
+      textLine <- paste0(carryover,
+                         gsub("\t", "",
+                              gsub(" ", "", fileLines[j])))
 
       if (substr(textLine, 1, 1) != "!" & textLine != "") {
         # Add a check here, sometimes, if there is a hanging comma,

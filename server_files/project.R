@@ -31,7 +31,7 @@ observeEvent(
   if(is.null(ctrlList)) {
     # Use default data
     REAC_DATA = REAC_DATA_default
-    DN_DATA   = DB_DATA_default
+    DB_DATA   = DB_DATA_default
     # writeCtrl(REAC_DATA,DB_DATA) # Generate control.dat
 
   } else {
@@ -48,8 +48,8 @@ observeEvent(
   }
 
   # Populate/Update reactive values
-  reacData(ctrlList$REAC_DATA)
-  chemDBData(ctrlList$DB_DATA)
+  reacData(REAC_DATA)
+  chemDBData(DB_DATA)
   spectrumData(NULL) # Reinit
 
 })

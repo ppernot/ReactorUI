@@ -1,46 +1,74 @@
 form = function(x) {
-
-  if(is.logical(x)){
-    val = '.false.'
-    if(x)
-      val = '.true.'
+  if (is.logical(x)) {
+    val = ifelse(x, '.true.', '.false.')
     return(val)
   }
 
-  if(is.vector(x) & length(x) > 1) {
-    if(is.numeric(x[1])) {
-      sel = !is.na(x)
-      count = 10 - sum(sel)
-      val = paste(
-        paste(signif(x[sel],5),collapse=','),
-        ',',
-        paste0(count,'*0')
-      )
-    } else {
-       val = paste(x,collapse=',')
-    }
+  if (is.vector(x) & length(x) > 1) {
+    val = paste(x, collapse = ',')
     return(val)
   }
 
-  if(is.numeric(x) | is.character(x))
+  if (is.character(x)) {
+    val = paste0("'", x, "'")
+    return(val)
+  }
+
+  if (is.numeric(x))
     return(x)
 
+}
+formSp = function(x, nsp) {
+  count = 10 - nsp
 
+  if (is.numeric(x[1])) {
+    val = paste0(paste0(signif(x[1:nsp], 5), collapse = ','),
+                 ',', paste0(count, '*0'))
+  } else {
+    val = strsplit(x, ',')[[1]][1:nsp]
+    val = paste0(paste0("'", val, "'", collapse = ','),
+                 ',',
+                 paste0(count, "*''"))
+  }
+
+  return(val)
 
 }
-generateUpdatedControl = function(ll) {
+generateUpdatedControl = function() {
+  ll = reacData()
   namelist = '&REAC_DATA\n'
-  for(n in names(reacData()) )
-    namelist = paste(
-      namelist,
-      n, '=',  form( reacData()[[n]] ), ',\n'
-    )
-  namelist = paste(namelist,'/')
-print(namelist)
+  for (n in names(ll)) {
+    if (n == 'reactantsSpecies' |
+        n == 'reactantsComposition') {
+      nsp = sum(is.finite(ll$reactantsComposition))
+      val = formSp(ll[[n]], nsp)
+    } else {
+      val = form(ll[[n]])
+    }
+    namelist = paste0(namelist,
+                      n, '=',  val, ',\n')
+  }
+  namelist = paste0(namelist, '/')
+
+  ll = chemDBData()
+  namelist = paste0(namelist,'\n','&DB_DATA\n')
+  for (n in names(ll)) {
+    val = form(ll[[n]])
+    namelist = paste0(namelist,
+                      n, '=',  val, ',\n')
+  }
+  namelist = paste0(namelist, '/')
+
+  # Save old control.dat, if any
+  oldCtrl = paste0(projectDir(), '/Run/control.dat')
+  if (file.exists(oldCtrl)) {
+    savCtrl = paste0(projectDir(), '/Run/control.dat_sav')
+    file.copy(from = oldCtrl,
+              to = savCtrl,
+              overwrite = TRUE)
+  }
+  writeLines(namelist, oldCtrl)
 }
-
-
-
 output$nMCRunSelect <- renderUI({
 
   # Max runs to max MC data samples
@@ -84,7 +112,7 @@ observeEvent(
   input$reactorRun, {
 
     # Generate updated control.dat
-    generateUpdatedControl(reacData()); stop()
+    generateUpdatedControl()
 
     # Clean standard outputs
     stdout = paste0(projectDir(),'/Run/runOut.txt')
@@ -97,7 +125,8 @@ observeEvent(
     # Nb MC runs
     nMC = as.numeric(input$nMCRun)
 
-    if (nMC == 0) # Nominal run
+    if (nMC == 0) {
+      # Nominal run
       running(
         try(
           system2(
@@ -109,7 +138,7 @@ observeEvent(
           silent = TRUE
         )
       )
-    else
+    } else {
       running(
         try(
           system2(
@@ -121,12 +150,12 @@ observeEvent(
           silent = TRUE
         )
       )
-
+    }
   }
 )
 stdErr = reactiveFileReader(
   500, session,
-  paste0(ctrlPars$ProjectDir,'/Run/runErr.txt'),
+  paste0(ctrlPars$projectDir,'/Run/runErr.txt'),
   readLines
 )
 output$reactorErrors <- renderPrint({
@@ -145,7 +174,7 @@ output$reactorErrors <- renderPrint({
 })
 stdOut = reactiveFileReader(
   500, session,
-  paste0(ctrlPars$ProjectDir,'/Run/runOut.txt'),
+  paste0(ctrlPars$projectDir,'/Run/runOut.txt'),
   readLines
 )
 output$reactorOutput <- renderPrint({

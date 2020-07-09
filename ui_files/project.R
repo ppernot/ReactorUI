@@ -4,12 +4,12 @@ sidebarLayout(
     h4("Select Project Directory"),
     hr( style="border-color: #666;"),
     shinyDirButton(
-      id = "projectDir", 
-      label = "Choose", 
-      title = "Choose Project Directory", 
-      buttonType = "default", 
+      id = "projectDir",
+      label = "Choose",
+      title = "Choose Project Directory",
+      buttonType = "default",
       class = NULL,
-      icon = shiny::icon('folder'), 
+      icon = shiny::icon('folder'),
       style = NULL)
   ),
   mainPanel(
@@ -17,4 +17,4 @@ sidebarLayout(
     verbatimTextOutput("selectMsg"),
     verbatimTextOutput("contentsMsg")
   )
-) 
+)

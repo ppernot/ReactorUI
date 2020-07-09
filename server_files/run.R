@@ -88,7 +88,7 @@ output$nMCRunSelect <- renderUI({
       'nMCRun',
       label    = '# MC Runs (0: nominal)',
       choices  = choices,
-      width    = '200px'
+      width    = '150px'
     ),
     conditionalPanel(
       condition = "input.nMCRun != 0",
@@ -98,11 +98,19 @@ output$nMCRunSelect <- renderUI({
         value = FALSE
       )
     ),
+    actionButton(
+      'mcClean',
+      'Clean Runs',
+      icon = icon('eraser')
+    ),
+    h3(''),
     numericInput(
       'nbSnap',
       label = '# snapshots per run ',
-      value = reacData()$nbSnapshots
-    )
+      value = reacData()$nbSnapshots,
+      width = '150px'
+    ),
+    h3('')
   )
   ui
 })
@@ -114,7 +122,30 @@ observeEvent(
     reacData(ll)
   })
 )
-
+observeEvent(
+  # Empty MC_Output dir
+  input$mcClean, ({
+    showModal(modalDialog(
+      title = ">>>> WARNING <<<< ",
+      paste0('You are about to remove all results in MC_Output'),
+      easyClose = FALSE,
+      footer = tagList(
+        modalButton("Cancel"),
+        actionButton("mcCleanOK", "OK")
+      ),
+      size = 's'
+    ))
+  })
+)
+observeEvent(input$mcCleanOK, {
+  removeModal()
+  allFiles = list.files(
+    path = paste0(projectDir(),'/MC_Output'),
+    pattern = '.dat',
+    full.names = TRUE
+  )
+  file.remove(allFiles)
+})
 running = reactiveVal(NULL)
 observeEvent(
   input$reactorRun, {

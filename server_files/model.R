@@ -673,6 +673,10 @@ observeEvent(
 
     # Nb MC samples
     nMC = as.numeric(input$nMC)
+    # Update chemDBData
+    ll = chemDBData()
+    ll$nMC = nMC
+    chemDBData(ll)
 
     # Where to save files
     outputDir   = projectDir()

@@ -6,7 +6,8 @@ options(
   shiny.maxRequestSize = 20 * 1024^2,
   width = 60,
   warn = 0,
-  stringsAsFactors = FALSE)
+  stringsAsFactors = FALSE,
+  max.print = 10000)
 
 # options(shiny.json.digits=32)
 # enableBookmarking("server")

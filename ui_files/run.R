@@ -11,12 +11,7 @@ sidebarLayout(
           'reactorRun',
           'Start',
           icon = icon('gear')
-        )#,
-        # actionButton(
-        #   'updateOut',
-        #   'Update',
-        #   icon = icon('file')
-        # )
+        )
       )
     )
   ),

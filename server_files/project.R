@@ -18,6 +18,7 @@ observeEvent(
     input$projectDir)
 
   projectDir(dir)
+  req(projectDir())
 
   # Save status to file
   ctrlPars[['projectDir']] <<- dir
@@ -84,11 +85,15 @@ output$contentsMsg <- renderPrint({
 
       # Consistency checks (data MC runs
       # posterior to control.dat ...)
-      samp = paste0(projectDir(),'/MC_Output/',mcf[1])
+      fmtime = sapply(
+        paste0(projectDir(),'/MC_Output/',mcf),
+        file.mtime
+      )
       ctrl = paste0(projectDir(),'/Run/control.dat')
-      if( file.mtime(samp) < file.mtime(ctrl) )
-        cat('WARNING : MC runs older than control.dat. \n',
-            '          Might be outdated...')
+      if( min(fmtime) < file.mtime(ctrl) )
+        cat('WARNING : some MC runs are older than ',
+            'control.dat. \n',
+            '          They might be outdated...')
     }
 
   }

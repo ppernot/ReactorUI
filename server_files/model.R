@@ -902,159 +902,6 @@ observeEvent(
 )
 # Irradiation ####
 
-# output$irradUI <- renderUI({
-#   if ( is.null(reacData()) ) {
-#     return(NULL)
-#   }
-#
-#   for (n in names(reacData()))
-#     assign(n, rlist::list.extract(reacData(), n))
-#
-#   speReso = spectralResolution
-#   if( is.null(speReso) | !speReso %in% c(0.1,1) )
-#     speReso = REAC_DATA_default$spectralResolution
-#
-#   # Process spectrum file
-#   # & Check compatibility with resolution
-#   if(!is.null(beamSpectrumFile)) {
-#     bsf = paste0(projectDir(),"/Run/",beamSpectrumFile)
-#     if(file.exists(bsf)) {
-#       # Get data and check resolution
-#       sp <- read.csv(
-#         file = bsf,
-#         header = FALSE,
-#         sep = "",
-#         stringsAsFactors = FALSE
-#       )
-#
-#       reso = abs(sp[2,1]-sp[1,1])
-#
-#       if ( abs((reso-speReso)/speReso) > 0.01) {
-#         source =  paste0(projectDir(),
-#                          '/../../ChemDBPublic/BeamSpectrumFiles/',
-#                          speReso,'nm/',beamSpectrumFile
-#         )
-#         if(file.exists(source)) {
-#           showModal(modalDialog(
-#             title = ">>>> Spectrum problem <<<< ",
-#             paste0('Local file: ',beamSpectrumFile,
-#                    ' inconsistent with declared
-#                    spectral resolution.',
-#                    '\nCopying valid version fom database...'),
-#             easyClose = TRUE,
-#             footer = modalButton("OK"),
-#             size = 's'
-#           ))
-#           file.copy(from = source,
-#                     to   = paste0(projectDir(),'/Run'))
-#           bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
-#
-#         } else {
-#           showModal(modalDialog(
-#             title = ">>>> Spectrum problem <<<< ",
-#             paste0('Local file: ',beamSpectrumFile,
-#                    ' inconsistent with declared
-#                    spectral resolution.',
-#                    '\nNo alt. version found. ',
-#                    '\nPlease choose a file...'),
-#             easyClose = TRUE,
-#             footer = modalButton("OK"),
-#             size = 's'
-#           ))
-#           bsf = NULL
-#
-#         }
-#       }
-#
-#     } else {
-#       # Attempt to get it from BSF repertory
-#       source =  paste0(projectDir(),
-#         '/../../ChemDBPublic/BeamSpectrumFiles/',
-#         speReso,'nm/',beamSpectrumFile
-#         )
-#       if(file.exists(source)) {
-#         showModal(modalDialog(
-#           title = ">>>> Spectrum problem <<<< ",
-#           paste0('Missing local file: ',beamSpectrumFile,
-#                  '\nCopying it fom database...'),
-#           easyClose = TRUE,
-#           footer = modalButton("OK"),
-#           size = 's'
-#         ))
-#         file.copy(from = source,
-#                   to   = paste0(projectDir(),'/Run'))
-#         bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
-#
-#       } else {
-#         showModal(modalDialog(
-#           title = ">>>> Spectrum problem <<<< ",
-#           paste0('Missing local file: ',beamSpectrumFile,
-#                  '\nNo alt. version found. ',
-#                  '\nPlease choose a file...'),
-#           easyClose = TRUE,
-#           footer = modalButton("OK"),
-#           size = 's'
-#         ))
-#         bsf = NULL
-#
-#       }
-#
-#     }
-#
-#   } else {
-#     beamSpectrumFile = REAC_DATA_default$beamSpectrumFile
-#     bsf = paste0(projectDir(),'/Run/',beamSpectrumFile)
-#     showModal(modalDialog(
-#       title = ">>>> Spectrum problem <<<< ",
-#       paste0('No beamSpectrumFile in control.dat',
-#              '\nA default file is installed :',beamSpectrumFile,
-#              '\nPlease choose another file if necessary...'),
-#       easyClose = TRUE,
-#       footer = modalButton("OK"),
-#       size = 's'
-#     ))
-#   }
-#
-#   if( !is.null(bsf) ) {
-#     sp <- read.csv(
-#       file = bsf,
-#       header = FALSE,
-#       sep = "",
-#       stringsAsFactors = FALSE
-#     )
-#     wavelength = sp[, 1]
-#     photonflux = sp[, 2]
-#
-#     spectrumData(
-#       list(
-#         beamSpectrumFileName = bsf,
-#         wavelength = sp[, 1],
-#         photonFlux = sp[, 2]
-#       )
-#     )
-#
-#     ll = reacData()
-#     ll$beamSpectrumFile = basename(bsf)
-#     # ll$spectralResolution = sp[2,1]-sp[1,1]
-#     reacData(ll)
-#   }
-#
-#   tagList(
-#     fileInput(
-#       "beamSpectrumFileName",
-#       label = "Beam spectrum file",
-#       # placeholder = paste0(projectDir(),
-#       #                      '/../../ChemDBPublic/BeamSpectrumFiles/',
-#       #                      speReso,'nm/')
-#       placeholder = ifelse(
-#         !is.null(bsf),
-#         basename(bsf),
-#         'Choose file...')
-#
-#     )
-#   )
-#
-# })
 getSpectrumReso = function(file) {
   # Get data and check resolution
   sp <- read.csv(file = file, header = FALSE, sep = "")
@@ -1104,8 +951,7 @@ loadSpectrumFile = function(source, path, checkReso = TRUE) {
   reacData(ll)
 }
 output$irradUI <- renderUI({
-  if (is.null(reacData()))
-    return(NULL)
+  req(reacData)
 
   speReso = reacData()$spectralResolution
   if (is.null(speReso) | !speReso %in% c(0.1, 1))
@@ -1182,6 +1028,8 @@ output$irradUI <- renderUI({
   )
 
 })
+outputOptions(output, "irradUI",
+              suspendWhenHidden = FALSE)
 observeEvent(input$beamSpectrumFileName, {
   source = input$beamSpectrumFileName
   loadSpectrumFile(

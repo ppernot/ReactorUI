@@ -46,7 +46,7 @@ generateUpdatedControl = function() {
       val = form(ll[[n]])
     }
     namelist = paste0(namelist,
-                      n, '=',  val, ',\n')
+                      ' ', n, '=',  val, ',\n')
   }
   namelist = paste0(namelist, '/')
 
@@ -55,7 +55,7 @@ generateUpdatedControl = function() {
   for (n in names(ll)) {
     val = form(ll[[n]])
     namelist = paste0(namelist,
-                      n, '=',  val, ',\n')
+                      ' ', n, '=',  val, ',\n')
   }
   namelist = paste0(namelist, '/')
 
@@ -89,6 +89,14 @@ output$nMCRunSelect <- renderUI({
       label    = '# MC Runs (0: nominal)',
       choices  = choices,
       width    = '200px'
+    ),
+    conditionalPanel(
+      condition = "input.nMCRun != 0",
+      checkboxInput(
+        'appendMC',
+        label = 'Append to existing MC runs',
+        value = FALSE
+      )
     ),
     numericInput(
       'nbSnap',
@@ -139,11 +147,38 @@ observeEvent(
         )
       )
     } else {
+      if(input$appendMC) {
+        mcf = list.files(
+          path = paste0(projectDir(),'/MC_Output'),
+          pattern = 'fracmol_'
+        )
+        nmc = length(mcf)
+        first = nmc # Run 0 always present
+        nrun  = nMC - 1 # if append, do not do nominal
+        nSamples = chemDBData()$nMC
+        if(first+nrun > nSamples) {
+          nrunMax = nSamples - first
+          showModal(modalDialog(
+            title = ">>>> Too many runs <<<< ",
+            paste0('The cumulated number of runs (',first + nrun,
+                   ') exceeds the number of chemDB samples.\n',
+                   'This session will be truncated to ',nrunMax,' runs.\n',
+                   'If you need more, generate more chemDB samples.'),
+            easyClose = TRUE,
+            footer = modalButton("OK"),
+            size = 's'
+          ))
+          nrun = nrunMax
+        }
+      } else {
+        first = 0
+        nrun  = nMC
+      }
       running(
         try(
           system2(
-            command = paste0(projectDir(),'/Scripts/MCRun_Loc.sh'),
-            args    = c(nMC,projectDir()),
+            command = paste0(projectDir(),'/Scripts/MCRun_Loc1.sh'),
+            args    = c(first,nrun,projectDir()),
             stdout  = stdout,
             stderr  = stderr,
             wait    = FALSE ),

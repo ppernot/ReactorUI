@@ -955,7 +955,7 @@ loadSpectrumFile = function(source, path, checkReso = TRUE) {
   reacData(ll)
 }
 output$irradUI <- renderUI({
-  req(reacData)
+  req(reacData())
 
   speReso = reacData()$spectralResolution
   if (is.null(speReso) | !speReso %in% c(0.1, 1))
@@ -1050,9 +1050,8 @@ observeEvent(input$bsfSelect, {
     checkReso = FALSE)
 })
 output$irradUI2 <- renderUI({
-  if( is.null(reacData()) | is.null(spectrumData()) ) {
-    return(NULL)
-  }
+  req(reacData())
+  req(spectrumData())
 
   for (n in names(reacData()))
     assign(n, rlist::list.extract(reacData(), n))
@@ -1087,10 +1086,8 @@ output$irradUI2 <- renderUI({
   )
 })
 output$irradParams <- renderPrint({
-  if ( is.null(reacData()) |
-       is.null(spectrumData()) ) {
-    return(NULL)
-  }
+  req(reacData())
+  req(spectrumData())
   req(input$beamIntensity)
 
   for (n in names(reacData()))
@@ -1130,10 +1127,8 @@ output$irradParams <- renderPrint({
 
 })
 output$irradSpectrum <- renderPlot({
-  if ( is.null(reacData()) |
-       is.null(spectrumData()) ) {
-    return(NULL)
-  }
+  req(reacData())
+  req(spectrumData())
   req(input$beamIntensity) # Ensure that full UI is defined
 
   for (n in names(reacData()))

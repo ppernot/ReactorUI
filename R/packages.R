@@ -17,6 +17,9 @@ for (lib in libs) {
   }
 }
 
+# Use development version (Bug correction about "New folder")
+# remotes::install_github("thomasp85/shinyFiles")
+
 # Github
 # if (!require("nml", character.only = TRUE, quietly = TRUE)) {
 #   devtools::install_github("jsta/nml")

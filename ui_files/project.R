@@ -1,16 +1,42 @@
 sidebarLayout(
   sidebarPanel(
     width = sideWidth,
-    h4("Select Project Directory"),
-    hr( style="border-color: #666;"),
-    shinyDirButton(
-      id = "projectDir",
-      label = "Choose",
-      title = "Choose Project Directory",
-      buttonType = "default",
-      class = NULL,
-      icon = shiny::icon('folder'),
-      style = NULL)
+    tabsetPanel(
+      tabPanel(
+        title = h4('Open/New'),
+        h3(' '),
+        checkboxInput(
+          'newProj',
+          label = 'New Project'
+        ),
+        conditionalPanel(
+          condition = "input.newProj != 0",
+          selectInput(
+            'newProjTemplate',
+            label = 'Template',
+            choices = c('APSIS','Titan')
+          )
+        ),
+        shinyDirButton(
+          id = "projectDir",
+          label = "Select a Project",
+          title = "Select a Project Directory",
+          buttonType = "default",
+          class = NULL,
+          icon = shiny::icon('folder'),
+          style = NULL)
+      ),
+      tabPanel(
+        title = h4('Save'),
+        h3(' '),
+        actionButton(
+          'saveProj',
+          'Save Project',
+          icon = icon('gear')
+        )
+
+      )
+    )
   ),
   mainPanel(
     width = mainWidth,

@@ -4,10 +4,11 @@ Sys.setlocale(
   locale = "C")
 options(
   shiny.maxRequestSize = 20 * 1024^2,
-  width = 60,
+  width = 80,
   warn = 0,
   stringsAsFactors = FALSE,
-  max.print = 10000)
+  max.print = 10000,
+  shiny.autoload.r = NULL)
 
 # options(shiny.json.digits=32)
 # enableBookmarking("server")
@@ -66,12 +67,12 @@ DB_DATA_default = list(
 )
 
 REAC_DATA_default = list(
-  runId                = "apsis",
+  runId                = 'apsis',
   ifRestart            = FALSE,
-  debug                = FALSE,
+  debug                = TRUE,
   reactorLength        = 50,
   reactorSection       = 105,
-  beamSpectrumFile     = "surf73.txt",
+  beamSpectrumFile     = 'surf73.txt',
   spectralResolution   = 1,
   spectrumRange        = c(50,200),
   beamIntensity        = 5e+16,
@@ -81,10 +82,32 @@ REAC_DATA_default = list(
   totalPressure        = 700,
   reactantsPressure    = 700,
   reactantsFlux        = 7,
-  reactantsSpecies     = c("N2","CH4"),
+  reactantsSpecies     = c('N2,CH4'),
   reactantsComposition = c(0.9,0.1),
   reactionTime         = 3600,
   nbSnapshots          = 100
+)
+
+REAC_DATA_Titan = list(
+  runId                = 'Titan',
+  ifRestart            = FALSE,
+  debug                = TRUE,
+  reactorLength        = 5e7,
+  reactorSection       = 96,
+  beamSpectrumFile     = 'stellarflux.txt',
+  spectralResolution   = 1,
+  spectrumRange        = c(50,200),
+  beamIntensity        = 1.1e11,
+  beamSection          = 96,
+  gasTemperature       = 150,
+  electronsTemperature = 150,
+  totalPressure        = 4e-4,
+  reactantsPressure    = 4e-4,
+  reactantsFlux        = 4e-4,
+  reactantsSpecies     = c('N2,CH4'),
+  reactantsComposition = c(0.90, 0.10),
+  reactionTime         = 2e8,
+  nbSnapshots          = 110
 )
 
 listParsReac <- c(
@@ -97,6 +120,7 @@ listParsReac <- c(
   "reactantsFlux",
   "reactionTime"
 )
+
 listParsReacUnits <- c(
   reactorLength = 'cm',
   reactorSection = 'cm^2',

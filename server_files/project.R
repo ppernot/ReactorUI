@@ -10,32 +10,60 @@ reacData     = reactiveVal(NULL)
 chemDBData   = reactiveVal(NULL)
 spectrumData = reactiveVal(NULL)
 
+# Open ####
 observeEvent(
   input$projectDir, {
 
   dir = shinyFiles::parseDirPath(
     roots = roots,
     input$projectDir)
-
   projectDir(dir)
   req(projectDir())
 
-  # Save status to file
-  ctrlPars[['projectDir']] <<- dir
-  if (!is.null(ctrlPars$projectDir) &
-      is.character(ctrlPars$projectDir))
-    rlist::list.save(ctrlPars, 'ctrlParams.yaml')
+  if(input$newProj) {
+    for (dname in c('/Run',
+                    '/Run/Photo',
+                    '/MC_Output',
+                    '/MC_Input',
+                    '/MC_Input/Photoprocs',
+                    '/MC_Input/Reactions',
+                    '/Scripts') )
+      dir.create(paste0(dir,dname),showWarnings = FALSE)
 
-  # Attempt reading "control.dat"
-  ctrlList = readCtrl(dir)
+    file.copy(
+      from = paste0(dir,'/../../Reactor/reactor'),
+      to   = paste0(dir,'/Run/reactor'),
+      overwrite = TRUE)
+    file.copy(
+      from = paste0(dir,'/../../Reactor/OneRun_Loc.sh'),
+      to   = paste0(dir,'/Scripts/OneRun_Loc.sh'),
+      overwrite = TRUE)
+    file.copy(
+      from = paste0(dir,'/../../Reactor/MCRun_Loc1.sh'),
+      to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
+      overwrite = TRUE)
 
-  if(is.null(ctrlList)) {
-    # Use default data
-    REAC_DATA = REAC_DATA_default
     DB_DATA   = DB_DATA_default
-    # writeCtrl(REAC_DATA,DB_DATA) # Generate control.dat
+    REAC_DATA = REAC_DATA_default
+    if(input$newProjTemplate != 'APSIS')
+      REAC_DATA = REAC_DATA_Titan
+
+    # Copy spectrum file
+    fromFile =  paste0(
+      dir,
+      '/../../ChemDBPublic/BeamSpectrumFiles/1nm/',
+      REAC_DATA$beamSpectrumFile
+    )
+    toFile   = paste0(
+      dir,
+      '/Run/',
+      REAC_DATA$beamSpectrumFile)
+    file.copy(from = fromFile, to = toFile)
 
   } else {
+
+    # Attempt at reading "control.dat"
+    ctrlList = readCtrl(dir)
 
     if(is.null(ctrlList$REAC_DATA))
       REAC_DATA = REAC_DATA_default
@@ -53,10 +81,19 @@ observeEvent(
   chemDBData(DB_DATA)
   spectrumData(NULL) # Reinit
 
+  # Save status to file
+  ctrlPars[['projectDir']] <<- dir
+  if (!is.null(ctrlPars$projectDir) &
+      is.character(ctrlPars$projectDir))
+    rlist::list.save(ctrlPars, 'ctrlParams.yaml')
+
 })
+# Save ####
+
+# Outputs ####
 output$selectMsg <- renderPrint({
   if (is.null(projectDir())) {
-    cat('Select a project directory\n')
+    cat('Select/Create a project directory\n')
 
   } else {
     cat('Selected: ', projectDir())
@@ -98,4 +135,8 @@ output$contentsMsg <- renderPrint({
 
   }
 
+})
+observeEvent(
+  input$saveProj, {
+    generateUpdatedControl()
 })

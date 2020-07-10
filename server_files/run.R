@@ -88,7 +88,7 @@ output$nMCRunSelect <- renderUI({
       'nMCRun',
       label    = '# MC Runs (0: nominal)',
       choices  = choices,
-      width    = '150px'
+      width    = '200px'
     ),
     conditionalPanel(
       condition = "input.nMCRun != 0",
@@ -108,7 +108,7 @@ output$nMCRunSelect <- renderUI({
       'nbSnap',
       label = '# snapshots per run ',
       value = reacData()$nbSnapshots,
-      width = '150px'
+      width = '200px'
     ),
     h3('')
   )

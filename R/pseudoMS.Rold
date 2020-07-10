@@ -1,0 +1,214 @@
+# Compute entropy evolution for products
+# in N2/CH4/He plasma and effect of inputs 
+# uncertainty
+
+# Load Stoechiomerty/Mass functions
+source('./Scripts/stoeFuns.R')
+
+# Start #####
+# setwd('..')
+
+PRINT=TRUE
+
+# Threshold on log concentrations
+concThresh = -50
+
+# Largest mass to plot
+maxMass = 120
+
+# Load sample files
+files = list.files(path="./MC_Output",pattern="fracmol_",full.names=TRUE)
+nf = length(files)
+
+# Build species list
+x = read.table(files[1], header=TRUE, skip=0)
+time=x[-1,1]
+nt = length(time)
+
+# Species list
+line  = readLines(con=files[1], n=1)
+spAll = scan(text=line, what=character(), 
+             strip.white=TRUE, quiet=TRUE)[-1]
+spDel= c("E","CxHyNz+","SOOT","He",'C4H2X',
+         'SOOTC+','Products','CxHy+','CxHy','CxHyNz','SOOTC','SOOTN')
+sel = ! spAll %in% spDel 
+species=spAll[sel]
+
+ions=grepl("\\+$",species)
+nIons=sum(ions)
+nNeus=sum(!ions)
+nsp= length(species)
+
+# Stoechiometry
+compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
+colnames(compo)=elements
+mass  = apply(compo,1,massFormula)
+names(mass) = species
+dummyMass   = round(max(mass,na.rm=TRUE)+2)
+dummySpecies = c('CxHy','CxHy+','CxHyNz','CxHyNz+',
+                 'Products','E','SOOTC','SOOTC+',
+                 'C4H2X','HC3NX','HC5NX','SOOTS','SOOTN')
+sel2 = dummySpecies %in% species
+mass[dummySpecies[sel2]] = dummyMass
+radic = apply(compo,1,numElec)
+radic = radic%%2
+
+orderByMass=order(mass)
+species=species[orderByMass]
+mass=mass[orderByMass]
+compo=compo[orderByMass,]
+ions=ions[orderByMass]
+iN2= which(species=="N2")
+
+# Get mole fractions at last time
+conc=matrix(NA,ncol=nf,nrow=nsp)
+for(i in seq_along(files) ) {
+  tab = as.vector(read.table(files[i], header=FALSE, skip=(nt+1)))
+  tab = unlist(tab[-1])
+  conc[1:nsp,i] = tab[sel]   
+}
+# Sort table by increasing mass
+conc = conc[orderByMass,]
+
+# Filter out undesirable values
+conc = ifelse(conc==0, NA, log10(conc/conc[iN2]))
+conc = ifelse(conc<=concThresh,NA,conc) 
+
+yMean = apply(conc,1,function(x) mean(x,na.rm=TRUE))
+ySd   = apply(conc,1,function(x) sd(x,na.rm=TRUE))
+yMax  = apply(conc,1,function(x) max(x,na.rm=TRUE))
+yInf95= yMean-2*ySd
+ySup95= yMean+2*ySd
+
+save(yMean,ySd,species,file=paste('./MC_Output/yStats.Rda',sep=''))
+
+
+if(PRINT) pdf(file=paste('conc.pdf',sep=''),
+              width=9,height=12)
+col=c('brown','blue')
+col=rep(col,6)
+
+dummy = split.screen(c(1,2))
+screen(1)  
+azot=grepl("N",species)
+neus=!ions & !azot
+sel= neus & yMean > -15
+sel[is.na(sel)]=FALSE
+nSel=sum(sel)
+colors=col[1+colorCx(species[sel][nSel:1])]
+pch = 15+ radic[sel][nSel:1]
+par(mar=c(5,3,5,1),cex=0.8,cex.axis=1.5,cex.lab=1.5)
+plot(yMean[sel][nSel:1],1:nSel,type='p',pch=pch, log='', 
+     ylim=c(0,nSel+1),yaxs='i',xlim=c(-15,-3), 
+     col=colors,main='Neutral species\n',xaxt='n',
+     ylab='', xlab="Log10 Mole Fraction",yaxt='n')
+axis(1,at=-14:-4)
+axis(3,at=-14:-4)
+mtext(paste(species[sel][nSel:1],'  -',sep=''),
+      at=1:nSel,side=2,cex=0.5,las=1,adj=1,col=colors)
+segments(-20,1:nSel,
+         yMean[sel][nSel:1],1:nSel,col='gray80',lwd=1)
+# segments(yInf95[sel][nSel:1],1:nSel,
+#          ySup95[sel][nSel:1],1:nSel,
+#          col=colors,lwd=2)
+grid(col="gray50")
+Sys.sleep(0)
+
+screen(2)  
+sel= ions & yMean > -15
+sel[is.na(sel)]=FALSE
+nSel=sum(sel)
+colors=col[1+colorCx(species[sel][nSel:1])]
+par(mar=c(5,3,5,1),cex=0.8,cex.axis=1.5,cex.lab=1.5)
+plot(yMean[sel][nSel:1],1:nSel,type='p',pch=15, log='', 
+     ylim=c(0,nSel+1),yaxs='i',xlim=c(-15,-3), 
+     col=colors,main='Ions\n',xaxt='n',
+     ylab='', xlab="Log10 Mole Fraction",yaxt='n')
+axis(1,at=-14:-4)
+axis(3,at=-14:-4)
+mtext(paste(species[sel][nSel:1],'  -',sep=''),
+      at=1:nSel,side=2,cex=0.5,las=1,adj=1,col=colors)
+segments(-20,1:nSel,
+         yMean[sel][nSel:1],1:nSel,col='gray80',lwd=1)
+# segments(yInf95[sel][nSel:1],1:nSel,
+#          ySup95[sel][nSel:1],1:nSel,
+#          col=colors,lwd=2)
+grid(col="gray50")
+Sys.sleep(0)
+
+dummy=close.screen(all = TRUE)
+if(PRINT)  dev.off()
+
+
+if(PRINT) pdf(file=paste('conc_CvsN.pdf',sep=''),
+              width=9,height=12)
+
+dummy = split.screen(c(1,2))
+screen(1)  
+azot=grepl("N",species)
+neus=!ions & !azot
+sel= neus & yMean > -15
+sel[is.na(sel)]=FALSE
+nSel=sum(sel)
+colors=col[1+colorCx(species[sel][nSel:1])]
+par(mar=c(5,3,2,1),cex=0.8,cex.axis=1.5,cex.lab=1.5)
+plot(yMean[sel][nSel:1],1:nSel,type='p',pch=15, log='', 
+     ylim=c(0,nSel+1),yaxs='i',xlim=c(-15,-3), 
+     col=colors,main='CxHy',
+     ylab='', xlab="Log10 Mole Fraction",yaxt='n')
+mtext(paste(species[sel][nSel:1],'  -',sep=''),
+      at=1:nSel,side=2,cex=0.5,las=1,adj=1,col=colors)
+segments(-20,1:nSel,
+         ySup95[sel][nSel:1],1:nSel,col='gray80',lwd=1)
+segments(yInf95[sel][nSel:1],1:nSel,
+         ySup95[sel][nSel:1],1:nSel,
+         col=colors,lwd=2)
+grid(col="gray50")
+Sys.sleep(0)
+
+screen(2) 
+sel= (azot & !ions) & yMean > -15
+sel[is.na(sel)]=FALSE
+nSel=sum(sel)
+colors=col[1+colorCx(species[sel][nSel:1])]
+par(mar=c(5,3,2,1),cex=0.8,cex.axis=1.5,cex.lab=1.5)
+plot(yMean[sel][nSel:1],1:nSel,type='p',pch=15, log='', 
+     ylim=c(0,nSel+1),yaxs='i',xlim=c(-15,-3), 
+     col=colors,main='CxHyNz',
+     ylab='', xlab="Log10 Mole Fraction",yaxt='n')
+mtext(paste(species[sel][nSel:1],'  -',sep=''),
+      at=1:nSel,side=2,cex=0.5,las=1,adj=1,col=colors)
+segments(-20,1:nSel,
+         ySup95[sel][nSel:1],1:nSel,col='gray80',lwd=1)
+segments(yInf95[sel][nSel:1],1:nSel,
+         ySup95[sel][nSel:1],1:nSel,
+         col=colors,lwd=2)
+grid(col="gray50")
+Sys.sleep(0)
+
+dummy=close.screen(all = TRUE)
+if(PRINT)  dev.off()
+
+if(PRINT) pdf(file='fig_ZP.pdf',width=12,height=8)
+
+neus=!ions
+sel= neus & yMean > -15
+sel[is.na(sel)]=FALSE
+nSel=sum(sel)
+colors=col[1+colorCx(species[sel])]
+par(mar=c(5,5,1,1),cex=0.8,cex.axis=1.5,cex.lab=1.5)
+plot(1:nSel,yMean[sel],type='p',pch=15, log='', 
+     xlim=c(0,nSel+1),xaxs='i',ylim=c(-15,-3),
+     col=colors,main=,
+     xlab='', ylab="Log10 Mole Fraction",xaxt='n')
+
+segments(1:nSel,-20,
+         1:nSel,-2,col='gray80',lwd=1)
+segments(1:nSel,yInf95[sel],
+         1:nSel,ySup95[sel],
+         col=colors,lwd=2)
+text(1:nSel,ySup95[sel]+0.1,
+     labels=species[sel],
+     cex=0.8,srt=90,adj=0,col=colors)
+grid(col="gray50")
+if(PRINT)  dev.off()

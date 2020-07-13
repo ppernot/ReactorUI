@@ -42,6 +42,14 @@ observeEvent(
       from = paste0(dir,'/../../Reactor/MCRun_Loc1.sh'),
       to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
       overwrite = TRUE)
+    file.copy(
+      from = paste0(dir,'/../../Reactor/OneRun_Cloud.sh'),
+      to   = paste0(dir,'/Scripts/OneRun_Loc.sh'),
+      overwrite = TRUE)
+    file.copy(
+      from = paste0(dir,'/../../Reactor/MCRun_Cloud.sh'),
+      to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
+      overwrite = TRUE)
 
     DB_DATA   = DB_DATA_default
     REAC_DATA = REAC_DATA_default

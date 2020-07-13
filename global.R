@@ -4,7 +4,7 @@ Sys.setlocale(
   locale = "C")
 options(
   shiny.maxRequestSize = 20 * 1024^2,
-  width = 80,
+  width = 100,
   warn = 0,
   stringsAsFactors = FALSE,
   max.print = 10000,

@@ -98,11 +98,11 @@ output$nMCRunSelect <- renderUI({
         value = FALSE
       )
     ),
-    actionButton(
-      'mcClean',
-      'Clean Runs',
-      icon = icon('eraser')
-    ),
+    # actionButton(
+    #   'mcClean',
+    #   'Clean Runs',
+    #   icon = icon('eraser')
+    # ),
     h3(''),
     numericInput(
       'nbSnap',
@@ -122,30 +122,30 @@ observeEvent(
     reacData(ll)
   })
 )
-observeEvent(
-  # Empty MC_Output dir
-  input$mcClean, ({
-    showModal(modalDialog(
-      title = ">>>> WARNING <<<< ",
-      paste0('You are about to remove all results in MC_Output'),
-      easyClose = FALSE,
-      footer = tagList(
-        modalButton("Cancel"),
-        actionButton("mcCleanOK", "OK")
-      ),
-      size = 's'
-    ))
-  })
-)
-observeEvent(input$mcCleanOK, {
-  removeModal()
-  allFiles = list.files(
-    path = paste0(projectDir(),'/MC_Output'),
-    pattern = '.dat',
-    full.names = TRUE
-  )
-  file.remove(allFiles)
-})
+# observeEvent(
+#   # Empty MC_Output dir
+#   input$mcClean, ({
+#     showModal(modalDialog(
+#       title = ">>>> WARNING <<<< ",
+#       paste0('You are about to remove all results in MC_Output'),
+#       easyClose = FALSE,
+#       footer = tagList(
+#         modalButton("Cancel"),
+#         actionButton("mcCleanOK", "OK")
+#       ),
+#       size = 's'
+#     ))
+#   })
+# )
+# observeEvent(input$mcCleanOK, {
+#   removeModal()
+#   allFiles = list.files(
+#     path = paste0(projectDir(),'/MC_Output'),
+#     pattern = '.dat',
+#     full.names = TRUE
+#   )
+#   file.remove(allFiles)
+# })
 
 # Local ####
 running = reactiveVal(NULL)
@@ -206,7 +206,15 @@ observeEvent(
       } else {
         first = 0
         nrun  = nMC
+        # Clean existing runs to avoid mixing with older runs
+        allFiles = list.files(
+          path = paste0(projectDir(),'/MC_Output'),
+          pattern = '.dat',
+          full.names = TRUE
+        )
+        file.remove(allFiles)
       }
+
       running(
         try(
           system2(
@@ -278,112 +286,117 @@ output$reactorOutput <- renderPrint({
 })
 
 # Cloud ####
-output$cloudSelect <- renderUI({
-
-  # Max runs to max MC data samples
-  InputMCDir = paste0(projectDir(),'/MC_Input/Reactions')
-  maxMC = length(
-    list.files(path = InputMCDir, pattern = '.csv'))
-  maxMC = maxMC - 1 # Do not count nominal run
-
-  # Rudimentary dispatch strategy
-  nMC = as.numeric(input$nMCRun)
-  if(nMC <= 10) {
-    CL_SIZE = max(nMC,1) # Size of cluster
-    NB_CORE = 1          # Nb cores on VM
-    RUN_BY_CORE = 1
-  } else if(nMC > 10 & nMC <= 100) {
-    CL_SIZE = 10
-    NB_CORE = nMC / CL_SIZE
-    RUN_BY_CORE = 1
-  } else{
-    CL_SIZE = 10    # Size of cluster
-    NB_CORE = 10    # Nb cores on VM
-    RUN_BY_CORE = nMC/(CL_SIZE*NB_CORE)
-  }
-
-  ui <- tagList(
-    fluidRow(
-      column(
-        width = 6,
-        numericInput(
-          'clSize',
-          label = 'Cluster size',
-          value = CL_SIZE,
-          min   =  1,
-          max   = 10,
-          width = '200px'
-        ),
-        numericInput(
-          'nbCore',
-          label = 'Cores per VM',
-          value = NB_CORE,
-          min   = 1,
-          max   = 20,
-          width = '200px'
-        )
-      ),
-      column(
-        width = 6,
-        numericInput(
-          'runByCore',
-          label = '# runs by core',
-          value = RUN_BY_CORE,
-          min   =  1,
-          max   = 10,
-          width = '200px'
-        )
-      )
-    ),
-    h3('')
-  )
-  ui
-})
-observeEvent(
-  input$createCluster, {
-
-    # Generate updated control.dat
-    generateUpdatedControl()
-
-    # Clean standard outputs
-    stdout = paste0(projectDir(), '/Run/runOut.txt')
-    if (file.exists(stdout))
-      file.remove(stdout)
-    stderr = paste0(projectDir(), '/Run/runErr.txt')
-    if (file.exists(stderr))
-      file.remove(stderr)
-
-    # Generate cluster config file used by all c-scripts
-    running('')
-    config = paste0(
-      'export CL_SIZE=',input$clSize,'\n',
-      'export NB_CORE=',input$nbCore,'\n',
-      'export MC_RUNS=',max(input$nMCRun,1),'\n',
-      'export VM_KEY=PPkey\n',
-      'export VM_FLAVOR=os.',input$nbCore,'\n',
-      'export VM_IMAGE=titan_2018-07-04'
-    )
-    writeLines(paste0('>>> Generate cl_config.rc <<<\n',config), stdout)
-    writeLines('',stderr)
-    oldCtrl = paste0(projectDir(), '/Run/cl_config.rc')
-    if (file.exists(oldCtrl)) {
-      savCtrl = paste0(projectDir(), '/Run/cl_config.rc_sav')
-      file.copy(from = oldCtrl,
-                to = savCtrl,
-                overwrite = TRUE)
-    }
-    writeLines(config, oldCtrl)
-
-    # Create cluster
-    writeLines('Creating cluster', stdout)
-    running(try(system2(
-      command = paste0(projectDir(), '/../../Reactor/claunch.sh'),
-      args    = projectDir(),
-      stdout  = stdout,
-      stderr  = stderr,
-      wait    = FALSE
-    ),
-    silent = TRUE))
-
-  }
-)
+#
+# RQ: requires a solid process and errors management
+# (errors in the nova scripts might generate infinite
+# loops of error messages)
+#
+# output$cloudSelect <- renderUI({
+#
+#   # Max runs to max MC data samples
+#   InputMCDir = paste0(projectDir(),'/MC_Input/Reactions')
+#   maxMC = length(
+#     list.files(path = InputMCDir, pattern = '.csv'))
+#   maxMC = maxMC - 1 # Do not count nominal run
+#
+#   # Rudimentary dispatch strategy
+#   nMC = as.numeric(input$nMCRun)
+#   if(nMC <= 10) {
+#     CL_SIZE = max(nMC,1) # Size of cluster
+#     NB_CORE = 1          # Nb cores on VM
+#     RUN_BY_CORE = 1
+#   } else if(nMC > 10 & nMC <= 100) {
+#     CL_SIZE = 10
+#     NB_CORE = nMC / CL_SIZE
+#     RUN_BY_CORE = 1
+#   } else{
+#     CL_SIZE = 10    # Size of cluster
+#     NB_CORE = 10    # Nb cores on VM
+#     RUN_BY_CORE = nMC/(CL_SIZE*NB_CORE)
+#   }
+#
+#   ui <- tagList(
+#     fluidRow(
+#       column(
+#         width = 6,
+#         numericInput(
+#           'clSize',
+#           label = 'Cluster size',
+#           value = CL_SIZE,
+#           min   =  1,
+#           max   = 10,
+#           width = '200px'
+#         ),
+#         numericInput(
+#           'nbCore',
+#           label = 'Cores per VM',
+#           value = NB_CORE,
+#           min   = 1,
+#           max   = 20,
+#           width = '200px'
+#         )
+#       ),
+#       column(
+#         width = 6,
+#         numericInput(
+#           'runByCore',
+#           label = '# runs by core',
+#           value = RUN_BY_CORE,
+#           min   =  1,
+#           max   = 10,
+#           width = '200px'
+#         )
+#       )
+#     ),
+#     h3('')
+#   )
+#   ui
+# })
+# observeEvent(
+#   input$createCluster, {
+#
+#     # Generate updated control.dat
+#     generateUpdatedControl()
+#
+#     # Clean standard outputs
+#     stdout = paste0(projectDir(), '/Run/runOut.txt')
+#     if (file.exists(stdout))
+#       file.remove(stdout)
+#     stderr = paste0(projectDir(), '/Run/runErr.txt')
+#     if (file.exists(stderr))
+#       file.remove(stderr)
+#
+#     # Generate cluster config file used by all c-scripts
+#     running('')
+#     config = paste0(
+#       'export CL_SIZE=',input$clSize,'\n',
+#       'export NB_CORE=',input$nbCore,'\n',
+#       'export MC_RUNS=',max(input$nMCRun,1),'\n',
+#       'export VM_KEY=PPkey\n',
+#       'export VM_FLAVOR=os.',input$nbCore,'\n',
+#       'export VM_IMAGE=titan_2018-07-04'
+#     )
+#     writeLines(paste0('>>> Generate cl_config.rc <<<\n',config), stdout)
+#     writeLines('',stderr)
+#     oldCtrl = paste0(projectDir(), '/Run/cl_config.rc')
+#     if (file.exists(oldCtrl)) {
+#       savCtrl = paste0(projectDir(), '/Run/cl_config.rc_sav')
+#       file.copy(from = oldCtrl,
+#                 to = savCtrl,
+#                 overwrite = TRUE)
+#     }
+#     writeLines(config, oldCtrl)
+#
+#     # Create cluster
+#     writeLines('Creating cluster', stdout)
+#     running(try(system2(
+#       command = paste0(projectDir(), '/../../Codes/claunch.sh'),
+#       args    = projectDir(),
+#       stdout  = stdout,
+#       stderr  = stderr,
+#       wait    = FALSE
+#     ),
+#     silent = TRUE))
+#
+#   }
+# )

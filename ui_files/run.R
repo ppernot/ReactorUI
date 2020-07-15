@@ -20,43 +20,42 @@ sidebarLayout(
         )
       ),
       tabPanel(
-        title = h5('Cloud (WIP)'),
-        h3(' '),
-        uiOutput("cloudSelect"),
-        fluidRow(
-          column(
-            width=6,
-            actionButton(
-              'createCluster',
-              'Create Cluster',
-              icon = icon('gear')
-            ),
-            actionButton(
-              'cleanCluster',
-              'Clean Cluster',
-              icon = icon('gear')
-            ),
-            actionButton(
-              'deleteCluster',
-              'Delete Cluster',
-              icon = icon('gear')
-            )
-          ),
-          column(
-            width=6,
-            actionButton(
-              'runCluster',
-              'Start Runs',
-              icon = icon('gear')
-            ),
-            actionButton(
-              'checkCluster',
-              'Update',
-              icon = icon('gear')
-            )
-          )
-
-        )
+        title = h5('Cloud (TBD)'),
+        # h3(' '),
+        # uiOutput("cloudSelect"),
+        # fluidRow(
+        #   column(
+        #     width=6,
+        #     actionButton(
+        #       'createCluster',
+        #       'Create Cluster',
+        #       icon = icon('gear')
+        #     ),
+        #     actionButton(
+        #       'cleanCluster',
+        #       'Clean Cluster',
+        #       icon = icon('gear')
+        #     ),
+        #     actionButton(
+        #       'deleteCluster',
+        #       'Delete Cluster',
+        #       icon = icon('gear')
+        #     )
+        #   ),
+        #   column(
+        #     width=6,
+        #     actionButton(
+        #       'runCluster',
+        #       'Start Runs',
+        #       icon = icon('gear')
+        #     ),
+        #     actionButton(
+        #       'checkCluster',
+        #       'Update',
+        #       icon = icon('gear')
+        #     )
+        #   )
+        # )
       )
     )
   ),

@@ -390,7 +390,7 @@ output$reactorOutput <- renderPrint({
 #     # Create cluster
 #     writeLines('Creating cluster', stdout)
 #     running(try(system2(
-#       command = paste0(projectDir(), '/../../Codes/claunch.sh'),
+#       command = paste0(projectDir(), '/../../Scripts/claunch.sh'),
 #       args    = projectDir(),
 #       stdout  = stdout,
 #       stderr  = stderr,

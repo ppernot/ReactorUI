@@ -31,23 +31,23 @@ observeEvent(
       dir.create(paste0(dir,dname),showWarnings = FALSE)
 
     file.copy(
-      from = paste0(dir,'/../../Codes/reactor'),
+      from = paste0(dir,'/../../ReactorCodes/reactor'),
       to   = paste0(dir,'/Run/reactor'),
       overwrite = TRUE)
     file.copy(
-      from = paste0(dir,'/../../Codes/OneRun_Loc.sh'),
+      from = paste0(dir,'/../../ReactorCodes/OneRun_Loc.sh'),
       to   = paste0(dir,'/Scripts/OneRun_Loc.sh'),
       overwrite = TRUE)
     file.copy(
-      from = paste0(dir,'/../../Codes/MCRun_Loc1.sh'),
+      from = paste0(dir,'/../../ReactorCodes/MCRun_Loc1.sh'),
       to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
       overwrite = TRUE)
     file.copy(
-      from = paste0(dir,'/../../Codes/OneRun_Cloud.sh'),
+      from = paste0(dir,'/../../ReactorCodes/OneRun_Cloud.sh'),
       to   = paste0(dir,'/Scripts/OneRun_Loc.sh'),
       overwrite = TRUE)
     file.copy(
-      from = paste0(dir,'/../../Codes/MCRun_Cloud.sh'),
+      from = paste0(dir,'/../../ReactorCodes/MCRun_Cloud.sh'),
       to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
       overwrite = TRUE)
 

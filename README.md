@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/165652991.svg)](https://zenodo.org/badge/latestdoi/165652991)
+
 # ReactorUI
 Graphical User Interface for the [reactor](https://github.com/ppernot/Reactor) 
 code.

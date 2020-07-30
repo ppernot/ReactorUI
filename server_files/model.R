@@ -231,7 +231,9 @@ output$chemDBVersions <- renderUI({
   allVersions  = basename(allAvailable)
 
   photoDir = file.path(
-    ctrlPars$projectDir,'..','..','ChemDBPublic','PhotoProcs_latest')
+    ctrlPars$projectDir,
+    '..','..','ChemDBPublic',
+    'PhotoProcs_latest')
   allReso  = list.dirs(
     path = photoDir,
     recursive = FALSE)
@@ -429,9 +431,18 @@ observeEvent(
 
     # Databases
     chemDBDir         = file.path('..','..','ChemDBPublic')
-    photoSourceDir    = file.path(chemDBDir,input$phoVers,input$speReso)
+    if(!dir.exists(chemDBDir)) # Run in container
+      chemDBDir       = file.path('/ChemDBPublic')
+
+    photoSourceDir    = file.path(chemDBDir,input$phoVers,
+                                  input$speReso)
     neutralsSourceDir = file.path(chemDBDir,input$neuVers)
     ionsSourceDir     = file.path(chemDBDir,input$ionVers)
+
+    showNotification(
+      h4('Generating chemistry,\nbe patient...'),
+      type = 'message'
+    )
 
     future({
       generateNetwork(
@@ -685,12 +696,13 @@ observeEvent(
       assign(n, rlist::list.extract(reacScheme(), n))
 
     # Databases
-    # Databases
     chemDBDir         = file.path('..','..','ChemDBPublic')
-    photoSourceDir    = file.path(chemDBDir,input$phoVers,input$speReso)
+    if(!dir.exists(chemDBDir)) # Run in container
+      chemDBDir       = file.path('/ChemDBPublic')
+    photoSourceDir    = file.path(chemDBDir,input$phoVers,
+                                  input$speReso)
     neutralsSourceDir = file.path(chemDBDir,input$neuVers)
     ionsSourceDir     = file.path(chemDBDir,input$ionVers)
-
 
     # Generate data files for reactor code ###
     sp_aux =paste(
@@ -999,8 +1011,7 @@ output$irradUI <- renderUI({
   # List of existing spectrum files with correct resolution
   source =  file.path( projectDir(),
     '..','..','ChemDBPublic','BeamSpectrumFiles',
-    speReso,'nm'
-  )
+    paste0(speReso,'nm'))
   files =  list.files(
     path = source,
     pattern = '.txt',

@@ -36,8 +36,19 @@ RUN R -e "utils::install.packages(c('devtools','Hmisc','shinyBS', 'shinycssloade
 RUN R -e "utils::install.packages('shinythemes')"
 
 # copy necessary files
+
 ## data
 ADD Reactor_Runs/ChemDB.tar.gz /
+
+# Mounting point for local Projects folder
+RUN mkdir /Projects
+
+## reactor
+COPY Reactor /Reactor/
+RUN  cd Reactor \
+  && ./compil \
+  && mv reactor /ReactorCodes \
+  && cd /
 
 ## app folder
 COPY ReactorUI/global.R /app/
@@ -46,16 +57,6 @@ COPY ReactorUI/server.R /app/
 COPY ReactorUI/ui_files /app/ui_files/
 COPY ReactorUI/server_files /app/server_files/
 COPY ReactorUI/R ./app/R/
-
-# Additional libs for fortran exe
-COPY Reactor /Reactor/
-RUN  cd Reactor \
-  && ./compil \
-  && mv reactor /ReactorCodes \
-  && cd /
-
-# Mounting point for local Projects folder
-RUN mkdir /Projects
 
 # expose port
 EXPOSE 3838

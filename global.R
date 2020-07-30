@@ -53,8 +53,9 @@ if (file.exists(ctrlFile)) {
 }
 
 # Define base directory
-roots = c(Projects = file.path(getwd(),'..','Reactor_Runs','Projects'))
+# roots = c(Projects = file.path(getwd(),'..','Reactor_Runs','Projects'))
 # roots = c(wd = '~')
+roots = c(Projects = '/Projects') # Docker version
 if (!is.null(ctrlPars$projectDir) &
     is.character(ctrlPars$projectDir))
   roots = c(Projects = dirname(ctrlPars$projectDir))

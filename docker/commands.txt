@@ -8,5 +8,7 @@ BUILD :
 3/ docker push ppernot1/reactorui
 
 RUN : 
- UI  : docker run -d -p 3838:3838 ppernot1/reactorui
+ UI  : 
+  1/ cd Projects
+  2/ docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects ppernot1/reactorui
  BASH: docker run -ti ppernot1/reactorui bash

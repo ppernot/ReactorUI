@@ -60,9 +60,9 @@ generateUpdatedControl = function() {
   namelist = paste0(namelist, '/')
 
   # Save old control.dat, if any
-  oldCtrl = paste0(projectDir(), '/Run/control.dat')
+  oldCtrl = file.path(projectDir(), 'Run','control.dat')
   if (file.exists(oldCtrl)) {
-    savCtrl = paste0(projectDir(), '/Run/control.dat_sav')
+    savCtrl = file.path(projectDir(), 'Run','control.dat_sav')
     file.copy(from = oldCtrl,
               to = savCtrl,
               overwrite = TRUE)
@@ -72,7 +72,7 @@ generateUpdatedControl = function() {
 output$nMCRunSelect <- renderUI({
 
   # Max runs to max MC data samples
-  InputMCDir = paste0(projectDir(),'/MC_Input/Reactions')
+  InputMCDir = file.path(projectDir(),'MC_Input','Reactions')
   maxMC = length(
     list.files(path = InputMCDir, pattern = '.csv'))
   maxMC = maxMC - 1 # Do not count nominal run
@@ -156,10 +156,10 @@ observeEvent(
     generateUpdatedControl()
 
     # Clean standard outputs
-    stdout = paste0(projectDir(),'/Run/runOut.txt')
+    stdout = file.path(projectDir(),'Run','runOut.txt')
     if(file.exists(stdout))
       file.remove(stdout)
-    stderr = paste0(projectDir(),'/Run/runErr.txt')
+    stderr = file.path(projectDir(),'Run','runErr.txt')
     if(file.exists(stderr))
       file.remove(stderr)
 
@@ -171,7 +171,7 @@ observeEvent(
       running(
         try(
           system2(
-            command = paste0(projectDir(),'/Scripts/OneRun_Loc.sh'),
+            command = file.path(projectDir(),'Scripts','OneRun_Loc.sh'),
             args    = c('0',projectDir()),
             stdout  = stdout,
             stderr  = stderr,
@@ -182,7 +182,7 @@ observeEvent(
     } else {
       if(input$appendMC) {
         mcf = list.files(
-          path = paste0(projectDir(),'/MC_Output'),
+          path = file.path(projectDir(),'MC_Output'),
           pattern = 'fracmol_'
         )
         nmc = length(mcf)
@@ -208,7 +208,7 @@ observeEvent(
         nrun  = nMC
         # Clean existing runs to avoid mixing with older runs
         allFiles = list.files(
-          path = paste0(projectDir(),'/MC_Output'),
+          path = file.path(projectDir(),'MC_Output'),
           pattern = '.dat',
           full.names = TRUE
         )
@@ -218,7 +218,7 @@ observeEvent(
       running(
         try(
           system2(
-            command = paste0(projectDir(),'/Scripts/MCRun_Loc1.sh'),
+            command = file.path(projectDir(),'Scripts','MCRun_Loc1.sh'),
             args    = c(first,nrun,projectDir()),
             stdout  = stdout,
             stderr  = stderr,
@@ -255,7 +255,7 @@ observeEvent(
 )
 stdErr = reactiveFileReader(
   500, session,
-  paste0(ctrlPars$projectDir,'/Run/runErr.txt'),
+  file.path(ctrlPars$projectDir,'Run','runErr.txt'),
   readLines
 )
 output$reactorErrors <- renderPrint({
@@ -274,7 +274,7 @@ output$reactorErrors <- renderPrint({
 })
 stdOut = reactiveFileReader(
   500, session,
-  paste0(ctrlPars$projectDir,'/Run/runOut.txt'),
+  file.path(ctrlPars$projectDir,'Run','runOut.txt'),
   readLines
 )
 output$reactorOutput <- renderPrint({

@@ -53,10 +53,11 @@ if (file.exists(ctrlFile)) {
 }
 
 # Define base directory
-roots = c(wd = '~')
+roots = c(Projects = file.path(getwd(),'..','Reactor_Runs','Projects'))
+# roots = c(wd = '~')
 if (!is.null(ctrlPars$projectDir) &
     is.character(ctrlPars$projectDir))
-  roots = c(wd = dirname(ctrlPars$projectDir))
+  roots = c(Projects = dirname(ctrlPars$projectDir))
 
 # Defaults for MC-ChemDB
 DB_DATA_default = list(

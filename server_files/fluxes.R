@@ -55,7 +55,8 @@ calcFluxes = function(C,R) {
   R = D + L
 
   for (i in 1:nf)
-    flux[i,] = allRates[i,] * apply(L,1,function(x) prod(conc[i,]^x))
+    flux[i,] = allRates[i,] *
+      apply(L,1,function(x) prod(conc[i,]^x))
 
   logFlux = ifelse(flux==0, NA, log10(flux))
 
@@ -91,15 +92,32 @@ calcFluxes = function(C,R) {
 
 fluxesList <- reactiveVal()
 observeEvent(
+  ignoreInit = TRUE,
   input$calcFlux,
   {
     if(is.null(concList())) {
+      showNotification(
+        h4('Loading data,\nbe patient...'),
+        type = 'message'
+      )
       C = getConc()
       concList(C)
     }
     C = concList()
 
+    test = dim(C$conc)[1] > 1
+    if(!test) # Rq: validate() would not display message !?!?!?
+      showNotification(
+        h4('Flux analysis impossible for a single run !'),
+        type = 'warning'
+      )
+    req(test)
+
     if(is.null(ratesList())){
+      showNotification(
+        h4('Loading data,\nbe patient...'),
+        type = 'message'
+      )
       R = getRates()
       ratesList(R)
     }

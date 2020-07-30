@@ -1,72 +1,88 @@
-shinyFiles::shinyDirChoose(
-  input,
-  'projectDir',
-  roots = roots
-)
-
-# projectDir = reactiveVal(ctrlPars$projectDir) # Restart ???
 projectDir   = reactiveVal(NULL)
 reacData     = reactiveVal(NULL)
 chemDBData   = reactiveVal(NULL)
 spectrumData = reactiveVal(NULL)
 
 # Open ####
+shinyFiles::shinyDirChoose(
+  input,
+  'projectDir',
+  roots = roots
+)
 observeEvent(
+  ignoreInit = TRUE,
   input$projectDir, {
 
   dir = shinyFiles::parseDirPath(
     roots = roots,
     input$projectDir)
+
+  # dir = path.expand(dir)
+  req(dir)
   projectDir(dir)
-  req(projectDir())
+  # Prevent msg from irradUI when switching projects
+  reacData(NULL)
 
   if(input$newProj) {
-    for (dname in c('/Run',
-                    '/Run/Photo',
-                    '/MC_Output',
-                    '/MC_Input',
-                    '/MC_Input/Photoprocs',
-                    '/MC_Input/Reactions',
-                    '/Scripts') )
-      dir.create(paste0(dir,dname),showWarnings = FALSE)
 
-    file.copy(
-      from = paste0(dir,'/../../ReactorCodes/reactor'),
-      to   = paste0(dir,'/Run/reactor'),
-      overwrite = TRUE)
-    file.copy(
-      from = paste0(dir,'/../../ReactorCodes/OneRun_Loc.sh'),
-      to   = paste0(dir,'/Scripts/OneRun_Loc.sh'),
-      overwrite = TRUE)
-    file.copy(
-      from = paste0(dir,'/../../ReactorCodes/MCRun_Loc1.sh'),
-      to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
-      overwrite = TRUE)
-    file.copy(
-      from = paste0(dir,'/../../ReactorCodes/OneRun_Cloud.sh'),
-      to   = paste0(dir,'/Scripts/OneRun_Loc.sh'),
-      overwrite = TRUE)
-    file.copy(
-      from = paste0(dir,'/../../ReactorCodes/MCRun_Cloud.sh'),
-      to   = paste0(dir,'/Scripts/MCRun_Loc1.sh'),
-      overwrite = TRUE)
+    # Check that new project dir is in 'Projects' folder
+    if( !dir.exists(file.path(dir,'..','..','Projects')) ) {
+      showModal(modalDialog(
+        title = ">>>> Wrong projects folder <<<< ",
+        paste0('The selected project (',dir,
+               ') is not in the "Projects" folder.\n',
+               'Please select another one.'),
+        easyClose = FALSE,
+        footer = modalButton("OK"),
+        size = 's'
+      ))
+      projectDir(NULL)
+      REAC_DATA = NULL
+      DB_DATA   = NULL
 
-    DB_DATA   = DB_DATA_default
-    REAC_DATA = REAC_DATA_default
-    if(input$newProjTemplate != 'APSIS')
-      REAC_DATA = REAC_DATA_Titan
+    } else {
+      # Populate project
+      for (dname in c(
+        'Run',
+        file.path('Run', 'Photo'),
+        'MC_Output',
+        'MC_Input',
+        file.path('MC_Input', 'Photoprocs'),
+        file.path('MC_Input', 'Reactions'),
+        'Scripts'
+      ))
+        dir.create(file.path(dir, dname), showWarnings = FALSE)
 
-    # Copy spectrum file
-    fromFile =  paste0(
-      dir,
-      '/../../ChemDBPublic/BeamSpectrumFiles/1nm/',
-      REAC_DATA$beamSpectrumFile
-    )
-    toFile   = paste0(
-      dir,
-      '/Run/',
-      REAC_DATA$beamSpectrumFile)
-    file.copy(from = fromFile, to = toFile)
+      from = file.path(dir, '..', '..', 'ReactorCodes', 'reactor')
+      to   = file.path(dir, 'Run', 'reactor')
+      file.copy(from, to, overwrite = TRUE)
+
+      for (script in c(
+        'OneRun_Loc.sh'  ,
+        'MCRun_Loc1.sh'  ,
+        'OneRun_Cloud.sh',
+        'MCRun_Cloud.sh'
+      )) {
+        from = file.path(dir, '..', '..', 'ReactorCodes', script)
+        to   = file.path(dir, 'Scripts', script)
+        file.copy(from, to, overwrite = TRUE)
+      }
+
+      DB_DATA   = DB_DATA_default
+      REAC_DATA = REAC_DATA_default
+      if(input$newProjTemplate != 'APSIS')
+        REAC_DATA = REAC_DATA_Titan
+
+      # Copy spectrum file
+      from =  file.path(
+        dir,'..','..','ChemDBPublic','BeamSpectrumFiles','1nm',
+        REAC_DATA$beamSpectrumFile
+      )
+      to   = file.path(
+        dir,'Run',
+        REAC_DATA$beamSpectrumFile)
+      file.copy(from, to)
+    }
 
   } else {
 
@@ -90,10 +106,12 @@ observeEvent(
   spectrumData(NULL) # Reinit
 
   # Save status to file
-  ctrlPars[['projectDir']] <<- dir
-  if (!is.null(ctrlPars$projectDir) &
-      is.character(ctrlPars$projectDir))
-    rlist::list.save(ctrlPars, 'ctrlParams.yaml')
+  if(!is.null(projectDir())) {
+    ctrlPars[['projectDir']] <<- dir
+    if (!is.null(ctrlPars$projectDir) &
+        is.character(ctrlPars$projectDir))
+      rlist::list.save(ctrlPars, 'ctrlParams.yaml')
+  }
 
 })
 # Save ####
@@ -131,10 +149,10 @@ output$contentsMsg <- renderPrint({
       # Consistency checks (data MC runs
       # posterior to control.dat ...)
       fmtime = sapply(
-        paste0(projectDir(),'/MC_Output/',mcf),
+        file.path(projectDir(),'MC_Output',mcf),
         file.mtime
       )
-      ctrl = paste0(projectDir(),'/Run/control.dat')
+      ctrl = file.path(projectDir(),'Run','control.dat')
       if( min(fmtime) < file.mtime(ctrl) )
         cat('WARNING : some MC runs are older than ',
             'control.dat. \n',

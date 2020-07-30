@@ -347,12 +347,19 @@ testAna = function() {
 
 concList <- reactiveVal(NULL)
 observeEvent(
-  input$loadMC,
-  future({getConc()}) %...>% concList()
+  ignoreInit = TRUE,
+  input$loadMC, {
+    showNotification(
+      h4('Loading data,\nbe patient...'),
+      type = 'message'
+    )
+    future({getConc()}) %...>% concList()
+  }
 )
 
 ratesList <- reactiveVal(NULL)
 observeEvent(
+  ignoreInit = TRUE,
   input$loadMC,
   future({getRates()}) %...>% ratesList()
 )
@@ -555,6 +562,7 @@ output$pseudoMS <- renderPlot({
 # Sensitivity ####
 MRList <- reactiveVal()
 observeEvent(
+  ignoreInit = TRUE,
   input$doSA,
   {
     if(is.null(concList()) |
@@ -566,6 +574,15 @@ observeEvent(
     # Extract conc et al.
     for (n in names(concList()))
       assign(n,rlist::list.extract(concList(),n))
+
+    # Exit if single run
+    test = dim(conc)[1] > 1
+    if(!test) # Rq: validate() would not display message !?!?!?
+      showNotification(
+        h4('SA impossible for a single run !'),
+        type = 'warning'
+      )
+    req(test)
 
     # Concentrations at stationary state (last snapshot)
     conc = conc[,nt,]

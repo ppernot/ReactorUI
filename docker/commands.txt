@@ -1,0 +1,12 @@
+SETUP :
+1/ cd Reactor_Runs
+2/ run "./compress" if ChemDBPublic and/or ReactorCodes have been updated
+
+BUILD : 
+1/ cd Titan-APSIS
+2/ docker build -t ppernot1/reactorui -f ReactorUI/docker/Dockerfile .
+3/ docker push ppernot1/reactorui
+
+RUN : 
+ UI  : docker run -d -p 3838:3838 ppernot1/reactorui
+ BASH: docker run -ti ppernot1/reactorui bash

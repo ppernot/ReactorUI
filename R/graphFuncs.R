@@ -10,10 +10,11 @@ hiveFlowGraph <- function (L,R,species,nbReac,reacType,
   require('HiveR')
   require('grid')
 
-  vplayout <- function(x,y,bkgnd="black"){viewport(layout.pos.row=x,
-                                                   layout.pos.col=y,
-                                                   gp = gpar(fill=bkgnd))}
-
+  vplayout <- function(x,y,bkgnd="black"){
+    viewport(layout.pos.row=x,
+             layout.pos.col=y,
+             gp = gpar(fill=bkgnd))
+  }
   compo = t(sapply(species,get.atoms))
   mass  = apply(compo,1,massCxHyNz)
 

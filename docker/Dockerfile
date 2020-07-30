@@ -32,10 +32,11 @@ RUN apt-get update && \
 #RUN Rscript -e 'install.packages("renv")'
 #RUN Rscript -e 'renv::restore()'
 
-RUN R -e "utils::install.packages(c('devtools','Hmisc','shinyBS', 'shinycssloaders', 'shinyFiles','DT','tools', 'igraph', 'dHSIC', 'fda.usc', 'rlist','xtable', 'inlmisc','CHNOSZ','networkD3','promises','future','future.apply'), dependencies = TRUE)"
-RUN R -e "utils::install.packages('shinythemes')"
+#  TBD: remove 'tools' from list; 'XML' requires R-4.0
+RUN R -e "utils::install.packages(c('devtools','Hmisc','shinyBS', 'shinycssloaders', 'shinyFiles','DT','tools', 'igraph', 'dHSIC', 'fda.usc', 'rlist','xtable', 'inlmisc','CHNOSZ','networkD3','promises','future','future.apply','shinythemes','XML'), dependencies = TRUE)"
+# 'HiveR' # Not used at this stage; would require openGL (see CRAN)....
 
-# copy necessary files
+# Add necessary files
 
 ## data
 ADD Reactor_Runs/ChemDB.tar.gz /

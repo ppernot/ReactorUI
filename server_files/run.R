@@ -156,10 +156,10 @@ observeEvent(
     generateUpdatedControl()
 
     # Clean standard outputs
-    stdout = file.path(projectDir(),'Run','runOut.txt')
+    stdout = file.path(ctrlPars$projectDir,'Run','runOut.txt')
     if(file.exists(stdout))
       file.remove(stdout)
-    stderr = file.path(projectDir(),'Run','runErr.txt')
+    stderr = file.path(ctrlPars$projectDir,'Run','runErr.txt')
     if(file.exists(stderr))
       file.remove(stderr)
 
@@ -171,7 +171,9 @@ observeEvent(
       running(
         try(
           system2(
-            command = file.path(projectDir(),'Scripts','OneRun_Loc.sh'),
+            command = file.path(projectDir(),
+                                'Scripts',
+                                'OneRun_Loc.sh'),
             args    = c('0',projectDir()),
             stdout  = stdout,
             stderr  = stderr,
@@ -253,6 +255,9 @@ observeEvent(
     }
   }
 )
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# PB: reactiveFileReader does not work in container
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 stdErr = reactiveFileReader(
   500, session,
   file.path(ctrlPars$projectDir,'Run','runErr.txt'),
@@ -273,16 +278,20 @@ output$reactorErrors <- renderPrint({
   )
 })
 stdOut = reactiveFileReader(
-  500, session,
-  file.path(ctrlPars$projectDir,'Run','runOut.txt'),
-  readLines
+  intervalMillis = 500,
+  session  = session,
+  filePath = file.path(ctrlPars$projectDir,'Run','runOut.txt'),
+  readFunc = readLines
 )
 output$reactorOutput <- renderPrint({
   if (is.null(running())) {
     cat('Please run code ...')
     return()
   }
-  cat(stdOut(),sep = "\n")
+  # cat(running(),'\n') # OK
+  # cat(readLines(file.path(ctrlPars$projectDir,'Run','runOut.txt')),
+  #     '\n\n')         # OK
+  cat(stdOut(),sep = '\n')
 })
 
 # Cloud ####

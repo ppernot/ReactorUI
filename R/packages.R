@@ -1,24 +1,35 @@
 # CRAN Libraries ####
 libs <- c(
-  "devtools","Hmisc",
-  "shiny", "shinyBS", "shinycssloaders", "shinyFiles",
-  "DT", "tools", "igraph", "dHSIC", "fda.usc", "rlist",
-  "xtable", "inlmisc","CHNOSZ","networkD3",
-  "promises","future","future.apply"
+  "devtools",
+  "Hmisc",
+  "shiny",
+  "shinyBS",
+  "shinycssloaders",
+  "shinyFiles",
+  "DT",
+  "tools",
+  "igraph",
+  "dHSIC",
+  "fda.usc",
+  "xtable",
+  "inlmisc",
+  "CHNOSZ",
+  "networkD3",
+  "promises",
+  "future",
+  "future.apply",
+  "rlist"
 )
-for (lib in libs) {
+for  (lib in libs) {
   if (!require(lib, character.only = TRUE, quietly = TRUE)) {
     install.packages(
       lib,
       dependencies = TRUE,
-      repos = "https://cran.univ-paris1.fr"
+      repos = "https://cran.rstudio.com"
     )
     library(lib, character.only = TRUE, quietly = TRUE)
   }
 }
-
-# Use development version (Bug correction about "New folder")
-# remotes::install_github("thomasp85/shinyFiles")
 
 # Github
 # if (!require("nml", character.only = TRUE, quietly = TRUE)) {

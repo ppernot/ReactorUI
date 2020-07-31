@@ -1,13 +1,12 @@
 # CRAN Libraries ####
 libs <- c(
-  "devtools",
+  # "devtools",
   "Hmisc",
   "shiny",
   "shinyBS",
   "shinycssloaders",
   "shinyFiles",
   "DT",
-  "tools",
   "igraph",
   "dHSIC",
   "fda.usc",
@@ -21,14 +20,15 @@ libs <- c(
   "rlist"
 )
 for  (lib in libs) {
-  if (!require(lib, character.only = TRUE, quietly = TRUE)) {
-    install.packages(
-      lib,
-      dependencies = TRUE,
-      repos = "https://cran.rstudio.com"
-    )
-    library(lib, character.only = TRUE, quietly = TRUE)
-  }
+  # # Installation is managed in the container
+  # if (!require(lib, character.only = TRUE, quietly = TRUE)) {
+  #   install.packages(
+  #     lib,
+  #     dependencies = TRUE,
+  #     repos = "https://cran.rstudio.com"
+  #   )
+  #  }
+  library(lib, character.only = TRUE, quietly = TRUE)
 }
 
 # Github

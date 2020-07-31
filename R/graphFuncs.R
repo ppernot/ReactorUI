@@ -7,8 +7,8 @@ col2tr =function(x,alpha=80)
 
 hiveFlowGraph <- function (L,R,species,nbReac,reacType,
                            alpha=50,PDF=FALSE) {
-  require('HiveR')
-  require('grid')
+  # require('HiveR')
+  # require('grid')
 
   vplayout <- function(x,y,bkgnd="black"){
     viewport(layout.pos.row=x,

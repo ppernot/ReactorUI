@@ -5,3 +5,5 @@
 outputDir/*
 *.*~
 scripts/os_lal.rc
+ctrlParams.yaml
+README.html

@@ -24,8 +24,16 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get clean
 
+
+## renv.lock file
+#COPY ../renv.lock ./renv.lock
+
+# install renv & restore packages
+#RUN Rscript -e 'install.packages("renv")'
+#RUN Rscript -e 'renv::restore()'
+
 #  TBD: remove 'tools' from list; 'XML' requires R-4.0
-#RUN R -e "utils::install.packages(c('devtools','Hmisc','shinyBS', 'shinycssloaders', 'shinyFiles','DT','tools', 'igraph', 'dHSIC', 'fda.usc', 'rlist','xtable', 'inlmisc','CHNOSZ','networkD3','promises','future','future.apply','shinythemes','XML'), dependencies = TRUE)"
+RUN R -e "utils::install.packages(c('devtools','Hmisc','shinyBS', 'shinycssloaders', 'shinyFiles','DT','tools', 'igraph', 'dHSIC', 'fda.usc', 'rlist','xtable', 'inlmisc','CHNOSZ','networkD3','promises','future','future.apply','shinythemes','XML'), dependencies = TRUE)"
 # 'HiveR' # Not used at this stage; would require openGL (see CRAN)....
 
 # Add necessary files
@@ -43,30 +51,17 @@ RUN  cd Reactor \
   && mv reactor /ReactorCodes \
   && cd /
 
-## renv
-ENV RENV_VERSION 0.11.0-17
-RUN Rscript -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
-RUN Rscript -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
-
-COPY ReactorUI/.Rprofile /ReactorUI/
-COPY ReactorUI/renv/activate.R /ReactorUI/renv/activate.R
-COPY ReactorUI/renv.lock /ReactorUI/renv.lock
-WORKDIR /ReactorUI
-RUN R -e 'renv::consent(TRUE)' \
- && R -e 'renv::restore()'
-
-## app files
-COPY ReactorUI/global.R /ReactorUI/
-COPY ReactorUI/ui.R /ReactorUI/
-COPY ReactorUI/server.R /ReactorUI/
-COPY ReactorUI/ui_files /ReactorUI/ui_files/
-COPY ReactorUI/server_files /ReactorUI/server_files/
-COPY ReactorUI/R /ReactorUI/R/
+## app folder
+COPY ReactorUI/global.R /app/
+COPY ReactorUI/ui.R /app/
+COPY ReactorUI/server.R /app/
+COPY ReactorUI/ui_files /app/ui_files/
+COPY ReactorUI/server_files /app/server_files/
+COPY ReactorUI/R ./app/R/
 
 # expose port
 EXPOSE 3838
 
 # run app on container start
-WORKDIR /ReactorUI
-#CMD ["R", "-e", "renv::status();renv:::renv_paths_cache()"]
+WORKDIR /app
 CMD ["R", "-e", "shiny::runApp(host = '0.0.0.0', port = 3838)"]

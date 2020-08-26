@@ -17,5 +17,7 @@ code.
     
     + Analyse the results
 
-* Requires installation of [ChemDB](http://dx.doi.org/10.5281/zenodo.3946044)  
-  from Zenodo. Follow the instruction in ReadMe.txt 
+* Requires installation of [ChemDBPublic](http://dx.doi.org/10.5281/zenodo.3946044)  
+  from Zenodo. 
+  
+    + Follow the instruction in ReadMe.txt 

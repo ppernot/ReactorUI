@@ -402,12 +402,13 @@ output$kinetics <- renderPlot({
 
   # Define zoom range
   if (is.null(rangesKinetics$x)) {
-    xlim <- range(time) * 10 # expand for labels
+    xlim <- range(time)# * 100 # expand for labels
   } else {
     xlim <- rangesKinetics$x
   }
   if (is.null(rangesKinetics$y)) {
-    ylim = range(c(mfLow[, sel], mfSup[, sel]), na.rm = TRUE)
+    # ylim = range(c(mfLow[, sel], mfSup[, sel]), na.rm = TRUE)
+    ylim = range(c(mfLow[, sel], 1), na.rm = TRUE)
     # ylim <- c(
     #   max(-30, min(mfLow[,sel])),
     #   min(0  , max(mfSup[,sel]))
@@ -427,18 +428,41 @@ output$kinetics <- renderPlot({
 
   # Plot
   par(mfrow = c(1, 1),
-      cex = cex, cex.main = cex, mar = c(mar[1:3],3),
+      cex = cex, cex.main = cex, mar = c(mar[1:3],3.5),
       mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
-  plot(time, time, type='n', log='x',
-       main = ifelse(!input$mcPlot, 'Mean values',
+
+  plot(time, time,
+       type = 'n',
+       log  = 'x',
+       main = ifelse(!input$mcPlot,
+                     'Mean values',
                      'Mean and 95 % Proba. Intervals'),
-       xlab = 'Time / s'     , xlim = xlim,
-       ylab = 'Log10(mole fraction)', ylim = ylim )
+       xlab = 'Time / s',
+       xlim = xlim,
+       xaxs = 'i',
+       ylab = 'Log10(mole fraction)',
+       ylim = ylim,
+       yaxs = 'i')
   grid()
-  if(input$ppscale)
-    axis(side = 4,
-         labels=c("ppm", "ppb","ppt","ppq"),
-         at = -3*(2:5), las = 1, tck = 1)
+
+  if(input$ppscale) {
+    axis(side = 2,
+         at = -3*(2:5),
+         labels = FALSE,
+         las = 1,
+         adj = 1,
+         line = 0,
+         tck = 1,
+         cex.lab = 0.8)
+    mtext(at   = -3*(2:5),
+          text = c("ppm", "ppb","ppt","ppq"),,
+          side = 2,
+          col  = 'gray30',
+          las  = 1,
+          adj  = 1,
+          line = 0.2)
+  }
+
   # CI
   if(input$mcPlot) {
     for(isp in (1:nsp)[sel])
@@ -451,10 +475,17 @@ output$kinetics <- renderPlot({
   matplot(time, mfMean[,sel], type='l', lty = 1,
           col = colors$colsSp[sel],
           lwd = 1.2*lwd, add = TRUE)
-  text(x = time[nt], y= mfMean[nt,sel],
-       labels = species[sel],
-       col=colors$colsSp[sel],
-       pos = 4, offset=0.2, cex=cex.leg)
+  # text(x = time[nt], y= mfMean[nt,sel],
+  #      labels = species[sel],
+  #      col=colors$colsSp[sel],
+  #      pos = 4, offset=0.2, cex=cex.leg)
+  mtext(at  = mfMean[nt,sel],
+       text = species[sel],
+       side = 4,
+       col  = colors$colsSp[sel],
+       las  = 1,
+       adj  = 0,
+       line = 0.2)
   box()
 
 })

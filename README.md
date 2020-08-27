@@ -33,7 +33,23 @@ To run the container:
 1. Type the following commands in a terminal
 ```
 cd Projects    
-docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects ppernot1/reactorui
+docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
+  --name reactorui ppernot1/reactorui
 ```      
 
 2. Access ReactorUI at http://localhost:3838 in your favorite browser
+
+3. When finished
+```
+docker kill reactorui
+```
+
+4. For further sessions
+```
+docker restart reactorui
+```
+
+4. To cleanup
+```
+docker remove -v reactorui
+```

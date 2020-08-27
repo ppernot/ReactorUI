@@ -33,7 +33,7 @@ gPars = list(
   mgp     = c(2, .75, 0),
   tcl     = -0.5,
   lwd     = 2,
-  cex     = 1,
+  cex     = 1.5,
   cex.leg = 0.8
 )
 

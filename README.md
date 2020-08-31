@@ -30,6 +30,8 @@ It avoids you the trouble of installing `R`, `reactor` and `chemDBPublic`.
 
 To run the container:
 
+0. Install [Docker](https://www.docker.com/products/docker-desktop)
+
 1. Type the following commands in a terminal
 ```
 cd Projects    

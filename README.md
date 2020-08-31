@@ -17,11 +17,19 @@ code.
     
     + Analyse the results
 
-* Requires installation of [ChemDBPublic](http://dx.doi.org/10.5281/zenodo.3946044)  
-  from Zenodo. 
-  
-    + Follow the instruction in ReadMe.txt 
+## Install
 
+1. Get the latest version of the [reactor](https://github.com/ppernot/Reactor) 
+code an compile it
+
+2. Install 
+[ChemDBPublic](http://dx.doi.org/10.5281/zenodo.3946044) 
+from Zenodo (follow the instruction in ReadMe.txt)
+
+3. Download 
+[ReactorUI](https://github.com/ppernot/ReactorUI/archive/master.zip) and run `global.R`
+
+    
 ## Docker container
 
 The [reactorui](https://hub.docker.com/repository/docker/ppernot1/reactorui)
@@ -34,7 +42,7 @@ To run the container:
 
 1. Type the following commands in a terminal
 ```
-cd Projects    
+cd Projects    # This is the home of your `reactor` projects   
 docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
   --name reactorui ppernot1/reactorui
 ```      

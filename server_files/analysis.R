@@ -16,7 +16,10 @@ getConc  = function(concThresh = -50) {
     full.names=TRUE
   )
 
-  x = read.table(files[1], header=TRUE, skip=0)
+  # x = read.table(files[1], header=TRUE, skip=0)
+  x = as.data.frame(
+    data.table::fread(files[1], header=TRUE, skip=0)
+  )
   time=x[-1,1]
 
   # Species list
@@ -30,7 +33,10 @@ getConc  = function(concThresh = -50) {
   nt   = length(time)
   conc = moleFrac = array(0,dim=c(nf,nt,nsp))
   for(i in seq_along(files[1:nf]) ) {
-    tab  = read.table(files[i], header=TRUE, skip=0)
+    # tab  = read.table(files[i], header=TRUE, skip=0)
+    tab  = as.data.frame(
+      data.table::fread(files[i], header=TRUE, skip=0)
+    )
     time = tab[-1,1]
     y    = as.matrix(tab[-1,-1])
     conc[i,1:nt,1:nsp]     = y[1:nt,1:nsp]
@@ -76,12 +82,16 @@ getRates = function() {
   nf = length(files)
 
   ## Get MC rates
-  x = read.table(files[1], header=FALSE, skip=0)
+  x = as.data.frame(
+    data.table::fread(files[1], header=FALSE, skip=0)
+  )
   nRates=length(x)
   rates=matrix(NA,nrow=nf,ncol=nRates)
   for(i in seq_along(files) ) {
-    tab = read.table(files[i], header=FALSE,
+    tab = as.data.frame(
+      data.table::fread(files[i], header=FALSE,
                      skip=0, colClasses='numeric')
+    )
     rates[i,] = t(tab)
   }
   ## Get reac names
@@ -97,13 +107,17 @@ getRates = function() {
   nf = length(files)
 
   ## Get MC photo rates
-  x = read.table(files[1], header=FALSE, skip=0)
+  x = as.data.frame(
+    data.table::fread(files[1], header=FALSE, skip=0)
+  )
   nPhotoRates=length(x)
   photoRates=matrix(NA,nrow=nf,ncol=nPhotoRates)
   for(i in seq_along(files) ) {
-    tab = read.table(files[i], header=FALSE,
+    tab = as.data.frame(
+      data.table::fread(files[i], header=FALSE,
                      skip=0,
                      colClasses=c('numeric')
+      )
     )
     photoRates[i,] = t(tab)
   }
@@ -349,10 +363,15 @@ concList <- reactiveVal(NULL)
 observeEvent(
   ignoreInit = TRUE,
   input$loadMC, {
-    showNotification(
-      h4('Loading data,\nbe patient...'),
+
+    id = shiny::showNotification(
+      h4('Loading concentrations, be patient...'),
+      closeButton = FALSE,
+      duration = NULL,
       type = 'message'
     )
+    on.exit(removeNotification(id), add = TRUE)
+
     future({getConc()}) %...>% concList()
   }
 )

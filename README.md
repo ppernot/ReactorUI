@@ -26,7 +26,7 @@ code an compile it
 [ChemDBPublic](http://dx.doi.org/10.5281/zenodo.3946044) 
 from Zenodo (follow the instruction in ReadMe.txt)
 
-3. Download 
+3. Download and extract
 [ReactorUI](https://github.com/ppernot/ReactorUI/archive/master.zip) and run `global.R`
 
     

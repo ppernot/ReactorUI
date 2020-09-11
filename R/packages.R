@@ -17,7 +17,8 @@ libs <- c(
   "promises",
   "future",
   "future.apply",
-  "rlist"
+  "rlist",
+  "data.table"
 )
 for  (lib in libs) {
   # # Installation is managed in the container

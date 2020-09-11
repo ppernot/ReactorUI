@@ -96,10 +96,14 @@ observeEvent(
   input$calcFlux,
   {
     if(is.null(concList())) {
-      showNotification(
-        h4('Loading data,\nbe patient...'),
+      id = shiny::showNotification(
+        h4('Loading concentrations, be patient...'),
+        closeButton = FALSE,
+        duration = NULL,
         type = 'message'
       )
+      on.exit(removeNotification(id), add = TRUE)
+
       C = getConc()
       concList(C)
     }
@@ -114,10 +118,14 @@ observeEvent(
     req(test)
 
     if(is.null(ratesList())){
-      showNotification(
-        h4('Loading data,\nbe patient...'),
+      id = shiny::showNotification(
+        h4('Loading rates, be patient...'),
+        closeButton = FALSE,
+        duration = NULL,
         type = 'message'
       )
+      on.exit(removeNotification(id), add = TRUE)
+
       R = getRates()
       ratesList(R)
     }

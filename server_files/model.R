@@ -42,8 +42,14 @@ generateNetwork <- function(
 
   ## Reactions
   for (sourceDir in c(neutralsSourceDir, ionsSourceDir)) {
-    filename = file.path(ctrlPars$projectDir, sourceDir, 'run_0000.csv')
-    scheme   = read.csv(file = filename, header = FALSE, sep = ';')
+    filename = file.path(
+      ctrlPars$projectDir,
+      sourceDir,
+      'run_0000.csv')
+    # scheme   = read.csv(file = filename, header = FALSE, sep = ';')
+    scheme   = as.data.frame(
+      data.table::fread(file = filename, header = FALSE, sep = ';')
+    )
     scheme   = t(apply(scheme, 1, function(x) gsub(" ", "", x)))
     for (i in 1:nrow(scheme)) {
       nbReac = nbReac + 1
@@ -431,7 +437,11 @@ observeEvent(
 
     # Databases
     chemDBDir         = file.path('..','..','ChemDBPublic')
-    if(!dir.exists(chemDBDir)) # Run in container
+    if(
+      !dir.exists(
+        file.path(ctrlPars$projectDir,chemDBDir)
+      )
+    ) # Run in container
       chemDBDir       = file.path('/ChemDBPublic')
 
     photoSourceDir    = file.path(chemDBDir,input$phoVers,
@@ -439,10 +449,13 @@ observeEvent(
     neutralsSourceDir = file.path(chemDBDir,input$neuVers)
     ionsSourceDir     = file.path(chemDBDir,input$ionVers)
 
-    showNotification(
-      h4('Generating chemistry,\nbe patient...'),
+   id = shiny::showNotification(
+      h4('Generating chemistry, be patient...'),
+      closeButton = FALSE,
+      duration = NULL,
       type = 'message'
     )
+   on.exit(removeNotification(id), add = TRUE)
 
     future({
       generateNetwork(
@@ -784,9 +797,15 @@ observeEvent(
           for (io in origs) {
             sourceDir = io
             filename = file.path(outputDir, sourceDir, sampleFile)
-            scheme   = read.csv(file = filename,
-                               header = FALSE,
-                               sep = ';')
+            # scheme   = read.csv(file = filename,
+            #                    header = FALSE,
+            #                    sep = ';')
+            scheme   = as.data.frame(
+              data.table::fread(file = filename,
+                                header = FALSE,
+                                sep = ';')
+            )
+
             scheme  = t(apply(scheme, 1, function(x)
               gsub(" ", "", x)))
             paramsLoc = list()

@@ -732,7 +732,7 @@ output$sensitivity <- renderPlot({
      SASpecies  != ""           ) {
     # Scatterplots
     par(mfrow = c(4,5),
-        cex = cex, cex.main = 0.6*cex, mar = mar,
+        cex = 0.7*cex, cex.main = 0.4*cex, mar = mar,
         mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
     isp = which(colnames(C) == SASpecies)[1]
     y = C[,isp]
@@ -760,7 +760,7 @@ output$sensitivity <- renderPlot({
   } else {
     # Barplot
     par(mfrow = c(1,1),
-        cex = cex, cex.main = cex, mar = c(3,20,2,1),
+        cex = cex, cex.main = 0.6*cex, mar = c(3,20,2,1),
         mgp = mgp, tcl = tcl, pty = pty, lwd = lwd ,lend=2)
 
     MR = rev(MR)
@@ -779,9 +779,10 @@ output$sensitivity <- renderPlot({
             col       = colbr,
             border    = NA,
             names.arg = names(MR),
-            main      = main
+            main      = ''
     )
     grid(ny=0)
+    mtext(main,side = 3, line = 0)
   }
 
 })

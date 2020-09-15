@@ -1,9 +1,37 @@
 # __Project__ module
 
-Project definition.
+This is where one chooses the project to be worked on. 
+A project is a folder with the following structure:
 
-- [__Open/New__ tab](#new-project-tab)
-- [__Save__ tab](#open-and-save-tabs)
+```
+├── MC_Input/ : Monte-Carlo samples of the chemistry 
+│   │
+|   ├── PhotoProcs/ : cross-sections and branching ratios
+|   │
+|   └── Reactions/ : neutral and ionic reactions
+|
+├── MC_Output/ : results of the simulations 
+│   │
+|   ├── fracmol_xxxx.dat : time-resolved mole fractions
+|   │
+|   ├── reac_rates_xxxx.dat : reaction rates
+|   │
+|   └── photo_rates_xxxx.dat : photoprocess rates
+│
+├── Run/ : contains all files necessary for a local run of reactor
+│   │
+|   ├── Photo/ : cross-sections and branching ratios
+│   │
+|   ├── reactor : executable simulation code
+│   │
+|   ├── control.dat : main input file
+|   │
+|   └── ...
+|
+└── Scripts/ : shell scripts for running the reactor code
+
+```
+
 
 ## __Open/New__ tab
 
@@ -26,3 +54,4 @@ to the chosen folder and a summary of the project's state
 
 The functionality is not active (the project's files are 
 automatically saved when running the simulator).
+

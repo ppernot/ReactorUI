@@ -1,4 +1,4 @@
-# __MOdel__ module
+# __Model__ module
 
 
 The left panel displays the current values of the project's parameters
@@ -11,9 +11,102 @@ the model.
 
 ## `Chemistry` tab
 
+This is where the chemical scheme/network is set-up.
+
+* `Generate`: generate the list of reactions corresponding to the initial
+mixture.
+
+    + the `Species` and  `Compo.` boxes enable to define the composition
+    of the initial gaz mixture.
+    
+    + when the composition is typed in, hit the `Generate Reactions` button.
+    The code reads the chemistry databases and elaborates iteratively
+    a set of reactions specific to the species present in the initial 
+    gaz mixture. 
+    
+    + the results of the Volpert analysis used to generate the reaction
+    network are proveded in the right panel, showing the new species 
+    added at each iteration.
+    
+
+* `Network` presents a zoomable and active graphical view of the network. 
+Two controls are available:
+
+    + `Nodes attraction` controls the strength of the forces in the
+    network representation.
+    
+    + `Max Volpert Index` enables to see the iterative building of the
+    reactions network, from the initial mixture, to the final scheme.
+    The species appearing at each Volpert iteration are color coded.
+    
+
+* `Reactions` lists the reactions. 
+
+    + The list can be copied to the clipboard or downloaded to disk.
+    
+    + Typing a species name into the `Target sp.` textbox on the left 
+    enables to select the subset of reactions involving this species.
+
+* `Checks` lists the especies for which no loss reactions have been 
+found. These will act as sinks.
+
+* `Sample` is used to assemble Monte-Carlo samples from the generated network.
+
+    + `#MC samples` enables to define the desired number 
+    (_N_, currently 500 max). The data are gathered from ChemDBPublic.
+    
+    + `Generate Samples` starts the generation of MC samples. 
+    
+    _N_+1 samples are generated, with numbers from 0 to _N_, where 0 is the
+    nominal sample, containing the unperturbed reference values for
+    the chemistry parameters.
+    
+    The generated files are stored in the `MC_Input` subfolder 
+    of the project's folder. 
+    __They will overwrite existing files with the same sample numbers.__
+
+
 ## `Irradiation` tab
+
+The spectrum, intensity and cross-section of the irradiation beam are
+defined here.
+
+* `Beam spectrum file` is used to choose a spectrum file on disk.
+
+    __Note__ the spectral resolution has to be conform to the one
+    declared for the photolysis cross-sections in the `ChemDB Versions`
+    tab.
+
+* `Predefined files` proposes a set of spectra.
+
+* `Spectrum Range` enables to define the irradiation spectral range
+(by default the range of the spectrum file, in nanometers)
+
+* `Beam intensity (ph.cm^-2.s^-1)` defines the intensity of the beam.
+
+* `Beam Section (cm^2)` defines the  beam's cross-section.
+
+A summary is provided at the bottom of the controls column,
+and a figure of the model spectrum is shown on the right.
 
 ## `Reactor` tab
 
+The reactor is considered as a tube in which a gaz flow
+is maintained.
+
+The dimensions of the tube (length, cross-section), 
+the working temperatures (gaz and electrons),
+the properties of the gaz flow (total pressure,
+reactants pressure and reactants flux)
+and the duration of the experiment are managed here.
+
+
 ## `ChemDB Versions` tab
+
+By default, the latest versions of the chemmistry databases
+(Photoprocs, Neutrals and Ions) are used, but the user can 
+control specific versions through this tab.
+
+The resolution of the photoprocesses cross-sections can be switched
+between `1 nm` (default) and `0.1 nm` (high resolution).
 

@@ -27,4 +27,4 @@ for the source code
 [‘Issues’ page](https://github.com/ppernot/ReactorUI/issues) 
 of the github deposit, where you can interact with the author.
 
-- `Users Manual` should lead you to the present [documentation](index.html)…
+- `Users Manual` should lead you to the present [documentation](index.html).

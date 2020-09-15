@@ -14,8 +14,7 @@ you use Reactor for a publication, namely
     
     > Pernot, P. (2020) ReactorUI: graphical UI for the 
     > simulation of photochemical reactors
-    > (Version X.X).  
-    > <https://doi.org/10.5281/zenodo.3946078>
+    > (Version X.X). <https://doi.org/10.5281/zenodo.3946078>
     
     where the version number is provided just above the `How to cite`
     link.

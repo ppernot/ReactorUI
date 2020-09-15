@@ -16,23 +16,23 @@
     <div class="wrapper">
       <header>
         <h1 class="header">{{ site.title | default: site.github.repository_name }}</h1>
-        
+
         <ul>
           <li><a href="index.html">Introduction</a></li>
           <li><a href="1-project.html">Project</a></li>
-          <li><a href="2-model.html">Data Selection</a></li>
-          <li><a href="3-run.html">SVD</a></li>
-          <li><a href="4-analysis.html">ALS</a></li>
-          <li><a href="5-fluxes.html">Kinet</a></li>
+          <li><a href="2-model.html">Model</a></li>
+          <li><a href="3-run.html">Run</a></li>
+          <li><a href="4-analysis.html">Analysis</a></li>
+          <li><a href="5-fluxes.html">Fluxes</a></li>
           <li><a href="6-about.html">About</a></li>
-          
+
           <li><a class="buttons github" href="{{ site.github.repository_url }}">View On GitHub</a></li>
         </ul>
 
         {% if site.github.is_project_page %}
           <p class="header">Maintained by <a class="header name" href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a></p>
         {% endif %}
-        
+
       </header>
 
       <section>

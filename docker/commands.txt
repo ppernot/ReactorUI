@@ -10,7 +10,7 @@ BUILD :
 RUN :
    UI :
        1/ cd Projects
-       2/ docker run -d -p 3838:3838 --mount type=bind,source="$(pwd)",target=/Projects --name reactorui --user $(id -u):$(id -g) ppernot1/reactorui
+       2/ docker run -d -p 3838:3838 --mount type=bind,source="$(pwd)",target=/Projects --name reactorui ppernot1/reactorui
        3/ access http://localhost:3838 in browser
 
    BASH :

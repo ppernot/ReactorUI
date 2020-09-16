@@ -72,12 +72,14 @@ rates over the Monte-Carlo sample:
     - `dCorr`: distance correlation t-test of multivariate 
     and functional independence (Szekely, G.J. and Rizzo, M.L. (2013). 
     The distance correlation t-test of independence in high dimension. 
-    Journal of Multivariate Analysis, Volume 117, pp. 193-213.)
+    Journal of Multivariate Analysis, Volume 117, pp. 193-213.
+    <https://doi.org/10.1016/j.jmva.2013.02.012>).
     
     - `dHSIC`: d-variable Hilbert Schmidt independence criterion 
     (Gretton, A., K. Fukumizu, C. H. Teo, L. Song, B. Scholkopf 
     and A. J. Smola (2007). A kernel statistical test of independence. 
-    In Advances in Neural Information Processing Systems, pp. 585-592.)
+    In Advances in Neural Information Processing Systems, pp. 585-592.
+    <https://dl.acm.org/doi/10.5555/2981562.2981636>).
     
     __Note__: the `dCorr` and `dHSIC` features are experimental...
     

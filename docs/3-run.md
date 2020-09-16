@@ -44,8 +44,8 @@ __Note__: to run `reactor` on the Virtual Data openstack cloud:
 1. perform a nominal run on the local machine to ensure 
 and check that the project is correctly configured;
 
-2. follow the manual procedure explained on 
-<https://github.com/ppernot/CloudReactor> in this
+2. follow the manual procedure explained on  
+[](https://github.com/ppernot/CloudReactor) in this
 [document](https://github.com/ppernot/CloudReactor/blob/master/Doc/CloudReactor.pdf);
 
 3. when the runs are done, proceed to the [Analysis](4-analysis.html) tab.

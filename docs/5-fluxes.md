@@ -5,11 +5,12 @@ at the final reaction time.
 
 ## Controls
 
-* `Compute fluxes` starts the computation of fluxes. 
-__This has to be done once__. 
-The results shown in the right tabs depend on the other controls.
+* `Compute fluxes` starts the computation of fluxes.
+This is a time-consuming computation and is not started automatically.
+__It has to be done once__. 
+The results shown in the right tabs depend only on the other controls.
 
-* `Choose species` specify the target species
+* `Choose species` specifies the target species
 
 * `Threshold` enables to limit the number of reactions 
 kept in the results
@@ -24,8 +25,8 @@ for the graph (`ViewFlow`)
 
 * `ViewFlow` tab: a graph representation of the fluxes,
 where the size of arrows increases with the flux.
-Red arrows correspond to formation reactions for the target product,
-and blue arrows to loss reactions.
+Red arrows correspond to formation reactions of the target product,
+and blue arrows to its loss reactions.
 
     The reactions are tagged by their index given in 
     `Model > Chemistry > Reactions`,
@@ -34,5 +35,5 @@ and blue arrows to loss reactions.
 * `Budget/Target` lists the main production and loss paths for
 the target species. 
 The main production path from the initial mixture is also estimated.
-The relative weight/contribution of each reaction is shown,
-ased on the computed fluxes.
+The relative weight/contribution of each reaction is shown;
+it is based on the fluxes.

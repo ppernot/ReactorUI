@@ -26,7 +26,35 @@ mixture.
     
     + the results of the Volpert analysis used to generate the reaction
     network are proveded in the right panel, showing the new species 
-    added at each iteration.
+    added at each iteration. The Volpert index (VlpI) is the number of 
+    steps separating a species from the initial mixture.
+    
+        ```
+        # Pseudocode for the 'Volpert' generation of reaction scheme
+        # Inputs: 
+        # - the initial mixture of the gaz
+        # - a database of reactions (including photoprocesses)
+        # Outputs:
+        # - a reduced and consistent list of reactions
+        # - a list of accessible species
+    
+        1. VlpI = 0 : initialize species list with initial mixture
+    
+        2. VlPI = 1 :
+           a. search and list photoprocess for species in the list
+           b. augment the list with the photoprocess products
+               (new species are tagged with VlpI = 1)
+    
+        3. VlpI = VlpI +1 
+           a. search and list photoprocess and reactions involving 
+              species in the list as reactants
+           b. augment the list with the products of these reactions
+              (new species are tagged with VlpI)
+           c. if (no new species) 
+                stop 
+              else 
+                iterate at 3. 
+        ```
     
 
 * `Network` presents a zoomable and active graphical view of the network. 

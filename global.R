@@ -87,7 +87,9 @@ REAC_DATA_default = list(
   reactantsSpecies     = c('N2,CH4'),
   reactantsComposition = c(0.9,0.1),
   reactionTime         = 3600,
-  nbSnapshots          = 100
+  nbSnapshots          = 100,
+  relativeError        = 1e-4,
+  absoluteError        = 1e-2
 )
 
 REAC_DATA_Titan = list(
@@ -109,7 +111,9 @@ REAC_DATA_Titan = list(
   reactantsSpecies     = c('N2,CH4'),
   reactantsComposition = c(0.90, 0.10),
   reactionTime         = 2e8,
-  nbSnapshots          = 110
+  nbSnapshots          = 110,
+  relativeError        = 1e-4,
+  absoluteError        = 1e-2
 )
 
 listParsReac <- c(

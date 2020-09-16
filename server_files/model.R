@@ -2,12 +2,9 @@
 ## Chemistry
 generateNetwork <- function(
   spInit,
-  photoSourceDir    = file.path(
-    '..','..','ChemDBPublic','PhotoProcs_latest','1nm'),
-  neutralsSourceDir = file.path(
-    '..','..','ChemDBPublic','Neutrals_latest'),
-  ionsSourceDir     = file.path(
-    '..','..','ChemDBPublic','Ions_latest')
+  photoSourceDir    = NULL,
+  neutralsSourceDir = NULL,
+  ionsSourceDir     = NULL
   ) {
 
   # Kinetic Parser
@@ -16,8 +13,7 @@ generateNetwork <- function(
     type = orig = locnum = reacTag = list()
 
   ## Photo processes
-  photoData = file.path(
-    ctrlPars$projectDir,photoSourceDir,'..','PhotoScheme.dat')
+  photoData = file.path(photoSourceDir,'..','PhotoScheme.dat')
   for (filename in photoData) {
     if(file.exists(filename)){ # PhotoIonScheme.dat is optional
       scheme  = read.fwf(file=filename, widths= rep(11,12))
@@ -42,10 +38,7 @@ generateNetwork <- function(
 
   ## Reactions
   for (sourceDir in c(neutralsSourceDir, ionsSourceDir)) {
-    filename = file.path(
-      ctrlPars$projectDir,
-      sourceDir,
-      'run_0000.csv')
+    filename = file.path(sourceDir,'run_0000.csv')
     # scheme   = read.csv(file = filename, header = FALSE, sep = ';')
     scheme   = as.data.frame(
       data.table::fread(file = filename, header = FALSE, sep = ';')
@@ -229,20 +222,11 @@ output$chemDBVersions <- renderUI({
   for (n in names(chemDBData()))
     assign(n, rlist::list.extract(chemDBData(), n))
 
-  chemDBDir    = file.path(
-    ctrlPars$projectDir,'..','..','ChemDBPublic')
-  allAvailable = list.dirs(
-    path = chemDBDir,
-    recursive = FALSE)
+  allAvailable = list.dirs(path = chemDBDir(),recursive = FALSE)
   allVersions  = basename(allAvailable)
 
-  photoDir = file.path(
-    ctrlPars$projectDir,
-    '..','..','ChemDBPublic',
-    'PhotoProcs_latest')
-  allReso  = list.dirs(
-    path = photoDir,
-    recursive = FALSE)
+  photoDir = file.path(chemDBDir(), 'PhotoProcs_latest')
+  allReso  = list.dirs(path = photoDir,recursive = FALSE)
   allReso  = basename(allReso)
 
   phoVers = photoVersion
@@ -436,18 +420,9 @@ observeEvent(
     spInit = spInit[!is.na(spInit) & spInit != ""]
 
     # Databases
-    chemDBDir         = file.path('..','..','ChemDBPublic')
-    if(
-      !dir.exists(
-        file.path(ctrlPars$projectDir,chemDBDir)
-      )
-    ) # Run in container
-      chemDBDir       = file.path('/ChemDBPublic')
-
-    photoSourceDir    = file.path(chemDBDir,input$phoVers,
-                                  input$speReso)
-    neutralsSourceDir = file.path(chemDBDir,input$neuVers)
-    ionsSourceDir     = file.path(chemDBDir,input$ionVers)
+    photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
+    neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
+    ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
 
    id = shiny::showNotification(
       h4('Generating chemistry, be patient...'),
@@ -658,13 +633,12 @@ output$nMCButton <- renderUI({
   }
 
   # Get max number of samples
-  chemDBDir   = '/../../ChemDBPublic/'
-  photoSourceDir = paste0(projectDir(),
-    chemDBDir,input$phoVers,'/',input$speReso,'/')
-  neutralsSourceDir = paste0(projectDir(),
-    chemDBDir,input$neuVers,'/')
-  ionsSourceDir = paste0(projectDir(),
-    chemDBDir,input$ionVers,'/')
+  # chemDBDir      = file.path('..','..','ChemDBPublic')
+  # if(!dir.exists(file.path(outputDir,chemDBDir))) # Run in container
+  #   chemDBDir    = file.path('/ChemDBPublic')
+  photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
+  neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
+  ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
 
   maxNeutrals = length(
     list.files(path = neutralsSourceDir, pattern = '.csv'))
@@ -709,13 +683,9 @@ observeEvent(
       assign(n, rlist::list.extract(reacScheme(), n))
 
     # Databases
-    chemDBDir         = file.path('..','..','ChemDBPublic')
-    if(!dir.exists(chemDBDir)) # Run in container
-      chemDBDir       = file.path('/ChemDBPublic')
-    photoSourceDir    = file.path(chemDBDir,input$phoVers,
-                                  input$speReso)
-    neutralsSourceDir = file.path(chemDBDir,input$neuVers)
-    ionsSourceDir     = file.path(chemDBDir,input$ionVers)
+    photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
+    neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
+    ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
 
     # Generate data files for reactor code ###
     sp_aux =paste(
@@ -791,12 +761,11 @@ observeEvent(
         sel = !photo
         origs = unique(unlist(orig[sel]))
         for (iMC in 0:nMC) {
-          sampleFile = paste0(
-            'run_', sprintf('%04i', iMC), '.csv')
+          sampleFile = paste0('run_', sprintf('%04i', iMC), '.csv')
           data = ''
           for (io in origs) {
             sourceDir = io
-            filename = file.path(outputDir, sourceDir, sampleFile)
+            filename = file.path(sourceDir, sampleFile)
             # scheme   = read.csv(file = filename,
             #                    header = FALSE,
             #                    sep = ';')
@@ -896,12 +865,12 @@ observeEvent(
             for (i in (1:nbReac)[photo]) {
               sp=species[which(Lphoto[i,]!=0)]
               file = paste0(prefix,'se',sp,'.dat')
-              fromFile = file.path(outputDir, photoSourceDir, file)
+              fromFile = file.path(photoSourceDir, file)
               toFile   = file.path(targetMCDir, 'Photoprocs', file)
               file.copy(from = fromFile, to = toFile)
               if( params[[i]][1] != 0 ) {
                 file = paste0(prefix,'qy',sp,'_',params[[i]][1],'.dat')
-                fromFile = file.path(outputDir, photoSourceDir, file)
+                fromFile = file.path(photoSourceDir, file)
                 toFile   = file.path(targetMCDir, 'Photoprocs', file)
                 file.copy(from = fromFile, to = toFile)
               }
@@ -917,12 +886,12 @@ observeEvent(
         for (i in (1:nbReac)[photo]) {
           sp=species[which(Lphoto[i,]!=0)]
           file = paste0('se',sp,'.dat')
-          fromFile = file.path(outputDir, photoSourceDir, prefix, file)
+          fromFile = file.path(photoSourceDir, prefix, file)
           toFile   = file.path(outputDir, 'Run','Photo', file)
           file.copy(from = fromFile, to = toFile)
           if( params[[i]][1] != 0 ) {
             file = paste0('qy',sp,'_',params[[i]][1],'.dat')
-            fromFile = file.path(outputDir, photoSourceDir, prefix, file)
+            fromFile = file.path(photoSourceDir, prefix, file)
             toFile   = file.path(outputDir, 'Run','Photo', file)
             file.copy(from = fromFile, to = toFile)
           }

@@ -110,6 +110,36 @@ output$nMCRunSelect <- renderUI({
       value = reacData()$nbSnapshots,
       width = '200px'
     ),
+    h3(''),
+    sliderInput(
+      "logRelErr",
+      "Log relative error",
+      min = -10,
+      max =  -2,
+      step =  1,
+      value = log10(
+        ifelse(
+          is.null(reacData()$relativeError),
+          REAC_DATA_default$relativeError,
+          reacData()$relativeError
+        )
+      )
+    ),
+    h3(''),
+    sliderInput(
+      "logAbsErr",
+      "Log absolute error",
+      min = -10,
+      max =  -2,
+      step =  1,
+      value = log10(
+        ifelse(
+          is.null(reacData()$absoluteError),
+          REAC_DATA_default$absoluteError,
+          reacData()$absoluteError
+        )
+      )
+    ),
     h3('')
   )
   ui
@@ -119,6 +149,22 @@ observeEvent(
   input$nbSnap, ({
     ll = reacData()
     ll$nbSnapshots = input$nbSnap
+    reacData(ll)
+  })
+)
+observeEvent(
+  # Update integrator relative error
+  input$logRelErr, ({
+    ll = reacData()
+    ll$relativeError = 10^input$logRelErr
+    reacData(ll)
+  })
+)
+observeEvent(
+  # Update integrator absolute error
+  input$logAbsErr, ({
+    ll = reacData()
+    ll$absoluteError = 10^input$logAbsErr
     reacData(ll)
   })
 )

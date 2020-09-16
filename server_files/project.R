@@ -1,4 +1,5 @@
 projectDir   = reactiveVal(NULL)
+chemDBDir    = reactiveVal(NULL)
 reacData     = reactiveVal(NULL)
 chemDBData   = reactiveVal(NULL)
 spectrumData = reactiveVal(NULL)
@@ -112,6 +113,12 @@ observeEvent(
         is.character(ctrlPars$projectDir))
       rlist::list.save(ctrlPars, 'ctrlParams.yaml')
   }
+
+  # Set ChemDBDir
+  dir = file.path(projectDir(),'..','..','ChemDBPublic')
+  if(!dir.exists(dir)) # When run in container, dirs are at the top...
+    dir = '/ChemDBPublic'
+  chemDBDir(dir)
 
 })
 # Save ####

@@ -23,17 +23,20 @@ for the graph (`ViewFlow`)
 
 ## Outputs
 
-* `ViewFlow` tab: a graph representation of the fluxes,
-where the size of arrows increases with the flux.
+### __ViewFlow__ tab
+
+A graph representation of the fluxes, where the size of arrows 
+increases with the flux.
 Red arrows correspond to formation reactions of the target product,
 and blue arrows to its loss reactions.
 
-    The reactions are tagged by their index given in 
-    `Model > Chemistry > Reactions`,
-    and color coded (orange: photoprocesses; green: reactions).
+The reactions are tagged by their index given in 
+`Model > Chemistry > Reactions`,
+and color coded (orange: photoprocesses; green: reactions).
 
-* `Budget/Target` lists the main production and loss paths for
-the target species. 
+### __Budget/Target__ tab
+
+Lsts ofthe main production and loss paths for the target species. 
 The main production path from the initial mixture is also estimated.
 The relative weight/contribution of each reaction is shown;
 it is based on the fluxes.

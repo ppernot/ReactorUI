@@ -18,7 +18,11 @@ of the chemistry for which the code is to be run.
 species concentrations will be saved along the simulation. 
 The points are regularly spaced on the logarithmic time scale.
 
-## `Local` tab
+* `Log relative error` and `Log absolute error` control
+the error levels of the  IRKC implicit-explicit integrator
+(see <https://github.com/ppernot/Reactor>)
+
+## __Local__ tab
 
 The `Start` button in the `Local` tab will launch the simulations
 on the local computer. 
@@ -30,12 +34,12 @@ the simulations are perfectly running in the background.
 If this happens, check that the `MC_Output` folder is being 
 populated according to your expectations...
 
-## `Cloud` tab
+## __Cloud__ tab
 
 There is provision for a `Cloud` mode to launch the
 simulations on the Virtual Data cloud. To be done...
 
-To run `reactor` on the Virtual Data openstack cloud:
+__Note__: to run `reactor` on the Virtual Data openstack cloud:
 
 1. perform a nominal run on the local machine to ensure 
 and check that the project is correctly configured;

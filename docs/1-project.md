@@ -1,6 +1,7 @@
 # __Project__ module
 
 This is where one chooses the project to be worked on. 
+
 A project is a folder with the following structure:
 
 ```

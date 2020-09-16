@@ -9,7 +9,7 @@ The right panel contains a series of tabs for the different parts of
 the model.
 
 
-## `Chemistry` tab
+## __Chemistry__ tab
 
 This is where the chemical scheme/network is set-up.
 
@@ -94,7 +94,7 @@ found. These will act as sinks.
     __They will overwrite existing files with the same sample numbers.__
 
 
-## `Irradiation` tab
+## __Irradiation__ tab
 
 The spectrum, intensity and cross-section of the irradiation beam are
 defined here.
@@ -117,7 +117,7 @@ defined here.
 A summary is provided at the bottom of the controls column,
 and a figure of the model spectrum is shown on the right.
 
-## `Reactor` tab
+## __Reactor__ tab
 
 The reactor is considered as a tube in which a gaz flow
 is maintained.

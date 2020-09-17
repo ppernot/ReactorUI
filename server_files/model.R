@@ -340,9 +340,22 @@ output$chemistryParams <- renderUI({
   csp = csp[sel]/sum(csp[sel])
   rsp = reactantsSpecies
   rsp = strsplit(rsp,',')[[1]][sel]
+  nsp = length(rsp)
 
   width = 6
 
+  # UI with 6 slots should be enough...
+  nslots = 6
+  if(nsp > nslots)
+    showModal(modalDialog(
+      title = ">>>> Too many initail species <<<< ",
+      paste0('Your control data nb os species (',nsp,
+             ') exceeds the capacity of the interface(',nslots,').\n',
+             'If you need more, please raise an issue.'),
+      easyClose = TRUE,
+      footer = modalButton("OK"),
+      size = 's'
+    ))
   ui <- list(
     fluidRow(
       column(
@@ -356,38 +369,37 @@ output$chemistryParams <- renderUI({
     ),
     hr(style = "border-color: #666;")
   )
-  for (i in 1:length(rsp)) {
-    ui[[2+i]] <-
-      fixedRow(
+  for (i in 1:nsp) {
+    ui[[2+i]] = fixedRow(
+      column(
+        width,
+        textInput(
+          paste0("sp_", i),
+          label = NULL,
+          value = rsp[i]
+        )
+      ),
+      column(
+        width,
+        numericInput(
+          paste0("c0_", i),
+          label = NULL,
+          value = csp[i],
+          min   = 0,
+          max   = 1,
+          step  = 0.1
+        )
+      )
+    )
+  }
+  if (nsp < nslots) {
+    # Additional empty lines
+    for (i in (nsp+1):nslots) {
+      ui[[2+i]] = fixedRow(
         column(
           width,
           textInput(
             paste0("sp_", i),
-            label = NULL,
-            value = rsp[i]
-          )
-        ),
-        column(
-          width,
-          numericInput(
-            paste0("c0_", i),
-            label = NULL,
-            value = csp[i],
-            min   = 0,
-            max   = 1,
-            step  = 0.1
-          )
-        )
-      )
-  }
-  # Additional empty lines
-  for (i in 1:2) {
-    ui[[2+length(rsp)+i]] <-
-      fixedRow(
-        column(
-          width,
-          textInput(
-            paste0("sp_", length(rsp)+i),
             label = NULL,
             value = NA,
             placeholder = "New sp."
@@ -396,7 +408,7 @@ output$chemistryParams <- renderUI({
         column(
           width,
           numericInput(
-            paste0("c0_", length(rsp)+i),
+            paste0("c0_", i),
             label = NULL,
             value = 0,
             min   = 0,
@@ -405,6 +417,7 @@ output$chemistryParams <- renderUI({
           )
         )
       )
+    }
   }
   ui
 })
@@ -414,10 +427,27 @@ observeEvent(
   input$generateNetwork, {
 
     # Initial mixture
-    spInit = c()
-    for(sp in 1:5)
-      spInit = c(spInit, input[[paste0('sp_',sp)]])
-    spInit = spInit[!is.na(spInit) & spInit != ""]
+
+    ## Number of inputs
+    nslots = 6
+
+    ## Collect inputs
+    spInit = cInit = c()
+    for(sp in 1:nslots) {
+      c0 = input[[paste0('c0_',sp)]]
+      if(!is.finite(c0) | c0 == 0) next
+      s0 = input[[paste0('sp_',sp)]]
+      if(is.na(s0) | s0 == "") next
+      cInit  = c(cInit,  c0)
+      spInit = c(spInit, s0)
+    }
+    cInit = cInit / sum(cInit)
+
+    ## Actuate parms list
+    ll = reacData()
+    ll$reactantsSpecies = paste0(spInit,collapse=',')
+    ll$reactantsComposition = cInit
+    reacData(ll)
 
     # Databases
     photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
@@ -427,10 +457,10 @@ observeEvent(
    id = shiny::showNotification(
       h4('Generating chemistry, be patient...'),
       closeButton = FALSE,
-      duration = NULL,
+      duration = 5,
       type = 'message'
     )
-   on.exit(removeNotification(id), add = TRUE)
+   # on.exit(removeNotification(id), add = TRUE)
 
     future({
       generateNetwork(

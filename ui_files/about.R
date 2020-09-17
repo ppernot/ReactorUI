@@ -10,5 +10,8 @@ sidebarPanel(
   a(href="https://github.com/ppernot/ReactorUI","code@github"),
   br(),
   a(href="https://github.com/ppernot/ReactorUI/issues",
-    "Bugs report, Features request")
+    "Bugs report, Features request"),
+  br(),
+  a(href="https://ppernot.github.io/ReactorUI",
+    "User's manual")
 )

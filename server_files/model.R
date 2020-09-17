@@ -501,20 +501,25 @@ output$quality <- renderPrint({
   for (n in names(reacScheme()))
     assign(n, rlist::list.extract(reacScheme(), n))
 
-  cat('Sinks / Species with no loss:')
+  cat('Sinks / Species with no loss:\n',
+      '-----------------------------')
   cat('\n\n')
   sel = colSums(L) == 0
-  sp = species[sel]
-  ms = mass[sel]
-  io = order(ms)
-  for (i in 1:length(sp)) {
-    ind = io[i]
-    s = sp[ind]
-    prods = which(R[,s] != 0)
-    cat(round(ms[ind],digits=4),s,'\n  Productions :\n')
-    for(j in 1:length(prods))
-      cat('    ',unlist(reacTag)[reacs[prods[j]]],'\n')
-    cat('\n')
+  if(sum(sel) != 0) {
+    sp = species[sel]
+    ms = mass[sel]
+    io = order(ms)
+    for (i in 1:length(sp)) {
+      ind = io[i]
+      s = sp[ind]
+      prods = which(R[,s] != 0)
+      cat(round(ms[ind],digits=4),s,'\n  Productions :\n')
+      for(j in 1:length(prods))
+        cat('    ',unlist(reacTag)[reacs[prods[j]]],'\n')
+      cat('\n')
+    }
+  } else {
+    cat('None...')
   }
   cat('\n')
 })

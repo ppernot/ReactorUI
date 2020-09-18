@@ -445,6 +445,9 @@ output$kinetics <- renderPlot({
     input$colSel, species, sel, nf=1,
     cols, col_tr, col_tr2)
 
+  # Show uncertainty bands ?
+  showBands = (nf > 1) & input$mcPlot
+
   # Plot
   par(mfrow = c(1, 1),
       cex = cex, cex.main = cex, mar = c(mar[1:3],3.5),
@@ -453,7 +456,7 @@ output$kinetics <- renderPlot({
   plot(time, time,
        type = 'n',
        log  = 'x',
-       main = ifelse(!input$mcPlot,
+       main = ifelse(!showBands,
                      'Mean values',
                      'Mean and 95 % Proba. Intervals'),
        xlab = 'Time / s',
@@ -483,13 +486,14 @@ output$kinetics <- renderPlot({
   }
 
   # CI
-  if(input$mcPlot) {
+  if(showBands) {
     for(isp in (1:nsp)[sel])
       polygon(c(time     , rev(time      )),
               c(mfLow[,isp],rev(mfSup[,isp])),
               col = colors$col_trSp[isp],
               border = NA)
   }
+
   # Mean concentrations
   matplot(time, mfMean[,sel], type='l', lty = 1,
           col = colors$colsSp[sel],
@@ -498,6 +502,7 @@ output$kinetics <- renderPlot({
   #      labels = species[sel],
   #      col=colors$colsSp[sel],
   #      pos = 4, offset=0.2, cex=cex.leg)
+
   mtext(at  = mfMean[nt,sel],
        text = species[sel],
        side = 4,

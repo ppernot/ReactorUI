@@ -668,9 +668,6 @@ output$nMCButton <- renderUI({
   }
 
   # Get max number of samples
-  # chemDBDir      = file.path('..','..','ChemDBPublic')
-  # if(!dir.exists(file.path(outputDir,chemDBDir))) # Run in container
-  #   chemDBDir    = file.path('/ChemDBPublic')
   photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
   neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
   ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
@@ -726,7 +723,7 @@ observeEvent(
     sp_aux =paste(
       nbSpecies,'\n',
       paste(species,collapse = ' '), '\n',
-      paste(mass,   collapse =  ' '), '\n',
+      paste(mass,   collapse = ' '), '\n',
       paste(rep(0,nbSpecies), collapse = ' ')
     )
     writeLines(

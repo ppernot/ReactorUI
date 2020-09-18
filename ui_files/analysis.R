@@ -34,7 +34,7 @@ sidebarLayout(
                 checkboxInput(
                   "mcPlot",
                   "Show error bands",
-                  value = TRUE
+                  value = FALSE
                 ),
                 checkboxInput(
                   "colSel",

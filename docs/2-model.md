@@ -129,7 +129,7 @@ reactants pressure and reactants flux)
 and the duration of the experiment are managed here.
 
 
-## `ChemDB Versions` tab
+## __ChemDB Versions__ tab
 
 By default, the latest versions of the chemmistry databases
 (Photoprocs, Neutrals and Ions) are used, but the user can 

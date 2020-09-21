@@ -36,7 +36,7 @@ and color coded (orange: photoprocesses; green: reactions).
 
 ### __Budget/Target__ tab
 
-Lsts ofthe main production and loss paths for the target species. 
+List of the main production and loss paths for the target species. 
 The main production path from the initial mixture is also estimated.
 The relative weight/contribution of each reaction is shown;
 it is based on the fluxes.

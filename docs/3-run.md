@@ -15,7 +15,7 @@ of the chemistry for which the code is to be run.
     accordingly, to avoid double runs with the same sample...
 
 * `# snapshots per run` defines the number of snapshots of the
-species concentrations will be saved along the simulation. 
+species concentrations to be saved along the simulation. 
 The points are regularly spaced on the logarithmic time scale.
 
 * `Log relative error` and `Log absolute error` control

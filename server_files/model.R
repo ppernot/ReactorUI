@@ -161,7 +161,7 @@ generateNetwork <- function(
   for (i in 1:nbReac) {
     reacts = which(L[i,] != 0)
     prodts = which(R[i,] != 0)
-    linksR[reacts, prodts] = 1
+    linksR[reacts, prodts] = linksR[reacts, prodts] + 1
     # linksR[prodts, reacts] = 1
   }
 
@@ -537,6 +537,31 @@ output$summaryScheme <- renderPrint({
   for (i in 0:maxVlpInd)
     cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n')
 
+  # Graph connectivity
+  g = simplify(
+    graph_from_adjacency_matrix(
+      linksR,
+      mode = "undirected",
+      weighted = TRUE
+    )
+  )
+
+  # cat(' Connectivity : ',igraph::vertex_connectivity(g),'\n',
+  #     'Radius       : ',igraph::radius(g),'\n\n')
+
+  deg = degree(g)
+  io = order(deg, decreasing = TRUE)
+  cat(' 40 Most connected species\n',
+      '-------------------------\n')
+  for(i in 1:40)
+    cat(species[io][i], '\t\t',deg[io][i], '\n')
+  cat('\n\n')
+
+  cat(' Connectivity distribution\n',
+      '-------------------------\n')
+  print(table(deg)[1:30])
+
+
 })
 output$quality <- renderPrint({
   if (is.null(reacScheme())) {
@@ -685,10 +710,27 @@ output$plotScheme <- renderForceNetwork({
     )
   )
 
-  # eb = cluster_edge_betweenness(g)
-  # gr = membership(eb)
+  # Coloring/clustering
+  if (input$netColoring == 'volpert') {
+    grp = vlpInd[sel]
+  } else if (input$netColoring == 'charge') {
+    ions = grepl("\\+$",species[sel])
+    grp = as.numeric(factor(ions))
+  } else if (input$netColoring == 'edge_betweeneness') {
+    eb = cluster_edge_betweenness(g)
+    grp = eb$membership
+  } else if (input$netColoring == 'louvain') {
+    eb = cluster_louvain(g)
+    grp = eb$membership
+  } else if (input$netColoring == 'fast_greedy') {
+    eb = cluster_fast_greedy(g)
+    grp = eb$membership
+  } else if (input$netColoring == 'leading_eigen') {
+    eb = cluster_leading_eigen(g)
+    grp = eb$membership
+  }
 
-  graph_d3 <- igraph_to_networkD3(g, group = vlpInd[sel])
+  graph_d3 <- igraph_to_networkD3(g, group = grp)
 
   forceNetwork(
     Links   = graph_d3$links,

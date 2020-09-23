@@ -67,7 +67,19 @@ Two controls are available:
     reactions network, from the initial mixture, to the final scheme.
     The species appearing at each Volpert iteration are color coded.
     
-
+    + `Coloring/Clustering` offers a choice of options to color the nodes 
+    of the graph:
+    
+        - `volpert` colors by the value of the volpert index
+        
+        - `charge` colors by the charge of the species
+        
+        - `edge_betweeneness`, `louvain`, `fast_greedy` and
+        `leading_eigen` are community detection algorithms offered 
+        by the [igraph](https://igraph.org/r) package 
+        (_experimental_; might be very slow for large networks)
+    
+    
 * `Reactions` lists the reactions. 
 
     + The list can be copied to the clipboard or downloaded to disk.

@@ -62,6 +62,18 @@ sidebarLayout(
                       max   = 10,
                       step  =  1,
                       value = 10
+                    ),
+                    shiny::radioButtons(
+                      'netColoring',
+                      'Coloring/Clustering',
+                      choiceNames = list(
+                        'volpert','charge','edge_betweeneness',
+                        'louvain','fast_greedy','leading_eigen'
+                      ),
+                      choiceValues = list(
+                        'volpert','charge','edge_betweeneness',
+                        'louvain','fast_greedy','leading_eigen'
+                      )
                     )
                   ),
                   column(

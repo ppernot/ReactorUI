@@ -2,7 +2,7 @@
 getConc  = function(concThresh = -50) {
 
   # Read Ctrl file to get spInit
-  ctrlList = readCtrl(projectDir())
+  ctrlList = readCtrl(ctrlPars$projectDir)
   csp = ctrlList$REAC_DATA$reactantsComposition
   sel = which(is.finite(csp))
   rsp = ctrlList$REAC_DATA$reactantsSpecies
@@ -11,7 +11,7 @@ getConc  = function(concThresh = -50) {
 
   # Load 1 sample files
   files = list.files(
-    path = file.path(projectDir(),'MC_Output'),
+    path = file.path(ctrlPars$projectDir,'MC_Output'),
     pattern = "fracmol_",
     full.names = TRUE
   )
@@ -56,6 +56,23 @@ getConc  = function(concThresh = -50) {
                 function(x) quantile(x,probs = 0.025,na.rm=TRUE))
   ySup95= apply(moleFrac,c(2,3),
                 function(x) quantile(x,probs = 0.975,na.rm=TRUE))
+
+  # Save final mole fractions to disk
+  dirOut = file.path(ctrlPars$projectDir, 'Outputs')
+  if(!dir.exists(dirOut))
+    dir.create(dirOut, showWarnings = FALSE)
+  cnv = log10(exp(1))
+  mmol = 10^yMean[nt,]
+  write.csv(
+    data.frame(
+      mean  = mmol,
+      sd    = cnv * mmol * ySd[nt,],
+      low95 = 10^yLow95[nt,],
+      sup95 = 10^ySup95[nt,],
+      row.names = species
+    ),
+    file = file.path(dirOut,'MoleFrac_tFinal.csv')
+  )
 
   return(
     list(
@@ -416,20 +433,6 @@ output$kinetics <- renderPlot({
   # Extract conc et al.
   for (n in names(concList()))
     assign(n,rlist::list.extract(concList(),n))
-
-  # Save final mole fractions to disk
-  # dirOut = file.path(projectDir(), 'Outputs')
-  # if(!dir.exists(dirOut))
-  #   dir.create(dirOut, showWarnings = FALSE)
-  # write.csv(
-  #   data.frame(
-  #     mean = yMean[nt,],
-  #     sd   = ySd[nt,],
-  #     low95= yLow95[nt,],
-  #     sup95= ySup95[nt,]
-  #   ),
-  #   file = file.path(dirOut,'log_MoleFrac_tFinal.csv')
-  # )
 
   # Species list to plot
   sel = selectSpecies(species, input$categsPlot)

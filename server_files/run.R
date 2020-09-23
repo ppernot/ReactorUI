@@ -114,7 +114,7 @@ output$nMCRunSelect <- renderUI({
     sliderInput(
       "logRelErr",
       "Log relative error",
-      min = -10,
+      min = -12,
       max =  -2,
       step =  1,
       value = log10(
@@ -129,7 +129,7 @@ output$nMCRunSelect <- renderUI({
     sliderInput(
       "logAbsErr",
       "Log absolute error",
-      min = -10,
+      min = -12,
       max =  -2,
       step =  1,
       value = log10(

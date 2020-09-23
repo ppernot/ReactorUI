@@ -151,6 +151,14 @@ sidebarLayout(
                   max = 10,
                   step = 1,
                   value = 3
+                ),
+                sliderInput(
+                  "MStext.cex",
+                  "Size of names",
+                  min = 0,
+                  max = 9,
+                  step = 1,
+                  value = 5
                 )
               )
             ),

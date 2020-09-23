@@ -50,7 +50,8 @@ observeEvent(
         'MC_Input',
         file.path('MC_Input', 'Photoprocs'),
         file.path('MC_Input', 'Reactions'),
-        'Scripts'
+        'Scripts',
+        'Outputs'
       ))
         dir.create(file.path(dir, dname), showWarnings = FALSE)
 

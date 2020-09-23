@@ -237,8 +237,15 @@ output$chemDBVersions <- renderUI({
                    paste0('v_',phoVers))
   phoVers = paste0('PhotoProcs_',phoVers)
 
-  speReso = spectralResolution
-  if(is.null(speReso) | !speReso  %in% c(0.1,1)) {
+  if (exists('spectralResolution')){
+    speReso = spectralResolution
+    if(is.null(speReso) | !speReso  %in% c(0.1,1)) {
+      speReso = REAC_DATA_default$spectralResolution
+      ll = reacData()
+      ll$spectralResolution = speReso
+      reacData(ll)
+    }
+  } else {
     speReso = REAC_DATA_default$spectralResolution
     ll = reacData()
     ll$spectralResolution = speReso
@@ -486,8 +493,47 @@ output$summaryScheme <- renderPrint({
   cat('Nb species         = ', length(species),'\n')
   cat('Nb reactions       = ', length(reacs)  ,'\n\n')
 
+  # Nature of species
+  types = c("neutrals","ions")
+  chems = c("hydrocarbons","N-bearing","O-bearing")
+  heavy = c("C0","C1","C2","C3","C4","C5","C6","Cmore")
+  resu = matrix(0,
+                nrow = 1 + length(chems),
+                ncol = 2 + length(types))
+  rownames(resu) = c(chems,'total')
+  colnames(resu) = c(types,'radicals','total')
+  for (type in types)
+    resu['total',type] = sum(
+      selectSpecies(species,c(type,chems,heavy)))
+  resu['total','radicals'] = sum(
+    selectSpecies(species,c(types,'radicals',chems,heavy)))
+
+  for (chem in chems) {
+    resu[chem,'total'] = sum(
+      selectSpecies(species,c(types,chem,heavy)))
+    resu[chem,'radicals'] = sum(
+      selectSpecies(species,c(types,'radicals',chem,heavy)))
+  }
+  for (type in types)
+    for (chem in chems)
+      resu[chem,type] = sum(
+        selectSpecies(species,c(type,chem,heavy)))
+
+  cat('Compositions (excl. dummies)\n')
+  cat('----------------------------\n\n')
+  print(resu)
+  cat('\n\n')
+
+  # Volpert index analysis ####
+  cat('Volpert analysis\n')
+  cat('----------------\n\n')
+
+  cat('Species distribution of Volpert index\n')
+  print(table(vlpInd))
+  cat('\n\n')
+
   maxVlpInd = max(vlpInd)
-  cat('Max. Volpert Index = ', maxVlpInd,'\n\n')
+  # cat('Max. Volpert Index = ', maxVlpInd,'\n\n')
   for (i in 0:maxVlpInd)
     cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n')
 
@@ -615,6 +661,7 @@ options = list(
   scrollY = 550,
   scroller = TRUE
 ))
+# Network ####
 output$plotScheme <- renderForceNetwork({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -637,6 +684,9 @@ output$plotScheme <- renderForceNetwork({
       weighted = TRUE
     )
   )
+
+  # eb = cluster_edge_betweenness(g)
+  # gr = membership(eb)
 
   graph_d3 <- igraph_to_networkD3(g, group = vlpInd[sel])
 

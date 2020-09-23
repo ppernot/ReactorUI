@@ -1097,29 +1097,42 @@ volpertIndex <- function (rootSpecies, species, L, R) {
 
 plotMS <- function(x, y, yLow, ySup, xlim, ylim,
                    w, col, colt=col, species, xlab= 'm/z',
-                   main='', ppScale=FALSE, errBar = FALSE) {
+                   main='', ppScale=FALSE, errBar = FALSE,
+                   text.cex = 1) {
+
   plot(x, y, type = 'n',
        xlim = xlim, xlab = xlab, cex.axis=0.75,
        ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
        main = main)
+
+  # Axis
   ti = seq(floor(xlim[1]), ceiling(xlim[2]), by=1)
   axis(side = 1, at = ti, labels = ti, cex.axis=0.75)
   grid()
+
   if(ppScale)
     axis(side = 4,
          labels=c("ppm", "ppb","ppt","ppq"),
          at = -3*(2:5), las = 1, tck = 1)
+
+  # Transparent bars
   for(i in 1:2) # Increase color density
     segments(x, y, x, rep(-30, length(y)),
-             lwd = w,
-             col = colt)
+             lwd = w, col = colt)
+
   # CI
   if(errBar)
     Hmisc::errbar(x, y, ySup, yLow, cap = 0.02,
                   add = TRUE, lty = 1, type = 'p',
                   pch = 16, lwd = 1.2,
                   col = col, errbar.col = col)
-  text( x, y, labels = species, col = col,
-    pos = 4, offset = 0.25, font = 2)
+
+  # Names
+  if(text.cex != 0)
+    text( x, y,
+          labels = species, col = col,
+          pos = 4, offset = 0.25,
+          font = 1, cex = text.cex)
+
   box()
 }

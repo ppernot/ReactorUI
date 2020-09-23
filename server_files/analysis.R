@@ -2,7 +2,7 @@
 getConc  = function(concThresh = -50) {
 
   # Read Ctrl file to get spInit
-  ctrlList = readCtrl(ctrlPars$projectDir)
+  ctrlList = readCtrl(projectDir())
   csp = ctrlList$REAC_DATA$reactantsComposition
   sel = which(is.finite(csp))
   rsp = ctrlList$REAC_DATA$reactantsSpecies
@@ -11,9 +11,9 @@ getConc  = function(concThresh = -50) {
 
   # Load 1 sample files
   files = list.files(
-    path=paste0(ctrlPars$projectDir,'/MC_Output'),
-    pattern="fracmol_",
-    full.names=TRUE
+    path = file.path(projectDir(),'MC_Output'),
+    pattern = "fracmol_",
+    full.names = TRUE
   )
 
   # x = read.table(files[1], header=TRUE, skip=0)
@@ -367,7 +367,7 @@ observeEvent(
     id = shiny::showNotification(
       h4('Loading concentrations, be patient...'),
       closeButton = FALSE,
-      duration = NULL,
+      duration = 5,
       type = 'message'
     )
     on.exit(removeNotification(id), add = TRUE)
@@ -407,6 +407,7 @@ output$loadMsg <- renderPrint({
 
 })
 
+# Kinetics ####
 rangesKinetics <- reactiveValues(x = NULL, y = NULL)
 output$kinetics <- renderPlot({
   if(is.null(concList()))
@@ -416,8 +417,28 @@ output$kinetics <- renderPlot({
   for (n in names(concList()))
     assign(n,rlist::list.extract(concList(),n))
 
+  # Save final mole fractions to disk
+  # dirOut = file.path(projectDir(), 'Outputs')
+  # if(!dir.exists(dirOut))
+  #   dir.create(dirOut, showWarnings = FALSE)
+  # write.csv(
+  #   data.frame(
+  #     mean = yMean[nt,],
+  #     sd   = ySd[nt,],
+  #     low95= yLow95[nt,],
+  #     sup95= ySup95[nt,]
+  #   ),
+  #   file = file.path(dirOut,'log_MoleFrac_tFinal.csv')
+  # )
+
   # Species list to plot
   sel = selectSpecies(species, input$categsPlot)
+  if(sum(sel) == 0)
+    showNotification(
+      h4('Your selection is empty !'),
+      type = 'warning'
+    )
+  req(sum(sel) > 0)
 
   # Define zoom range
   if (is.null(rangesKinetics$x)) {
@@ -595,7 +616,8 @@ output$pseudoMS <- renderPlot({
           species[selNeu],xlab ='mass',
           ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
           main = paste0('Neutrals / Time = 10^',
-                        round(log10(t0)),' s' ) )
+                        round(log10(t0)),' s' ),
+          text.cex = input$MStext.cex/5 )
 
   #Ions
   x    = mass[selIon]
@@ -606,11 +628,14 @@ output$pseudoMS <- renderPlot({
   col  = colorsIon$colsSp[selIon]
   colt = colorsIon$col_trSp[selIon]
 
+
   plotMS( x, y, yLow, ySup, xlim, ylim,
           w, col, colt, species[selIon],
           ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
           main = paste0('Ions / Time = 10^',
-                        round(log10(t0)),' s' ) )
+                        round(log10(t0)),' s' ),
+          text.cex = input$MStext.cex/5
+          )
 
 })
 

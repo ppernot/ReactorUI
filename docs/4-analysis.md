@@ -55,6 +55,8 @@ to be used to draw the MS.
 of the mass-spectra.
     
 * `Adjust bar width` enables to tune the width of the MS bars.
+
+* `Size of names` controls the peaks labels size (0 = no labels)
     
 ## __Sensitivity__ tab
 

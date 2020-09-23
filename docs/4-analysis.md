@@ -10,6 +10,12 @@ The analysis of reaction fluxes is done in the `Fluxes` module.
 A short summary is presented below the button when the operation 
 is completed.
 
+__News__
+
+* 2020_09_23: Statistics about the mole fractions at final simulation 
+time are saved in `Outputs/MoleFrac_tFinal.csv`
+
+
 ## __Kinetics__ tab 
 
 A plot of the time-dependent mole fractions 

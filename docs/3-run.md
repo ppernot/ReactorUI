@@ -22,6 +22,10 @@ The points are regularly spaced on the logarithmic time scale.
 the error levels of the  IRKC implicit-explicit integrator
 (see <https://github.com/ppernot/Reactor>)
 
+    __Note__: the default values are chosen to provide rapidly 
+    reasonable results. Fot a better accuracy on the minor species,
+    it might be better to lower these values.
+
 ## __Local__ tab
 
 The `Start` button in the `Local` tab will launch the simulations

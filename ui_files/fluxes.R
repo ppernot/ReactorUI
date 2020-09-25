@@ -52,6 +52,14 @@ sidebarLayout(
             ),
           selected = "GEM",
           width = "50%"
+        ),
+        sliderInput(
+          'forceNetChargeFlux',
+          'Nodes attraction',
+          min   = -160,
+          max   =    0,
+          step  =   20,
+          value = -100
         )
       )
     )
@@ -67,6 +75,17 @@ sidebarLayout(
             plotOutput(
               "viewFlow",
               height = 700
+            # ),
+            # type=4
+          )
+        ),
+        tabPanel(
+          title=h4("ViewFlow-D3"),
+          br(),
+          # withSpinner(
+          forceNetworkOutput(
+            "viewFlowD3",
+            height = 700
             # ),
             # type=4
           )

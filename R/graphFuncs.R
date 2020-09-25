@@ -394,6 +394,7 @@ addLinks = function (sp1,
                      nbReacs,
                      nbSpecies,
                      wght = 1) {
+
   # Update flow digraph
   lSpecies = (nbReacs + 1):(nbReacs + nbSpecies)
 
@@ -419,6 +420,7 @@ addLinks = function (sp1,
     links[reacSel, lSpecies] =
       links[reacSel, lSpecies] + wght * KR[reacSel, 1:nbSpecies]
   }
+
   return(links)
 }
 
@@ -505,8 +507,8 @@ viewFlow = function(sp1,
   E(g)$arrow.width = 0.25*max(E(g)$width)
   E(g)$curved = curved
 
-  loners=which(degree(g)==0)
-  g=delete.vertices(g,loners)
+  loners = which(degree(g) == 0)
+  g = delete.vertices(g, loners)
 
   return(g)
 }

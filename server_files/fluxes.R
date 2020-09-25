@@ -99,7 +99,7 @@ observeEvent(
       id = shiny::showNotification(
         h4('Loading concentrations, be patient...'),
         closeButton = FALSE,
-        duration = NULL,
+        duration = 5,
         type = 'message'
       )
       on.exit(removeNotification(id), add = TRUE)
@@ -121,7 +121,7 @@ observeEvent(
       id = shiny::showNotification(
         h4('Loading rates, be patient...'),
         closeButton = FALSE,
-        duration = NULL,
+        duration = 5,
         type = 'message'
       )
       on.exit(removeNotification(id), add = TRUE)
@@ -150,6 +150,14 @@ output$viewFlow <- renderPlot({
   for (n in names(fluxesList()))
     assign(n,rlist::list.extract(fluxesList(),n))
 
+  test = input$flSpec %in% species
+  if(!test) # Rq: validate() would not display message !?!?!?
+    showNotification(
+      h4('Invalid species name !'),
+      type = 'warning'
+    )
+  req(test)
+
   # Remove dummy species
   sel  = ! species %in% spDummy
   spec = species[sel]
@@ -173,22 +181,100 @@ output$viewFlow <- renderPlot({
     showLegend = TRUE,
     curved = input$curvedArrow
   )
+
   layout = switch(
     input$fluxGraphAlgo,
     FR  = layout_with_fr(g),
     LGL = layout_with_lgl(g,
-                          root = input$flSpec,
-                          repulserad = vcount(g)^3 * input$topShow),
-    Bipartite = layout_as_bipartite(g,vgap = 100 * input$topShow),
+      root = input$flSpec,
+      repulserad = vcount(g)^3 * input$topShow),
+    Bipartite = layout_as_bipartite(g,
+      vgap = 100 * input$topShow),
     layout_with_gem(g) # Default
   )
   plot(g, layout=layout)
+
   # legend(
   #   'topright',cex=1,bty='n',
   #   legend=reacTypeNames,
   #   lty=1,lwd=2,
   #   col=[1:length(reacTypeNames)]
   # )
+
+})
+# NetworkD3 ####
+output$viewFlowD3 <- renderForceNetwork({
+  if(is.null(concList()) |
+     is.null(ratesList()) |
+     is.null(fluxesList()) |
+     is.null(input$flSpec)  )
+    return(NULL)
+
+  # Extract data from lists
+  for (n in names(concList()))
+    assign(n,rlist::list.extract(concList(),n))
+  for (n in names(ratesList()))
+    assign(n,rlist::list.extract(ratesList(),n))
+  for (n in names(fluxesList()))
+    assign(n,rlist::list.extract(fluxesList(),n))
+
+  test = input$flSpec %in% species
+  if(!test) # Rq: validate() would not display message !?!?!?
+    showNotification(
+      h4('Invalid species name !'),
+      type = 'warning'
+    )
+  req(test)
+
+  # Remove dummy species
+  sel  = ! species %in% spDummy
+  spec = species[sel]
+  LR   = L[,sel]
+  RR   = R[,sel]
+
+
+  reacTypeNames=c("Ph","R")
+  g = viewFlow(
+    input$flSpec,
+    LR,
+    RR,
+    spec,
+    reacs    = paste0('R',1:(ncol(photoRates)+ncol(rates))),
+    reacType = c(rep(1, ncol(photoRates)),
+                 rep(2, ncol(rates))),
+    reacTypeNames = reacTypeNames,
+    flMean = flMean,
+    spInit = spInit,
+    topShow = input$topShow,
+    level = ifelse(input$level, 2, 1),
+    showLegend = TRUE,
+    curved = input$curvedArrow
+  )
+
+  grp = as.numeric(factor(V(g)$shape))-1
+  graph_d3 = networkD3::igraph_to_networkD3(g,group = grp)
+  graph_d3$links[['value']] = E(g)$width
+
+  networkD3::forceNetwork(
+    Links   = graph_d3$links,
+    Nodes   = graph_d3$nodes,
+    Source  = 'source',
+    Target  = 'target',
+    NodeID  = 'name',
+    Group   = 'group',
+    Value   = 'value',
+    bounded = FALSE,
+    zoom    = TRUE,
+    arrows  = TRUE,
+    linkDistance = JS("function(d){return 10 / d.value}"),
+    opacity = 0.9,
+    colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
+    clickAction = 'alert(d.name );',
+    linkColour = "#BBB",
+    legend = FALSE,
+    opacityNoHover = 0.8,
+    charge = input$forceNetChargeFlux
+  )
 
 })
 

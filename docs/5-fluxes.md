@@ -21,6 +21,9 @@ the graph representation (`ViewFlow`)
 * `Graph algorithm` enables a choice of representations
 for the graph (`ViewFlow`)
 
+* `Nodes attraction` repulsion factor between nodes (`ViewFlow-D3`)
+
+
 ## Outputs
 
 ### __ViewFlow__ tab
@@ -33,6 +36,15 @@ and blue arrows to its loss reactions.
 The reactions are tagged by their index given in 
 `Model > Chemistry > Reactions`,
 and color coded (orange: photoprocesses; green: reactions).
+
+### __ViewFlow-D3__ tab
+
+An interactive graph representation of the fluxes, 
+where the size of arrows increases with the flux.
+
+The reactions are tagged by their index given in 
+`Model > Chemistry > Reactions`.
+
 
 ### __Budget/Target__ tab
 

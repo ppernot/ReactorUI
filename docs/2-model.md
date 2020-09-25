@@ -75,8 +75,8 @@ Two controls are available:
         - `charge` colors by the charge of the species
         
         - `edge_betweeneness`, `louvain`, `fast_greedy` and
-        `leading_eigen` are community detection algorithms offered 
-        by the [igraph](https://igraph.org/r) package 
+        `leading_eigen` are community detection algorithms 
+        proposed by the [igraph](https://igraph.org/r) package 
         (_experimental_; might be very slow for large networks)
     
     
@@ -85,7 +85,7 @@ Two controls are available:
     + The list can be copied to the clipboard or downloaded to disk.
     
     + Typing a species name into the `Target sp.` textbox on the left 
-    enables to select the subset of reactions involving this species.
+    selects the subset of reactions involving this species.
 
 * `Checks` lists the especies for which no loss reactions have been 
 found. These will act as sinks.

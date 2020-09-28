@@ -60,6 +60,11 @@ sidebarLayout(
           max   =    0,
           step  =   20,
           value = -100
+        ),
+        shiny::checkboxInput(
+          'scaleDistD3',
+          label = 'Weigted distances',
+          value = FALSE
         )
       )
     )

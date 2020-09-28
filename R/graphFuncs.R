@@ -471,6 +471,7 @@ viewFlow = function(sp1,
         links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies,
                          wght = 1e-6)
   }
+  # print(links)
 
   # Select most important links if there are too many
   linksThresh = links
@@ -480,6 +481,7 @@ viewFlow = function(sp1,
                          na.rm = TRUE)
     linksThresh[abs(links) < lnkThresh] = 0
   }
+  # print(linksThresh)
 
   g = graph.adjacency(linksThresh, mode = "directed", weighted=TRUE)
   g = simplify(g)

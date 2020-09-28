@@ -55,19 +55,22 @@ calcFluxes = function(C,R) {
   R = D + L
 
   for (i in 1:nf)
-    flux[i,] = allRates[i,] *
-      apply(L,1,function(x) prod(conc[i,]^x))
+    flux[i, ] = allRates[i, ] *
+    apply(L, 1, function(x) prod(conc[i, ] ^ x))
 
-  logFlux = ifelse(flux==0, NA, log10(flux))
+  logFlux = ifelse(flux == 0, NA, log(flux))
 
   # Summaries
-  flMean  = apply(logFlux,2,function(x) 10^mean(x,na.rm=TRUE))
-  flMed   = apply(logFlux,2,function(x) 10^median(x,na.rm=TRUE))
-  flF     = apply(logFlux,2,function(x) 10^sd(x,na.rm=TRUE))
-  flLow   = apply(logFlux,2,
-                function(x) 10^quantile(x,probs = 0.025,na.rm=TRUE))
-  flSup   = apply(logFlux,2,
-                function(x) 10^quantile(x,probs = 0.975,na.rm=TRUE))
+  flMean  = apply(logFlux, 2, function(x)
+    exp(mean(x, na.rm = TRUE)))
+  flMed   = apply(logFlux, 2, function(x)
+    exp(median(x, na.rm = TRUE)))
+  flF     = apply(logFlux, 2, function(x)
+    exp(sd(x, na.rm = TRUE)))
+  flLow   = apply(logFlux, 2, function(x)
+    exp(quantile(x, probs = 0.025, na.rm = TRUE)))
+  flSup   = apply(logFlux, 2, function(x)
+    exp(quantile(x, probs = 0.975, na.rm = TRUE)))
 
   names(flMean) = reacNames
   names(flMed)  = reacNames
@@ -228,20 +231,21 @@ output$viewFlowD3 <- renderForceNetwork({
 
   # Remove dummy species
   sel  = ! species %in% spDummy
-  spec = species[sel]
-  LR   = L[,sel]
-  RR   = R[,sel]
 
-
-  reacTypeNames=c("Ph","R")
+  reacTypeNames = c("Ph", "R")
   g = viewFlow(
     input$flSpec,
-    LR,
-    RR,
-    spec,
-    reacs    = paste0('R',1:(ncol(photoRates)+ncol(rates))),
-    reacType = c(rep(1, ncol(photoRates)),
-                 rep(2, ncol(rates))),
+    L[, sel],
+    R[, sel],
+    species[sel],
+    reacs    = c(
+      paste0('Ph', 1:ncol(photoRates)),
+      paste0('R',  1:ncol(rates))
+    ),
+    reacType = c(
+      rep(1, ncol(photoRates)),
+      rep(2, ncol(rates))
+    ),
     reacTypeNames = reacTypeNames,
     flMean = flMean,
     spInit = spInit,
@@ -255,6 +259,8 @@ output$viewFlowD3 <- renderForceNetwork({
   graph_d3 = networkD3::igraph_to_networkD3(g,group = grp)
   graph_d3$links[['value']] = E(g)$width
 
+  print(graph_d3$links, max = 1000)
+
   networkD3::forceNetwork(
     Links   = graph_d3$links,
     Nodes   = graph_d3$nodes,
@@ -266,11 +272,14 @@ output$viewFlowD3 <- renderForceNetwork({
     bounded = FALSE,
     zoom    = TRUE,
     arrows  = TRUE,
-    linkDistance = JS("function(d){return 10 / d.value}"),
+    linkDistance = if(input$scaleDistD3)
+      JS("function(d){return 10 / Math.pow(d.value,0.5) }")
+    else
+      60,
     opacity = 0.9,
     colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
-    clickAction = 'alert(d.name );',
-    linkColour = "#BBB",
+    # clickAction = 'alert(d.name );',
+    linkColour = "#999",
     legend = FALSE,
     opacityNoHover = 0.8,
     charge = input$forceNetChargeFlux

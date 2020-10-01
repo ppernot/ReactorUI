@@ -47,12 +47,17 @@ sidebarLayout(
                 fixedRow(
                   column(
                     width = 3,
+                    checkboxInput(
+                      'digraph',
+                      'Digraph',
+                      value = FALSE
+                    ),
                     sliderInput(
                       'forceNetCharge',
                       'Nodes attraction',
-                      min   = -150,
+                      min   = -500,
                       max   =    0,
-                      step  =   10,
+                      step  =   25,
                       value = -100
                     ),
                     sliderInput(
@@ -65,15 +70,34 @@ sidebarLayout(
                     ),
                     shiny::radioButtons(
                       'netColoring',
-                      'Coloring/Clustering',
+                      'Nodes colors',
                       choiceNames = list(
-                        'volpert','charge','edge_betweeneness',
-                        'louvain','fast_greedy','leading_eigen'
+                        'volpert','charge','radicals','C/N/O'
                       ),
                       choiceValues = list(
-                        'volpert','charge','edge_betweeneness',
-                        'louvain','fast_greedy','leading_eigen'
+                        'volpert','charge','radicals','C/N/O'
                       )
+                    ),
+                    sliderInput(
+                      'fontSizeNet',
+                      'Labels size',
+                      min = 7,
+                      max = 18,
+                      step = 1,
+                      value = 12
+                    ),
+                    sliderInput(
+                      'linkDensNet',
+                      'Links opacity',
+                      min = 1,
+                      max = 14,
+                      step = 1,
+                      value = 3
+                    ),
+                    checkboxInput(
+                      'netLegend',
+                      'Legend',
+                      value = TRUE
                     )
                   ),
                   column(

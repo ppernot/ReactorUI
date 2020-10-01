@@ -130,6 +130,7 @@ generateNetwork <- function(
     ncount   = ncount + 1
     vlpInd[spProds] = ncount
   }
+
   # Orphan species: species without parents in scheme
   ## For info only. At the moment, they are not rejected from scheme
   # reject = apply(compo, 1, function(x)
@@ -549,17 +550,21 @@ output$summaryScheme <- renderPrint({
   # cat(' Connectivity : ',igraph::vertex_connectivity(g),'\n',
   #     'Radius       : ',igraph::radius(g),'\n\n')
 
-  deg = degree(g)
+  deg    = degree(g)
+  degIn  = degree(g, mode = 'in')
+  degOut = degree(g, mode = 'out')
+
   io = order(deg, decreasing = TRUE)
-  cat(' 40 Most connected species\n',
-      '-------------------------\n')
-  for(i in 1:40)
-    cat(species[io][i], '\t\t',deg[io][i], '\n')
-  cat('\n\n')
+  cat('Species\t\t In\t Out\t Total\n')
+  for (i in 1:20)
+    cat(species[io][i], '\t\t',
+        degIn[io][i],'\t',
+        degOut[io][i],'\t',
+        deg[io][i], '\n')
 
   cat(' Connectivity distribution\n',
       '-------------------------\n')
-  print(table(deg)[1:30])
+  print(table(deg)[1:20])
 
 
 })
@@ -698,58 +703,111 @@ output$plotScheme <- renderForceNetwork({
   for (n in names(gPars))
     assign(n, rlist::list.extract(gPars, n))
 
-  # Select max Volpert index to display
-  sel = vlpInd <= input$vlpMax
-  linksR = linksR[sel,sel]
+  if(input$digraph) {
+    nbPhoto = sum(type == 'photo')
+    reacTags    = c(
+      paste0('Ph', 1:nbPhoto),
+      paste0('R',  1:(nbReac-nbPhoto))
+    )
+
+    # Build digraph adjacency matrix
+    nbNodes = nbReac + nbSpecies
+    lSpecies = (nbReac + 1):(nbReac + nbSpecies)
+    nodeNames = c(reacTags,species)
+    linksR = matrix(0, ncol = nbNodes, nrow = nbNodes)
+    colnames(linksR) = nodeNames
+    rownames(linksR) = nodeNames
+    for (i in 1:nbReac) {
+      linksR[lSpecies, i] = linksR[lSpecies, i] + L[i, 1:nbSpecies]
+      linksR[i, lSpecies] = linksR[i, lSpecies] + R[i, 1:nbSpecies]
+    }
+
+    # Select max Volpert index to display
+    sel = vlpInd <= input$vlpMax
+    species = species[sel]
+    rsel = colSums(linksR) != 0
+    csel = c(rsel[1:nbReac],sel)
+    linksR = linksR[csel,csel]
+
+    arrows = TRUE
+
+  } else {
+
+    # Select max Volpert index to display
+    sel = vlpInd <= input$vlpMax
+    species = species[sel]
+    linksR = linksR[sel,sel]
+
+    arrows = FALSE
+
+  }
+
 
   g = simplify(
     graph_from_adjacency_matrix(
       linksR,
-      mode = "undirected",
+      mode = "directed",
       weighted = TRUE
     )
   )
 
-  # Coloring/clustering
+  # Coloring
+  compo = t(apply(as.matrix(species, ncol = 1), 1, get.atoms))
+  colnames(compo) = elements
+  charge = rep(0,length(species))
+  ions   = grepl("\\+$",species)
+  charge[ions] = 1
+  charge[which(species == 'E')] = -1
+
   if (input$netColoring == 'volpert') {
     grp = vlpInd[sel]
   } else if (input$netColoring == 'charge') {
-    ions = grepl("\\+$",species[sel])
-    grp = as.numeric(factor(ions))
-  } else if (input$netColoring == 'edge_betweeneness') {
-    eb = cluster_edge_betweenness(g)
-    grp = eb$membership
-  } else if (input$netColoring == 'louvain') {
-    eb = cluster_louvain(g)
-    grp = eb$membership
-  } else if (input$netColoring == 'fast_greedy') {
-    eb = cluster_fast_greedy(g)
-    grp = eb$membership
-  } else if (input$netColoring == 'leading_eigen') {
-    eb = cluster_leading_eigen(g)
-    grp = eb$membership
+    grp = charge #as.numeric(factor(ions))
+  } else if (input$netColoring == 'radicals') {
+    radic = (apply(compo,1,numElec)-charge) %% 2
+    radic[which(species == 'E')] = 1
+    grp = radic
+  } else if (input$netColoring == 'C/N/O') {
+    azot = grepl("N",species)
+    oxy  = grepl("O",species)
+    grp  = rep('!N!O',length(species))
+    sel  = azot & !oxy
+    grp[sel] = 'N!O'
+    grp[oxy] = 'O'
   }
 
-  graph_d3 <- igraph_to_networkD3(g, group = grp)
+  if(input$digraph)
+    grp = c(rep('reac',nbReac),grp)
 
-  forceNetwork(
+  graph_d3 <- igraph_to_networkD3(g, group = grp)
+  graph_d3$nodes[['size']] = igraph::degree(g)
+  cs = JS("d3.scaleOrdinal(d3.schemeCategory10);")
+
+  lc = sprintf("%x",15-input$linkDensNet)
+  lc = paste0('#',lc,lc,lc)
+
+  networkD3::forceNetwork(
     Links   = graph_d3$links,
     Nodes   = graph_d3$nodes,
     Source  = 'source',
     Target  = 'target',
+    Value   = 'value',
     NodeID  = 'name',
     Group   = 'group',
-    bounded = TRUE,
+    Nodesize= 'size',
+    bounded = FALSE,
     zoom    = TRUE,
-    arrows  = FALSE,
-    opacity = 0.8,
-    colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
-    # clickAction = 'alert(d.name );'
-    linkColour = "#DDDDDD",
-    legend = TRUE,
-    opacityNoHover = 0.5,
-    charge = input$forceNetCharge
+    arrows  = arrows,
+    opacity = 0.9,
+    opacityNoHover = 0.4,
+    colourScale = cs,
+    clickAction = 'alert(d.name);',
+    linkColour = lc,
+    legend   = input$netLegend,
+    charge   = input$forceNetCharge,
+    fontSize = input$fontSizeNet
   )
+
 
 })
 

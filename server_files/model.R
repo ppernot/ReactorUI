@@ -543,7 +543,7 @@ output$summaryScheme <- renderPrint({
   print(resu)
   cat('\n\n')
 
-  # Volpert index analysis ####
+  # Volpert index analysis
   cat('Volpert analysis\n')
   cat('----------------\n\n')
 
@@ -554,35 +554,50 @@ output$summaryScheme <- renderPrint({
   maxVlpInd = max(vlpInd)
   # cat('Max. Volpert Index = ', maxVlpInd,'\n\n')
   for (i in 0:maxVlpInd)
-    cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n')
+    cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n\n')
 
-  # Graph connectivity
+  cat(' =============================\n',
+      'Network connectivity analysis\n',
+      '-----------------------------\n\n')
+  # Graph connectivity ####
   g = simplify(
     graph_from_adjacency_matrix(
-      linksR,
-      mode = "undirected",
+      linksR2,
+      mode = "directed",
       weighted = TRUE
     )
   )
-
+  nodeNames = row.names(linksR2)
+  pmax = length(nodeNames)
   # cat(' Connectivity : ',igraph::vertex_connectivity(g),'\n',
   #     'Radius       : ',igraph::radius(g),'\n\n')
 
   deg    = degree(g)
-  degIn  = degree(g, mode = 'in')
-  degOut = degree(g, mode = 'out')
+  degOut = degree(g, mode = 'out') # Losses
+  degIn  = degree(g, mode = 'in')  # Prods
 
   io = order(deg, decreasing = TRUE)
-  cat('Species\t\t In\t Out\t Total\n')
-  for (i in 1:20)
-    cat(species[io][i], '\t\t',
-        degIn[io][i],'\t',
+  cat(' Degree analysis\n',
+      '---------------\n\n',
+    'Node\t\t Out\t In\t Total\n')
+  for (i in 1:min(pmax,20))
+    cat(nodeNames[io][i], '\t\t',
         degOut[io][i],'\t',
+        degIn[io][i],'\t',
         deg[io][i], '\n')
 
-  cat(' Connectivity distribution\n',
-      '-------------------------\n')
-  print(table(deg)[1:20])
+  cat('\n Species connectivity distribution\n',
+      '----------------------------------\n')
+  lSpecies = (nbReac + 1):(nbReac + nbSpecies)
+  print(table(deg[lSpecies],
+              dnn = 'Degree'
+              )[1:min(length(unique(deg[lSpecies])),15)])
+
+  cat('\n Reactions connectivity distribution\n',
+      '----------------------------------\n')
+  print(table(deg[1:nbReac],
+              dnn = 'Degree'
+              )[1:min(length(unique(deg[1:nbReac])),15)])
 
 
 })

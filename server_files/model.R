@@ -156,7 +156,7 @@ generateNetwork <- function(
   orig      = orig[reacList]
   reacTag   = reacTag[reacList]
 
-  # Build species connextivity  matrix for network plots
+  # Build species connectivity  matrix for network plots
   linksR=matrix(0,ncol = nbSpecies, nrow = nbSpecies)
   colnames(linksR) = species
   rownames(linksR) = species
@@ -166,7 +166,7 @@ generateNetwork <- function(
     linksR[reacts, prodts] = linksR[reacts, prodts] + 1
   }
 
-  # Build bi-partite connectivity matrix
+  # Build bi-partite/digraph connectivity matrix
   nbPhoto = sum(type == 'photo')
   reacTags    = c(
     paste0('Ph', 1:nbPhoto),
@@ -724,7 +724,7 @@ output$plotScheme <- renderForceNetwork({
   # Select max Volpert index to display
   selVp = vlpInd <= input$vlpMax
 
-  if('digraph' %in% input$digraph) {
+  if('digraph' %in% input$netCtrl) {
 
     linksR = linksR2
     helpNames = c(unlist(reacTag),species)
@@ -787,13 +787,13 @@ output$plotScheme <- renderForceNetwork({
     grp[oxy] = 'O'
   }
 
-  if('digraph' %in% input$digraph)
+  if('digraph' %in% input$netCtrl)
     grp = c(rep('reac',nbReac),grp)
 
   graph_d3 <- igraph_to_networkD3(g, group = grp)
   graph_d3$nodes[['size']] = igraph::degree(g)
-  if('digraph'   %in% input$digraph &
-     'showNames' %in% input$digraph)
+  if('digraph'   %in% input$netCtrl &
+     'showNames' %in% input$netCtrl)
     graph_d3$nodes[['name']] = helpNames
 
   cs = JS("d3.scaleOrdinal(d3.schemeCategory10);")
@@ -819,7 +819,7 @@ output$plotScheme <- renderForceNetwork({
     colourScale = cs,
     clickAction = alert,
     linkColour = lc,
-    legend   = input$netLegend,
+    legend   = 'legend' %in% input$netCtrl,
     charge   = input$forceNetCharge,
     fontSize = input$fontSizeNet
   )

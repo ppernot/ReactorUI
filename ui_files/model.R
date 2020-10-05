@@ -48,16 +48,16 @@ sidebarLayout(
                   column(
                     width = 3,
                     checkboxGroupInput(
-                      'digraph',
+                      'netCtrl',
                       '',
                       choiceNames = list(
-                        'Digraph','Full names'
+                        'Digraph','Full names','Legend'
                       ),
                       choiceValues = list(
-                        'digraph','showNames'
+                        'digraph','showNames','legend'
                       ),
                       inline = TRUE,
-                      selected = c('digraph','showNames')
+                      selected = c('digraph','showNames','legend')
                     ),
                     sliderInput(
                       'forceNetCharge',
@@ -100,11 +100,6 @@ sidebarLayout(
                       max   = 9,
                       step  = 1,
                       value = 3
-                    ),
-                    checkboxInput(
-                      'netLegend',
-                      'Legend',
-                      value = TRUE
                     )
                   ),
                   column(

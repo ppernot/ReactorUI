@@ -47,10 +47,17 @@ sidebarLayout(
                 fixedRow(
                   column(
                     width = 3,
-                    checkboxInput(
+                    checkboxGroupInput(
                       'digraph',
-                      'Digraph',
-                      value = FALSE
+                      '',
+                      choiceNames = list(
+                        'Digraph','Full names'
+                      ),
+                      choiceValues = list(
+                        'digraph','showNames'
+                      ),
+                      inline = TRUE,
+                      selected = c('digraph','showNames')
                     ),
                     sliderInput(
                       'forceNetCharge',
@@ -72,7 +79,7 @@ sidebarLayout(
                       'netColoring',
                       'Nodes colors',
                       choiceNames = list(
-                        'volpert','charge','radicals','C/N/O'
+                        'Volpert','Charge','Radicals','C/N/O'
                       ),
                       choiceValues = list(
                         'volpert','charge','radicals','C/N/O'
@@ -81,17 +88,17 @@ sidebarLayout(
                     sliderInput(
                       'fontSizeNet',
                       'Labels size',
-                      min = 7,
-                      max = 18,
-                      step = 1,
+                      min   = 6,
+                      max   = 24,
+                      step  = 1,
                       value = 12
                     ),
                     sliderInput(
                       'linkDensNet',
                       'Links opacity',
-                      min = 1,
-                      max = 14,
-                      step = 1,
+                      min   = 1,
+                      max   = 9,
+                      step  = 1,
                       value = 3
                     ),
                     checkboxInput(

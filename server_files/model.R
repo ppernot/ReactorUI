@@ -154,8 +154,9 @@ generateNetwork <- function(
   type      = type[reacList]
   locnum    = locnum[reacList]
   orig      = orig[reacList]
+  reacTag   = reacTag[reacList]
 
-  # Build links matrix for network plots
+  # Build species connextivity  matrix for network plots
   linksR=matrix(0,ncol = nbSpecies, nrow = nbSpecies)
   colnames(linksR) = species
   rownames(linksR) = species
@@ -163,7 +164,23 @@ generateNetwork <- function(
     reacts = which(L[i,] != 0)
     prodts = which(R[i,] != 0)
     linksR[reacts, prodts] = linksR[reacts, prodts] + 1
-    # linksR[prodts, reacts] = 1
+  }
+
+  # Build bi-partite connectivity matrix
+  nbPhoto = sum(type == 'photo')
+  reacTags    = c(
+    paste0('Ph', 1:nbPhoto),
+    paste0('R',  1:(nbReac-nbPhoto))
+  )
+  nbNodes = nbReac + nbSpecies
+  lSpecies = (nbReac + 1):(nbReac + nbSpecies)
+  nodeNames = c(reacTags,species)
+  linksR2 = matrix(0, ncol = nbNodes, nrow = nbNodes)
+  colnames(linksR2) = nodeNames
+  rownames(linksR2) = nodeNames
+  for (i in 1:nbReac) {
+    linksR2[lSpecies, i] = linksR2[lSpecies, i] + L[i, 1:nbSpecies]
+    linksR2[i, lSpecies] = linksR2[i, lSpecies] + R[i, 1:nbSpecies]
   }
 
   return(
@@ -177,6 +194,7 @@ generateNetwork <- function(
       R       = R,
       D       = D,
       linksR  = linksR,
+      linksR2 = linksR2,
       params  = params,
       type    = type,
       locnum  = locnum,
@@ -703,45 +721,37 @@ output$plotScheme <- renderForceNetwork({
   for (n in names(gPars))
     assign(n, rlist::list.extract(gPars, n))
 
-  if(input$digraph) {
-    nbPhoto = sum(type == 'photo')
-    reacTags    = c(
-      paste0('Ph', 1:nbPhoto),
-      paste0('R',  1:(nbReac-nbPhoto))
-    )
+  # Select max Volpert index to display
+  selVp = vlpInd <= input$vlpMax
 
-    # Build digraph adjacency matrix
-    nbNodes = nbReac + nbSpecies
-    lSpecies = (nbReac + 1):(nbReac + nbSpecies)
-    nodeNames = c(reacTags,species)
-    linksR = matrix(0, ncol = nbNodes, nrow = nbNodes)
-    colnames(linksR) = nodeNames
-    rownames(linksR) = nodeNames
-    for (i in 1:nbReac) {
-      linksR[lSpecies, i] = linksR[lSpecies, i] + L[i, 1:nbSpecies]
-      linksR[i, lSpecies] = linksR[i, lSpecies] + R[i, 1:nbSpecies]
+  if('digraph' %in% input$digraph) {
+
+    linksR = linksR2
+    helpNames = c(unlist(reacTag),species)
+
+    if(sum(!selVp) > 0) {
+      rsel    = rowSums(R[,!selVp]) != 0 |
+                rowSums(L[,!selVp]) != 0
+
+      csel    = c(!rsel, selVp)
+      linksR  = linksR[csel,csel]
+      helpNames = helpNames[csel]
+
+      nbReac  = sum(!rsel)
+      species = species[selVp]
+      nbSpecies = sum(selVp)
     }
-
-    # Select max Volpert index to display
-    sel = vlpInd <= input$vlpMax
-    species = species[sel]
-    rsel = colSums(linksR) != 0
-    csel = c(rsel[1:nbReac],sel)
-    linksR = linksR[csel,csel]
 
     arrows = TRUE
 
   } else {
 
-    # Select max Volpert index to display
-    sel = vlpInd <= input$vlpMax
-    species = species[sel]
-    linksR = linksR[sel,sel]
+    species = species[selVp]
+    linksR = linksR[selVp,selVp]
 
     arrows = FALSE
 
   }
-
 
   g = simplify(
     graph_from_adjacency_matrix(
@@ -757,12 +767,13 @@ output$plotScheme <- renderForceNetwork({
   charge = rep(0,length(species))
   ions   = grepl("\\+$",species)
   charge[ions] = 1
+
   charge[which(species == 'E')] = -1
 
   if (input$netColoring == 'volpert') {
-    grp = vlpInd[sel]
+    grp = vlpInd[selVp]
   } else if (input$netColoring == 'charge') {
-    grp = charge #as.numeric(factor(ions))
+    grp = charge
   } else if (input$netColoring == 'radicals') {
     radic = (apply(compo,1,numElec)-charge) %% 2
     radic[which(species == 'E')] = 1
@@ -776,12 +787,17 @@ output$plotScheme <- renderForceNetwork({
     grp[oxy] = 'O'
   }
 
-  if(input$digraph)
+  if('digraph' %in% input$digraph)
     grp = c(rep('reac',nbReac),grp)
 
   graph_d3 <- igraph_to_networkD3(g, group = grp)
   graph_d3$nodes[['size']] = igraph::degree(g)
+  if('digraph'   %in% input$digraph &
+     'showNames' %in% input$digraph)
+    graph_d3$nodes[['name']] = helpNames
+
   cs = JS("d3.scaleOrdinal(d3.schemeCategory10);")
+  alert = 'alert(d.name);'
 
   lc = sprintf("%x",15-input$linkDensNet)
   lc = paste0('#',lc,lc,lc)
@@ -801,7 +817,7 @@ output$plotScheme <- renderForceNetwork({
     opacity = 0.9,
     opacityNoHover = 0.4,
     colourScale = cs,
-    clickAction = 'alert(d.name);',
+    clickAction = alert,
     linkColour = lc,
     legend   = input$netLegend,
     charge   = input$forceNetCharge,

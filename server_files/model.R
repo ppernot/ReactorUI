@@ -637,7 +637,7 @@ output$tabScheme <- renderDataTable({
     cat('Please Generate Reactions...')
     return()
   }
-
+  id      = rownames(reacScheme()$linksR2)
   reacs   = reacScheme()$reacs
   species = reacScheme()$species
   params  = reacScheme()$params
@@ -670,7 +670,7 @@ output$tabScheme <- renderDataTable({
       pars = pars[-length(pars)]
 
     return(data.frame(
-      Id        = i,
+      Id        = id[i],
       Reactants = react,
       Products  = prods,
       Params    = paste0(pars, collapse = ', '),

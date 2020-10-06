@@ -483,8 +483,12 @@ viewFlow = function(sp1,
   }
   # print(linksThresh)
 
-  g = graph.adjacency(linksThresh, mode = "directed", weighted=TRUE)
-  g = simplify(g)
+  g = simplify(
+    graph_from_adjacency_matrix(
+      linksThresh,
+      mode = "directed",
+      weighted = TRUE)
+  )
 
   cols=brewer.pal(9,"Set3")
   reacColor=c(cols[6:9])
@@ -504,7 +508,10 @@ viewFlow = function(sp1,
   wid = wid^0.1 # Empirical transfo for better scaling...
   wid = 0.12 + (wid-min(wid))/(max(wid)-min(wid))
   E(g)$width = wid*5
-  E(g)$color = ifelse(E(g)$weight>0,col2tr('red',160),col2tr('blue',160))
+  E(g)$color = ifelse(
+    E(g)$weight > 0,
+    col2tr('red',160),
+    col2tr('blue',160))
   E(g)$arrow.size  = 0.25*max(E(g)$width)
   E(g)$arrow.width = 0.25*max(E(g)$width)
   E(g)$curved = curved
@@ -514,6 +521,7 @@ viewFlow = function(sp1,
 
   return(g)
 }
+
 
 volpertGraph = function (linkMat,specList,vlpInd,topShow=0.5,PDF=FALSE,
                          curves=NULL) {

@@ -206,6 +206,52 @@ output$viewFlow <- renderPlot({
 
 })
 # NetworkD3 ####
+my_igraph_to_networkd3 = function (g, group, what = "both") {
+  if (!("igraph" %in% class(g)))
+    stop("g must be an igraph class object.", call. = FALSE)
+  if (!(what %in% c("both", "links", "nodes")))
+    stop("what must be either \"nodes\", \"links\", or \"both\".",
+         call. = FALSE)
+  temp_nodes <- V(g) %>% as.matrix %>% data.frame
+  temp_nodes$name <- row.names(temp_nodes)
+  names(temp_nodes) <- c("id", "name")
+  temp_nodes$id <- temp_nodes$id - 1
+  nodes <- temp_nodes$name %>% data.frame %>% setNames("name")
+  if (!missing(group)) {
+    group <- as.matrix(group)
+    if (nrow(nodes) != nrow(group))
+      stop("group must have the same number of rows as the number of nodes in g.",
+           call. = FALSE)
+    nodes <- cbind(nodes, group)
+  }
+  row.names(nodes) <- NULL
+  links <- as_data_frame(g, what = "edges")
+  links <- merge(links, temp_nodes, by.x = "from", by.y = "name")
+  links <- merge(links, temp_nodes, by.x = "to", by.y = "name")
+
+  # print(str(links))
+
+  links <- links[, c(9:10, 4)] %>%
+    setNames(c("source","target","value"))
+
+  # if (ncol(links) == 5) {
+  #   links <- links[, c(4:5, 3)] %>% setNames(c("source",
+  #                                              "target", "value"))
+  # }
+  # else {
+  #   links <- links[, c("id.x", "id.y")] %>% setNames(c("source",
+  #                                                      "target"))
+  # }
+  if (what == "both") {
+    return(list(links = links, nodes = nodes))
+  }
+  else if (what == "links") {
+    return(links)
+  }
+  else if (what == "nodes") {
+    return(nodes)
+  }
+}
 output$viewFlowD3 <- renderForceNetwork({
   if(is.null(concList()) |
      is.null(ratesList()) |
@@ -238,10 +284,11 @@ output$viewFlowD3 <- renderForceNetwork({
     L[, sel],
     R[, sel],
     species[sel],
-    reacs    = c(
-      paste0('Ph', 1:ncol(photoRates)),
-      paste0('R',  1:ncol(rates))
-    ),
+    # reacs    = c(
+    #   paste0('Ph', 1:ncol(photoRates)),
+    #   paste0('R',  1:ncol(rates))
+    # ),
+    reacs = names(flMean),
     reacType = c(
       rep(1, ncol(photoRates)),
       rep(2, ncol(rates))
@@ -256,32 +303,53 @@ output$viewFlowD3 <- renderForceNetwork({
   )
 
   grp = as.numeric(factor(V(g)$shape))-1
-  graph_d3 = networkD3::igraph_to_networkD3(g,group = grp)
-  graph_d3$links[['value']] = E(g)$width
 
+  graph_d3 = my_igraph_to_networkd3(g, group = grp)
+  graph_d3$nodes[['size']]  = 2 * igraph::degree(g)
+  # graph_d3$links[['value']] =
+  #   pmax(1,10*abs(E(g)$weight)/max(abs(E(g)$weight)))
+
+  print(E(g)$weight)
+  print(graph_d3$nodes)
   print(graph_d3$links, max = 1000)
 
+  # Loss/prod links colors
+  target = which(graph_d3$nodes[['name']] == input$flSpec)
+  linkOut = graph_d3$links[['source']] == target-1
+  for (i in which(linkOut) )
+     linkOut = linkOut |
+    graph_d3$links[['source']] == graph_d3$links[['target']][i]
+  linkIn  = graph_d3$links[['target']] == target-1
+  for (i in which(linkIn) )
+    linkIn = linkIn |
+    graph_d3$links[['target']] == graph_d3$links[['source']][i]
+  linkColour = rep('#BBB',length(linkIn))
+  linkColour[linkIn]  = gPars$cols[2]
+  linkColour[linkOut] = gPars$cols[5]
+
   networkD3::forceNetwork(
-    Links   = graph_d3$links,
-    Nodes   = graph_d3$nodes,
-    Source  = 'source',
-    Target  = 'target',
-    NodeID  = 'name',
-    Group   = 'group',
-    Value   = 'value',
-    bounded = FALSE,
-    zoom    = TRUE,
-    arrows  = TRUE,
+    Links    = graph_d3$links,
+    Nodes    = graph_d3$nodes,
+    Source   = 'source',
+    Target   = 'target',
+    NodeID   = 'name',
+    Group    = 'group',
+    Value    = 'value',
+    Nodesize = 'size',
+    bounded  = FALSE,
+    zoom     = TRUE,
+    arrows   = TRUE,
     linkDistance = if(input$scaleDistD3)
-      JS("function(d){return 10 / Math.pow(d.value,0.5) }")
+      JS("function(d){return 50 / Math.pow(d.value,0.5) }")
     else
       60,
-    opacity = 0.9,
+    opacity  = 0.9,
     colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
-    # clickAction = 'alert(d.name );',
-    linkColour = "#999",
+    clickAction = 'alert(d.name );',
+    # linkColour = "#BBB",
+    linkColour = linkColour,
     legend = FALSE,
-    opacityNoHover = 0.8,
+    opacityNoHover = 0.9,
     charge = input$forceNetChargeFlux
   )
 

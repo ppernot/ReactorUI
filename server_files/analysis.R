@@ -113,7 +113,7 @@ getRates = function() {
   }
   ## Get reac names
   reacs = readLines(
-    paste0(ctrlPars$projectDir,'/Run/reac_list.dat'))
+    file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
   colnames(rates) = reacs
 
   # Load photorates sample files
@@ -141,7 +141,7 @@ getRates = function() {
 
   ## Get reac names
   reacs = readLines(
-    paste0(ctrlPars$projectDir,'/Run/photo_list.dat'))
+    file.path(ctrlPars$projectDir,'Run','photo_list.dat'))
   colnames(photoRates)= reacs
 
   return(

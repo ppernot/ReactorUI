@@ -493,8 +493,7 @@ viewFlow = function(sp1,
   cols=brewer.pal(9,"Set3")
   reacColor=c(cols[6:9])
 
-  reacLab=paste0('R',1:nbReacs)
-  V(g)$label = c(reacLab,species)
+  V(g)$label = c(reacs,species)
   V(g)$shape=c(rep("rectangle",nbReacs),rep("circle",nbSpecies))
   V(g)$size = c(rep(20,nbReacs),rep(20,nbSpecies))
   V(g)$size2 = 6

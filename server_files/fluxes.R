@@ -8,9 +8,6 @@ calcFluxes = function(C,R) {
   for (n in names(R))
     assign(n,rlist::list.extract(R,n))
 
-  # Concentrations at stationnary state (last snapshot)
-  conc = conc[,nt,]
-
   # MC fluxes
   allRates   = cbind(photoRates,rates)
   reacNames  = colnames(allRates)
@@ -18,6 +15,9 @@ calcFluxes = function(C,R) {
   nf         = nrow(allRates)
   flux       = matrix(NA,nrow=nf,ncol=nbReacs)
   nbSpecies  = nsp
+
+  # Concentrations at stationary state (last snapshot)
+  conc = matrix(conc[,nt,],nrow=nf,ncol=nbSpecies)
 
   ## get D and L matrices
   D = L = matrix(0,ncol=nbSpecies,nrow=nbReacs)
@@ -54,6 +54,7 @@ calcFluxes = function(C,R) {
 
   R = D + L
 
+  ## Compute flux
   for (i in 1:nf)
     flux[i, ] = allRates[i, ] *
     apply(L, 1, function(x) prod(conc[i, ] ^ x))
@@ -111,13 +112,13 @@ observeEvent(
     }
     C = concList()
 
-    test = dim(C$conc)[1] > 1
-    if(!test) # Rq: validate() would not display message !?!?!?
-      showNotification(
-        h4('Flux analysis impossible for a single run !'),
-        type = 'warning'
-      )
-    req(test)
+    # test = dim(C$conc)[1] > 1
+    # if(!test) # Rq: validate() would not display message !?!?!?
+    #   showNotification(
+    #     h4('Flux analysis impossible for a single run !'),
+    #     type = 'warning'
+    #   )
+    # req(test)
 
     if(is.null(ratesList())){
       id = shiny::showNotification(
@@ -172,7 +173,11 @@ output$viewFlow <- renderPlot({
     LR,
     RR,
     spec,
-    reacs    = names(flMean),
+    reacs    = c(
+      paste0('Ph', 1:ncol(photoRates)),
+      paste0('R',  1:ncol(rates))
+    ),
+    # reacs    = names(flMean),
     reacType = c(rep(1, ncol(photoRates)),
                  rep(2, ncol(rates))),
     reacTypeNames = reacTypeNames,
@@ -212,11 +217,14 @@ my_igraph_to_networkd3 = function (g, group, what = "both") {
   if (!(what %in% c("both", "links", "nodes")))
     stop("what must be either \"nodes\", \"links\", or \"both\".",
          call. = FALSE)
+
   temp_nodes <- V(g) %>% as.matrix %>% data.frame
-  temp_nodes$name <- row.names(temp_nodes)
+  # temp_nodes$name <- row.names(temp_nodes)
+  temp_nodes$name <- V(g)$label
   names(temp_nodes) <- c("id", "name")
   temp_nodes$id <- temp_nodes$id - 1
   nodes <- temp_nodes$name %>% data.frame %>% setNames("name")
+
   if (!missing(group)) {
     group <- as.matrix(group)
     if (nrow(nodes) != nrow(group))
@@ -290,7 +298,7 @@ output$viewFlowD3 <- renderForceNetwork({
     #   paste0('Ph', 1:ncol(photoRates)),
     #   paste0('R',  1:ncol(rates))
     # ),
-    reacs = names(flMean),
+    reacs = make.unique(trimws(names(flMean))),
     reacType = c(
       rep(1, ncol(photoRates)),
       rep(2, ncol(rates))

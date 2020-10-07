@@ -10,7 +10,7 @@ generateNetwork <- function(
   # Kinetic Parser
   nbReac=0
   reactants = products = params =
-    type = orig = locnum = reacTag = list()
+    type = orig = locnum = reacTagFull = list()
 
   ## Photo processes
   photoData = file.path(photoSourceDir,'..','PhotoScheme.dat')
@@ -31,7 +31,7 @@ generateNetwork <- function(
         orig[[nbReac]]      = filename
         rr = paste(reactants[[nbReac]],collapse = ' + ')
         pp = paste(products[[nbReac]],collapse = ' + ')
-        reacTag[[nbReac]]   = paste0(rr,' --> ',pp)
+        reacTagFull[[nbReac]]   = paste0(rr,' --> ',pp)
       }
     }
   }
@@ -57,7 +57,7 @@ generateNetwork <- function(
       orig[[nbReac]]      = sourceDir
       rr = paste(reactants[[nbReac]],collapse = ' + ')
       pp = paste(products[[nbReac]],collapse = ' + ')
-      reacTag[[nbReac]]   = paste0(rr,' --> ',pp)
+      reacTagFull[[nbReac]]   = paste0(rr,' --> ',pp)
     }
   }
 
@@ -154,7 +154,7 @@ generateNetwork <- function(
   type      = type[reacList]
   locnum    = locnum[reacList]
   orig      = orig[reacList]
-  reacTag   = reacTag[reacList]
+  reacTagFull = reacTagFull[reacList]
 
   # Build species connectivity  matrix for network plots
   linksR=matrix(0,ncol = nbSpecies, nrow = nbSpecies)
@@ -201,7 +201,8 @@ generateNetwork <- function(
       orig    = orig,
       mass    = mass,
       vlpInd  = vlpInd,
-      reacTag = reacTag
+      reacTagFull = reacTagFull,
+      reacTags = reacTags
     )
   )
 }
@@ -539,7 +540,7 @@ observe({
   reac_list = ''
   sel = (1:nbReac)[!photo]
   for (i in sel) {
-    reac_list = paste(reac_list, reacTag[[i]])
+    reac_list = paste(reac_list, reacTagFull[[i]])
     if( i != sel[length(sel)])
       reac_list = paste(reac_list, '\n')
   }
@@ -568,7 +569,7 @@ observe({
   reac_list = ''
   sel = (1:nbReac)[photo]
   for (i in sel) {
-    reac_list = paste(reac_list, reacTag[[i]])
+    reac_list = paste(reac_list, reacTagFull[[i]])
     if( i != sel[length(sel)])
       reac_list = paste(reac_list, '\n')
   }
@@ -622,8 +623,8 @@ output$summaryScheme <- renderPrint({
 
   cat('Summary\n')
   cat('-------\n\n')
-  cat('Nb species         = ', length(species),'\n')
-  cat('Nb reactions       = ', length(reacs)  ,'\n\n')
+  cat('Nb species         = ', nbSpecies,'\n')
+  cat('Nb reactions       = ', nbReac   ,'\n\n')
 
   # Nature of species
   types = c("neutrals","ions")
@@ -714,6 +715,7 @@ output$summaryScheme <- renderPrint({
 
 
 })
+# Sinks ####
 output$quality   <- renderPrint({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -723,7 +725,7 @@ output$quality   <- renderPrint({
   for (n in names(reacScheme()))
     assign(n, rlist::list.extract(reacScheme(), n))
 
-  cat('Sinks / Species with no loss:\n',
+  cat(' Mass sorted sinks / Species with no loss:\n',
       '-----------------------------')
   cat('\n\n')
   sel = colSums(L) == 0
@@ -735,9 +737,9 @@ output$quality   <- renderPrint({
       ind = io[i]
       s = sp[ind]
       prods = which(R[,s] != 0)
-      cat(round(ms[ind],digits=4),s,'\n  Productions :\n')
+      cat(s,' (mass = ',round(ms[ind],digits=2),')\n  Productions :\n')
       for(j in 1:length(prods))
-        cat('    ',unlist(reacTag)[reacs[prods[j]]],'\n')
+        cat('    ',reacTagFull[[prods[j]]],'\n')
       cat('\n')
     }
   } else {
@@ -750,7 +752,7 @@ output$tabScheme <- renderDataTable({
     cat('Please Generate Reactions...')
     return()
   }
-  id      = rownames(reacScheme()$linksR2)
+  id      = reacScheme()$reacTags
   reacs   = reacScheme()$reacs
   species = reacScheme()$species
   params  = reacScheme()$params
@@ -855,7 +857,7 @@ output$plotScheme <- renderForceNetwork({
   if('digraph' %in% input$netCtrl) {
 
     linksR = linksR2
-    helpNames = c(unlist(reacTag),species)
+    helpNames = c(unlist(reacTagFull),species)
 
     if(sum(!selVp) > 0) {
       rsel    = rowSums(R[,!selVp]) != 0 |
@@ -1031,46 +1033,7 @@ observeEvent(input$sampleChem, {
     Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
     L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
 
-    # # Treat Reactions ###
-    # # 1/ Convert D & L to triplets (sparse matrices)
-    # Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
-    # Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
-    #
-    # reac_DL = paste(nrow(Dsp),'\n',
-    #                 trimws(paste(Dsp, collapse = " ")),'\n',
-    #                 nrow(Lsp),'\n',
-    #                 trimws(paste(Lsp, collapse = " ")))
-    # writeLines(
-    #   reac_DL,
-    #   file.path(outputDir,'Run','reac_DL.dat')
-    # )
-    #
-    # # Reactions list
-    # reac_list = ''
-    # sel = (1:nbReac)[!photo]
-    # for (i in sel) {
-    #   reac_list = paste(reac_list, reacTag[[reacs[i]]])
-    #   if( i != sel[length(sel)])
-    #   reac_list = paste(reac_list, '\n')
-    # }
-    # writeLines(
-    #   reac_list,
-    #   file.path(outputDir,'Run','reac_list.dat')
-    # )
-    #
-    # # Single output file from nominal data
-    # reac_params = ''
-    # for (i in sel) {
-    #   reac_params = paste(
-    #     reac_params,
-    #     paste(params[[i]], collapse = " "))
-    #   if( i != sel[length(sel)])
-    #     reac_params = paste(reac_params,'\n')
-    # }
-    # writeLines(
-    #   reac_params,
-    #   file.path(outputDir,'Run','reac_params.dat')
-    # )
+    # Treat Reactions ###
 
     if(nMC > 1) {
       # Clean target dir
@@ -1127,52 +1090,9 @@ observeEvent(input$sampleChem, {
       })
     }
 
-    # Treat Nominal Photo-processes ###
-
-    # # Reactions list
-    # reac_list = ''
-    # sel = (1:nbReac)[photo]
-    # for (i in sel) {
-    #   reac_list = paste(reac_list, reacTag[[reacs[i]]])
-    #   if( i != sel[length(sel)])
-    #     reac_list = paste(reac_list, '\n')
-    # }
-    # writeLines(
-    #   reac_list,
-    #   file.path(outputDir,'Run','photo_list.dat')
-    # )
+    # Treat Photo-processes ###
 
     if (dim(Dphoto)[1]!=0) {
-      # # Convert D & L to triplets (sparse matrices)
-      # Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
-      # Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
-      #
-      # reac_DL = paste(nrow(Dsp),'\n',
-      #                 trimws(paste(Dsp, collapse = " ")),'\n',
-      #                 nrow(Lsp),'\n',
-      #                 trimws(paste(Lsp, collapse = " ")))
-      # writeLines(
-      #   reac_DL,
-      #   file.path(outputDir,'Run','photo_DL.dat')
-      # )
-      #
-      # reac_params = ''
-      # for (i in sel) {
-      #   sp=species[which(Lphoto[i,]!=0)]
-      #   if( params[[i]][1] == 0 )
-      #     reac_params = paste0(reac_params,'se',sp,'.dat')
-      #   else
-      #     reac_params = paste(
-      #       reac_params,
-      #       paste0('se',sp,'.dat'),
-      #       paste0('qy',sp,'_',params[[i]][1],'.dat'))
-      #   if( i != sel[length(sel)])
-      #     reac_params = paste(reac_params, '\n')
-      # }
-      # writeLines(
-      #   reac_params,
-      #   file.path(outputDir,'Run','photo_params.dat')
-      # )
 
       if(nMC > 1) {
         # Clean target dir

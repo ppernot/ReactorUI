@@ -8,6 +8,7 @@ reacScheme   = reactiveVal(NULL)
 concList     = reactiveVal(NULL)
 ratesList    = reactiveVal(NULL)
 fluxesList   = reactiveVal(NULL)
+graphsList   = reactiveVal(NULL)
 
 # Open ####
 shinyFiles::shinyDirChoose(

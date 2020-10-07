@@ -331,9 +331,7 @@ output$chemDBVersions <- renderUI({
   )
   ui
 })
-outputOptions(output, "chemDBVersions",
-              suspendWhenHidden = FALSE)
-
+outputOptions(output, "chemDBVersions",suspendWhenHidden = FALSE)
 output$checkChanges <- renderPrint({
 
   req(input$speReso)
@@ -447,10 +445,7 @@ output$chemistryParams <- renderUI({
   }
   ui
 })
-
-reacScheme <- reactiveVal()
-observeEvent(
-  input$generateNetwork, {
+observeEvent(input$generateNetwork, {
 
     # Initial mixture
 
@@ -496,8 +491,126 @@ observeEvent(
         ionsSourceDir     = ionsSourceDir
       )
     }) %...>% reacScheme()
+  })
+observe({
+  # Generate data files for reactor code when reacScheme() is ready
+  req(reacScheme())
+
+  # Network params
+  for (n in names(reacScheme()))
+    assign(n, rlist::list.extract(reacScheme(), n))
+
+  # Save files
+  outputDir = projectDir()
+
+  sp_aux =paste(
+    nbSpecies,'\n',
+    paste(species,collapse = ' '), '\n',
+    paste(mass,   collapse = ' '), '\n',
+    paste(rep(0,nbSpecies), collapse = ' ')
+  )
+  writeLines(
+    sp_aux,
+    file.path(outputDir,'Run','species_aux.dat')
+  )
+
+  # Split photodissociations and reactions
+  photo = type == 'photo'
+  Dphoto = matrix(D[ photo,],nrow=sum(photo), ncol=nbSpecies)
+  D      = matrix(D[!photo,],nrow=sum(!photo),ncol=nbSpecies)
+  Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
+  L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
+
+  # Treat Reactions ###
+  # 1/ Convert D & L to triplets (sparse matrices)
+  Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
+  Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
+
+  reac_DL = paste(nrow(Dsp),'\n',
+                  trimws(paste(Dsp, collapse = " ")),'\n',
+                  nrow(Lsp),'\n',
+                  trimws(paste(Lsp, collapse = " ")))
+  writeLines(
+    reac_DL,
+    file.path(outputDir,'Run','reac_DL.dat')
+  )
+
+  # Reactions list
+  reac_list = ''
+  sel = (1:nbReac)[!photo]
+  for (i in sel) {
+    reac_list = paste(reac_list, reacTag[[i]])
+    if( i != sel[length(sel)])
+      reac_list = paste(reac_list, '\n')
   }
-)
+  writeLines(
+    reac_list,
+    file.path(outputDir,'Run','reac_list.dat')
+  )
+
+  # Single output file from nominal data
+  reac_params = ''
+  for (i in sel) {
+    reac_params = paste(
+      reac_params,
+      paste(params[[i]], collapse = " "))
+    if( i != sel[length(sel)])
+      reac_params = paste(reac_params,'\n')
+  }
+  writeLines(
+    reac_params,
+    file.path(outputDir,'Run','reac_params.dat')
+  )
+
+  # Treat Nominal Photo-processes ###
+
+  # Reactions list
+  reac_list = ''
+  sel = (1:nbReac)[photo]
+  for (i in sel) {
+    reac_list = paste(reac_list, reacTag[[i]])
+    if( i != sel[length(sel)])
+      reac_list = paste(reac_list, '\n')
+  }
+  writeLines(
+    reac_list,
+    file.path(outputDir,'Run','photo_list.dat')
+  )
+
+  if (dim(Dphoto)[1]!=0) {
+    # Convert D & L to triplets (sparse matrices)
+    Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
+    Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
+
+    reac_DL = paste(nrow(Dsp),'\n',
+                    trimws(paste(Dsp, collapse = " ")),'\n',
+                    nrow(Lsp),'\n',
+                    trimws(paste(Lsp, collapse = " ")))
+    writeLines(
+      reac_DL,
+      file.path(outputDir,'Run','photo_DL.dat')
+    )
+
+    reac_params = ''
+    for (i in sel) {
+      sp=species[which(Lphoto[i,]!=0)]
+      if( params[[i]][1] == 0 )
+        reac_params = paste0(reac_params,'se',sp,'.dat')
+      else
+        reac_params = paste(
+          reac_params,
+          paste0('se',sp,'.dat'),
+          paste0('qy',sp,'_',params[[i]][1],'.dat'))
+      if( i != sel[length(sel)])
+        reac_params = paste(reac_params, '\n')
+    }
+    writeLines(
+      reac_params,
+      file.path(outputDir,'Run','photo_params.dat')
+    )
+  }
+
+})
 output$summaryScheme <- renderPrint({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -601,7 +714,7 @@ output$summaryScheme <- renderPrint({
 
 
 })
-output$quality <- renderPrint({
+output$quality   <- renderPrint({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
     return()
@@ -877,8 +990,7 @@ output$nMCButton <- renderUI({
   )
   ui
 })
-observeEvent(
-  input$sampleChem, {
+observeEvent(input$sampleChem, {
 
     # Nb MC samples
     nMC = as.numeric(input$nMC)
@@ -900,17 +1012,17 @@ observeEvent(
     neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
     ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
 
-    # Generate data files for reactor code ###
-    sp_aux =paste(
-      nbSpecies,'\n',
-      paste(species,collapse = ' '), '\n',
-      paste(mass,   collapse = ' '), '\n',
-      paste(rep(0,nbSpecies), collapse = ' ')
-    )
-    writeLines(
-      sp_aux,
-      file.path(outputDir,'Run','species_aux.dat')
-    )
+    # # Generate data files for reactor code ###
+    # sp_aux =paste(
+    #   nbSpecies,'\n',
+    #   paste(species,collapse = ' '), '\n',
+    #   paste(mass,   collapse = ' '), '\n',
+    #   paste(rep(0,nbSpecies), collapse = ' ')
+    # )
+    # writeLines(
+    #   sp_aux,
+    #   file.path(outputDir,'Run','species_aux.dat')
+    # )
 
     # Split photodissociations and reactions
     photo = type == 'photo'
@@ -919,46 +1031,46 @@ observeEvent(
     Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
     L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
 
-    # Treat Reactions ###
-    # 1/ Convert D & L to triplets (sparse matrices)
-    Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
-    Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
-
-    reac_DL = paste(nrow(Dsp),'\n',
-                    trimws(paste(Dsp, collapse = " ")),'\n',
-                    nrow(Lsp),'\n',
-                    trimws(paste(Lsp, collapse = " ")))
-    writeLines(
-      reac_DL,
-      file.path(outputDir,'Run','reac_DL.dat')
-    )
-
-    # Reactions list
-    reac_list = ''
-    sel = (1:nbReac)[!photo]
-    for (i in sel) {
-      reac_list = paste(reac_list, reacTag[[reacs[i]]])
-      if( i != sel[length(sel)])
-      reac_list = paste(reac_list, '\n')
-    }
-    writeLines(
-      reac_list,
-      file.path(outputDir,'Run','reac_list.dat')
-    )
-
-    # Single output file from nominal data
-    reac_params = ''
-    for (i in sel) {
-      reac_params = paste(
-        reac_params,
-        paste(params[[i]], collapse = " "))
-      if( i != sel[length(sel)])
-        reac_params = paste(reac_params,'\n')
-    }
-    writeLines(
-      reac_params,
-      file.path(outputDir,'Run','reac_params.dat')
-    )
+    # # Treat Reactions ###
+    # # 1/ Convert D & L to triplets (sparse matrices)
+    # Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
+    # Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
+    #
+    # reac_DL = paste(nrow(Dsp),'\n',
+    #                 trimws(paste(Dsp, collapse = " ")),'\n',
+    #                 nrow(Lsp),'\n',
+    #                 trimws(paste(Lsp, collapse = " ")))
+    # writeLines(
+    #   reac_DL,
+    #   file.path(outputDir,'Run','reac_DL.dat')
+    # )
+    #
+    # # Reactions list
+    # reac_list = ''
+    # sel = (1:nbReac)[!photo]
+    # for (i in sel) {
+    #   reac_list = paste(reac_list, reacTag[[reacs[i]]])
+    #   if( i != sel[length(sel)])
+    #   reac_list = paste(reac_list, '\n')
+    # }
+    # writeLines(
+    #   reac_list,
+    #   file.path(outputDir,'Run','reac_list.dat')
+    # )
+    #
+    # # Single output file from nominal data
+    # reac_params = ''
+    # for (i in sel) {
+    #   reac_params = paste(
+    #     reac_params,
+    #     paste(params[[i]], collapse = " "))
+    #   if( i != sel[length(sel)])
+    #     reac_params = paste(reac_params,'\n')
+    # }
+    # writeLines(
+    #   reac_params,
+    #   file.path(outputDir,'Run','reac_params.dat')
+    # )
 
     if(nMC > 1) {
       # Clean target dir
@@ -1017,50 +1129,50 @@ observeEvent(
 
     # Treat Nominal Photo-processes ###
 
-    # Reactions list
-    reac_list = ''
-    sel = (1:nbReac)[photo]
-    for (i in sel) {
-      reac_list = paste(reac_list, reacTag[[reacs[i]]])
-      if( i != sel[length(sel)])
-        reac_list = paste(reac_list, '\n')
-    }
-    writeLines(
-      reac_list,
-      file.path(outputDir,'Run','photo_list.dat')
-    )
+    # # Reactions list
+    # reac_list = ''
+    # sel = (1:nbReac)[photo]
+    # for (i in sel) {
+    #   reac_list = paste(reac_list, reacTag[[reacs[i]]])
+    #   if( i != sel[length(sel)])
+    #     reac_list = paste(reac_list, '\n')
+    # }
+    # writeLines(
+    #   reac_list,
+    #   file.path(outputDir,'Run','photo_list.dat')
+    # )
 
     if (dim(Dphoto)[1]!=0) {
-      # Convert D & L to triplets (sparse matrices)
-      Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
-      Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
-
-      reac_DL = paste(nrow(Dsp),'\n',
-                      trimws(paste(Dsp, collapse = " ")),'\n',
-                      nrow(Lsp),'\n',
-                      trimws(paste(Lsp, collapse = " ")))
-      writeLines(
-        reac_DL,
-        file.path(outputDir,'Run','photo_DL.dat')
-      )
-
-      reac_params = ''
-      for (i in sel) {
-        sp=species[which(Lphoto[i,]!=0)]
-        if( params[[i]][1] == 0 )
-          reac_params = paste0(reac_params,'se',sp,'.dat')
-        else
-          reac_params = paste(
-            reac_params,
-            paste0('se',sp,'.dat'),
-            paste0('qy',sp,'_',params[[i]][1],'.dat'))
-        if( i != sel[length(sel)])
-          reac_params = paste(reac_params, '\n')
-      }
-      writeLines(
-        reac_params,
-        file.path(outputDir,'Run','photo_params.dat')
-      )
+      # # Convert D & L to triplets (sparse matrices)
+      # Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
+      # Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
+      #
+      # reac_DL = paste(nrow(Dsp),'\n',
+      #                 trimws(paste(Dsp, collapse = " ")),'\n',
+      #                 nrow(Lsp),'\n',
+      #                 trimws(paste(Lsp, collapse = " ")))
+      # writeLines(
+      #   reac_DL,
+      #   file.path(outputDir,'Run','photo_DL.dat')
+      # )
+      #
+      # reac_params = ''
+      # for (i in sel) {
+      #   sp=species[which(Lphoto[i,]!=0)]
+      #   if( params[[i]][1] == 0 )
+      #     reac_params = paste0(reac_params,'se',sp,'.dat')
+      #   else
+      #     reac_params = paste(
+      #       reac_params,
+      #       paste0('se',sp,'.dat'),
+      #       paste0('qy',sp,'_',params[[i]][1],'.dat'))
+      #   if( i != sel[length(sel)])
+      #     reac_params = paste(reac_params, '\n')
+      # }
+      # writeLines(
+      #   reac_params,
+      #   file.path(outputDir,'Run','photo_params.dat')
+      # )
 
       if(nMC > 1) {
         # Clean target dir
@@ -1111,10 +1223,9 @@ observeEvent(
         }
       }
     }
-  }
-)
-# Irradiation ####
+  })
 
+# Irradiation ####
 getSpectrumReso = function(file) {
   # Get data and check resolution
   sp <- read.csv(file = file, header = FALSE, sep = "")
@@ -1239,8 +1350,7 @@ output$irradUI <- renderUI({
   )
 
 })
-outputOptions(output, "irradUI",
-              suspendWhenHidden = FALSE)
+outputOptions(output, "irradUI",suspendWhenHidden = FALSE)
 observeEvent(input$beamSpectrumFileName, {
   source = input$beamSpectrumFileName
   loadSpectrumFile(
@@ -1379,6 +1489,7 @@ output$irradSpectrum <- renderPlot({
   grid()
   box()
 })
+
 # Reactor ####
 output$reactorUI <- renderUI({
   req( reacData() )
@@ -1422,4 +1533,5 @@ output$reactorParams <- renderPrint({
   reacData(ll)
 
 })
+
 # Bottom ####

@@ -93,7 +93,6 @@ calcFluxes = function(C,R) {
 
 # Interactive ####
 
-fluxesList <- reactiveVal()
 observeEvent(
   ignoreInit = TRUE,
   input$calcFlux,
@@ -205,6 +204,7 @@ output$viewFlow <- renderPlot({
   # )
 
 })
+
 # NetworkD3 ####
 my_igraph_to_networkd3 = function (g, group, what = "both") {
   if (!("igraph" %in% class(g)))
@@ -231,6 +231,7 @@ my_igraph_to_networkd3 = function (g, group, what = "both") {
 
   # print(str(links))
 
+  # Depends on the edges structure generated in viewFLow()
   links <- links[, c(9:10, 4)] %>%
     setNames(c("source","target","value"))
 
@@ -242,6 +243,7 @@ my_igraph_to_networkd3 = function (g, group, what = "both") {
   #   links <- links[, c("id.x", "id.y")] %>% setNames(c("source",
   #                                                      "target"))
   # }
+
   if (what == "both") {
     return(list(links = links, nodes = nodes))
   }

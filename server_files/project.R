@@ -1,8 +1,13 @@
+# Global reactive values
 projectDir   = reactiveVal(NULL)
 chemDBDir    = reactiveVal(NULL)
-reacData     = reactiveVal(NULL)
-chemDBData   = reactiveVal(NULL)
+reacData     = reactiveVal(NULL) # Content of namelist REAC_DATA
+chemDBData   = reactiveVal(NULL) # Content of namelist DB_DATA
 spectrumData = reactiveVal(NULL)
+reacScheme   = reactiveVal(NULL)
+concList     = reactiveVal(NULL)
+ratesList    = reactiveVal(NULL)
+fluxesList   = reactiveVal(NULL)
 
 # Open ####
 shinyFiles::shinyDirChoose(

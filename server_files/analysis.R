@@ -375,8 +375,6 @@ testAna = function() {
 
 }
 # Interactive ####
-
-concList <- reactiveVal(NULL)
 observeEvent(
   ignoreInit = TRUE,
   input$loadMC, {
@@ -392,8 +390,6 @@ observeEvent(
     future({getConc()}) %...>% concList()
   }
 )
-
-ratesList <- reactiveVal(NULL)
 observeEvent(
   ignoreInit = TRUE,
   input$loadMC,

@@ -424,102 +424,7 @@ addLinks = function (sp1,
   return(links)
 }
 
-viewFlow = function(sp1,
-                    L,
-                    R,
-                    species,
-                    reacs,
-                    reacType,
-                    reacTypeNames,
-                    flMean,
-                    spInit,
-                    topShow = 0.5,
-                    level = 1,
-                    showLegend = TRUE,
-                    PDF = FALSE,
-                    curved = FALSE) {
-  # Builds digraph of fluxes to and from sp1
 
-  nbSpecies = length(species)
-  nbReacs   = length(reacs)
-
-  nedges = nbReacs + nbSpecies
-  lspecies = (nbReacs+1):nedges
-  links = matrix(0, ncol = nedges, nrow = nedges)
-  dimnames(links)[[1]] = c(reacs, species)
-  dimnames(links)[[2]] = c(reacs, species)
-
-  KL = L * matrix(flMean,
-                  nrow = nbReacs,
-                  ncol = nbSpecies,
-                  byrow = FALSE)
-  KR = R * matrix(flMean,
-                  nrow = nbReacs,
-                  ncol = nbSpecies,
-                  byrow = FALSE)
-
-  # Build link matrix with first neighbors (reactants and products)
-  links = addLinks(sp1, links, species, KL, KR, nbReacs, nbSpecies)
-
-  if (level==2) {
-    # Add 2nd neighnors to link matrix ### DOES NOT WORK AS IS !!!
-    select = colSums(links[, lspecies]) != 0 |
-             rowSums(links[lspecies, ]) != 0
-    listSp = species[select]
-    for (sp2 in listSp)
-      if (!(sp2 %in% spInit))
-        links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies,
-                         wght = 1e-6)
-  }
-  # print(links)
-
-  # Select most important links if there are too many
-  linksThresh = links
-  if (sum(links != 0) > 50) {
-    lnkThresh = quantile(abs(links)[abs(links) > 0],
-                         probs = 1 - topShow,
-                         na.rm = TRUE)
-    linksThresh[abs(links) < lnkThresh] = 0
-  }
-  # print(linksThresh)
-
-  g = simplify(
-    graph_from_adjacency_matrix(
-      linksThresh,
-      mode = "directed",
-      weighted = TRUE)
-  )
-
-  cols=brewer.pal(9,"Set3")
-  reacColor=c(cols[6:9])
-
-  V(g)$label = c(reacs,species)
-  V(g)$shape=c(rep("rectangle",nbReacs),rep("circle",nbSpecies))
-  V(g)$size = c(rep(20,nbReacs),rep(20,nbSpecies))
-  V(g)$size2 = 6
-  V(g)$color = c(reacColor[reacType],rep("gold",nbSpecies))
-  V(g)$label.cex = c(rep(1,nbReacs),rep(1,nbSpecies))
-  V(g)$label.color = "black"
-  V(g)$label.font = 2
-  V(g)$type = c(rep(0,nbReacs),rep(1,nbSpecies))
-
-  wid = abs(E(g)$weight)
-  wid = wid^0.1 # Empirical transfo for better scaling...
-  wid = 0.12 + (wid-min(wid))/(max(wid)-min(wid))
-  E(g)$width = wid*5
-  E(g)$color = ifelse(
-    E(g)$weight > 0,
-    col2tr('red',160),
-    col2tr('blue',160))
-  E(g)$arrow.size  = 0.25*max(E(g)$width)
-  E(g)$arrow.width = 0.25*max(E(g)$width)
-  E(g)$curved = curved
-
-  loners = which(degree(g) == 0)
-  g = delete.vertices(g, loners)
-
-  return(g)
-}
 
 
 volpertGraph = function (linkMat,specList,vlpInd,topShow=0.5,PDF=FALSE,
@@ -1025,7 +930,7 @@ traceBack = function(sp1,L,R,species,spInit,reacTags,flMean) {
     cat(paste0('  ', reacTags[mainReac], ' : ', signif(wgt, 2), '\n'))
     io = order(KL[mainReac, ], decreasing = TRUE)
     start = species[io[1]]
-    if(start %in% stoppers)
+    if(start %in% stoppers & KL[mainReac,io[2]] != 0)
       start = species[io[2]]
     start = start[!(start %in% stoppers)]
 

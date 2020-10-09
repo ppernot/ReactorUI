@@ -225,6 +225,30 @@ sidebarLayout(
             )
           )
         ),
+        tabPanel(
+          title=h4("Sanity"),
+          br(),
+          fluidRow(
+            column(
+              width = 3,
+              wellPanel(
+                # radioButtons(
+                #   "anaType",
+                #   "Sensitivity indices",
+                #   choices = c(
+                #     "Rank Correl." = "spearman",
+                #     "dCorr"        = "dcorr",
+                #     "dHSIC"        = "hsic"
+                #   )
+                # )
+              )
+            ),
+            column(
+              width = 9,
+              verbatimTextOutput("sanity")
+            )
+          )
+        ),
         id="analysisTabset"
       )
     )

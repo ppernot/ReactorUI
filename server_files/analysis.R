@@ -790,4 +790,92 @@ output$sensitivity <- renderPlot({
   }
 
 })
+# Sanity ####
+output$sanity <- renderPrint({
+  if(is.null(concList())   |
+     is.null(ratesList())
+  )
+    return(NULL)
 
+  # Extract data from lists
+  for (n in names(concList()))
+    assign(n,rlist::list.extract(concList(),n))
+  for (n in names(ratesList()))
+    assign(n,rlist::list.extract(ratesList(),n))
+
+  # Analyze final concentrations
+  conc = conc[, nt, ]
+  lconc = ifelse(conc <= 0, NA, log10(conc))
+  sdc  = apply(lconc, 2, function(x) sd(x,na.rm=TRUE))
+  sel  = which(sdc == 0 | !is.finite(sdc))
+print(sdc)
+
+  if(length(sel) != 0) {
+    cat(' Species with suspicious concentrations\n',
+        '--------------------------------------\n\n')
+    nMC = nrow(conc)
+    sd0 = nzero = ninf = c()
+    for (ii in 1:length(sel)) {
+      i = sel[ii]
+      sd0[ii]   = ifelse(is.finite(sdc[i]),sdc[i] == 0,FALSE)
+      nzero[ii] = paste0(sum(conc[,i] <= 0),'/',nMC)
+      ninf[ii]  = paste0(sum(!is.finite(lconc[,i])),'/',nMC)
+    }
+    df = data.frame(
+      'Name'  = species[sel],
+      'Var=0' = sd0,
+      'Nzero' = nzero,
+      'Ninf'  = ninf
+    )
+    print(df)
+  }
+
+  sdc = apply(photoRates,2,function(x) sd(x))
+  sel = which(sdc==0 & !is.finite(sdc))
+  if(length(sel) != 0) {
+
+    cat('\n\n')
+    cat(' Photorates with suspicious samples\n',
+        '-----------------------------------\n\n')
+    sd0 = nzero = ninf = c()
+    for (ii in 1:length(sel)) {
+      i = sel[ii]
+      sd0[ii]   = sdc[i] == 0
+      nzero[ii] = paste0(sum(photoRates[,i] == 0),'/',nMC)
+      ninf[ii]  = paste0(sum(!is.finite(photoRates[,i])),'/',nMC)
+    }
+    df = data.frame(
+      'Name'  = colnames(photoRates)[sel],
+      'Var=0' = sd0,
+      'Nzero' = nzero,
+      'Ninf'  = ninf
+    )
+    print(df)
+  }
+
+
+  sdc = apply(rates,2,function(x) sd(x))
+  sel = which(sdc==0 & !is.finite(sdc))
+
+  if(length(sel) != 0) {
+    cat('\n\n')
+    cat(' Reaction rates with suspicious samples\n',
+        '---------------------------------------\n\n')
+
+    sd0 = nzero = ninf = c()
+    for (ii in 1:length(sel)) {
+      i = sel[ii]
+      sd0[ii]   = sdc[i] == 0
+      nzero[ii] = paste0(sum(rates[,i] == 0),'/',nMC)
+      ninf[ii]  = paste0(sum(!is.finite(rates[,i])),'/',nMC)
+    }
+    df = data.frame(
+      'Name'  = colnames(rates)[sel],
+      'Var=0' = sd0,
+      'Nzero' = nzero,
+      'Ninf'  = ninf
+    )
+    print(df)
+  }
+
+})

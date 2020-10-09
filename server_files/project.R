@@ -30,6 +30,12 @@ observeEvent(
   projectDir(dir)
   # Prevent msg from irradUI when switching projects
   reacData(NULL)
+  reacScheme(NULL)
+  concList(NULL)
+  ratesList(NULL)
+  fluxesList(NULL)
+  graphsList(NULL)
+  stoechList(NULL)
 
   if(input$newProj) {
 

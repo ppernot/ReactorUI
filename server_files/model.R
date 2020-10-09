@@ -630,6 +630,17 @@ observeEvent(
     }) %...>% reacScheme()
   })
 observe({
+  # Load reacScheme() from project if it exists
+  req(projectDir())
+
+  file = file.path(projectDir(),'Run','reacScheme.Rda')
+  if(file.exists(file)) {
+    load(file)     # Load RD list
+    reacScheme(RS) # Populate reacScheme()
+  }
+
+})
+observe({
   # Generate data files for reactor code when reacScheme() is ready
   req(projectDir())
   req(reacScheme())
@@ -641,7 +652,15 @@ observe({
 })
 observe({
   # Generate graph link matrices when reacScheme() is ready
+  req(projectDir())
   req(reacScheme())
+
+  # Save data reactiveVal
+  RS = reacScheme()
+  save(
+    RS,
+    file = file.path(projectDir(),'Run','reacScheme.Rda')
+  )
 
   # Populate stoechList()
   stoechList(
@@ -806,7 +825,7 @@ output$tabScheme <- renderDataTable({
     return()
   }
   id      = reacScheme()$reacTags
-  reacs   = reacScheme()$reacs
+  # reacs   = reacScheme()$reacs
   species = reacScheme()$species
   params  = reacScheme()$params
   type    = reacScheme()$type
@@ -855,7 +874,7 @@ output$tabScheme <- renderDataTable({
   )
   if (is.na(input$targetSpecies) |
       input$targetSpecies == "") {
-    for (i in 1:length(reacs))
+    for (i in 1:length(id))
       dat = rbind(dat, formatReac(i))
 
   } else {

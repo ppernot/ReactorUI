@@ -156,32 +156,15 @@ generateNetwork <- function(
   orig      = orig[reacList]
   reacTagFull = reacTagFull[reacList]
 
-  # Build species connectivity  matrix for network plots
-  linksR=matrix(0,ncol = nbSpecies, nrow = nbSpecies)
-  colnames(linksR) = species
-  rownames(linksR) = species
-  for (i in 1:nbReac) {
-    reacts = which(L[i,] != 0)
-    prodts = which(R[i,] != 0)
-    linksR[reacts, prodts] = linksR[reacts, prodts] + 1
-  }
-
-  # Build bi-partite/digraph connectivity matrix
+  # Short tags
   nbPhoto = sum(type == 'photo')
   reacTags    = c(
     paste0('Ph', 1:nbPhoto),
     paste0('R',  1:(nbReac-nbPhoto))
   )
-  nbNodes = nbReac + nbSpecies
-  lSpecies = (nbReac + 1):(nbReac + nbSpecies)
-  nodeNames = c(reacTags,species)
-  linksR2 = matrix(0, ncol = nbNodes, nrow = nbNodes)
-  colnames(linksR2) = nodeNames
-  rownames(linksR2) = nodeNames
-  for (i in 1:nbReac) {
-    linksR2[lSpecies, i] = linksR2[lSpecies, i] + L[i, 1:nbSpecies]
-    linksR2[i, lSpecies] = linksR2[i, lSpecies] + R[i, 1:nbSpecies]
-  }
+  rownames(L) = reacTags
+  rownames(R) = reacTags
+  rownames(D) = reacTags
 
   return(
     list(
@@ -193,8 +176,6 @@ generateNetwork <- function(
       L       = L,
       R       = R,
       D       = D,
-      linksR  = linksR,
-      linksR2 = linksR2,
       params  = params,
       type    = type,
       locnum  = locnum,
@@ -206,7 +187,160 @@ generateNetwork <- function(
     )
   )
 }
+generateLinks = function (LR, weights = NULL) {
 
+  # Chemical network params
+  L = LR$L
+  R = LR$R
+
+  nbSpecies = ncol(R)
+  species   = colnames(R)
+  nbReacs   = nrow(R)
+  reacTags  = rownames(R)
+
+  # Build species connectivity  matrix for network plots
+  linksR=matrix(0,ncol = nbSpecies, nrow = nbSpecies)
+  colnames(linksR) = species
+  rownames(linksR) = species
+  for (i in 1:nbReacs) {
+    reacts = which(L[i,] != 0)
+    prodts = which(R[i,] != 0)
+    linksR[reacts, prodts] = linksR[reacts, prodts] + 1
+  }
+
+  # Build bi-partite/digraph connectivity matrix
+  nbNodes = nbReacs + nbSpecies
+  lSpecies = (nbReacs + 1):(nbReacs + nbSpecies)
+  nodeNames = c(reacTags,species)
+  linksR2 = matrix(0, ncol = nbNodes, nrow = nbNodes)
+  colnames(linksR2) = nodeNames
+  rownames(linksR2) = nodeNames
+  for (i in 1:nbReacs) {
+    linksR2[lSpecies, i] = linksR2[lSpecies, i] + L[i, 1:nbSpecies]
+    linksR2[i, lSpecies] = linksR2[i, lSpecies] + R[i, 1:nbSpecies]
+  }
+
+  return(
+    list(
+      linksR  = linksR,
+      linksR2 = linksR2
+    )
+  )
+}
+writeDL = function(outputDir,RS) {
+
+  # Chemical network params
+  for (n in names(RS))
+    assign(n, rlist::list.extract(RS, n))
+
+  # Save species list, mass [& charge (TBD)]
+  sp_aux =paste(
+    nbSpecies,'\n',
+    paste(species,collapse = ' '), '\n',
+    paste(mass,   collapse = ' '), '\n',
+    paste(rep(0,nbSpecies), collapse = ' ')
+  )
+  writeLines(
+    sp_aux,
+    file.path(outputDir,'Run','species_aux.dat')
+  )
+
+  # Split photodissociations and reactions
+  photo = type == 'photo'
+  Dphoto = matrix(D[ photo,],nrow=sum(photo), ncol=nbSpecies)
+  D      = matrix(D[!photo,],nrow=sum(!photo),ncol=nbSpecies)
+  Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
+  L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
+
+  # Treat Reactions ###
+  # 1/ Convert D & L to triplets (sparse matrices)
+  Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
+  Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
+
+  reac_DL = paste(nrow(Dsp),'\n',
+                  trimws(paste(Dsp, collapse = " ")),'\n',
+                  nrow(Lsp),'\n',
+                  trimws(paste(Lsp, collapse = " ")))
+  writeLines(
+    reac_DL,
+    file.path(outputDir,'Run','reac_DL.dat')
+  )
+
+  # Reactions list
+  reac_list = ''
+  sel = (1:nbReac)[!photo]
+  for (i in sel) {
+    reac_list = paste(reac_list, reacTagFull[[i]])
+    if( i != sel[length(sel)])
+      reac_list = paste(reac_list, '\n')
+  }
+  writeLines(
+    reac_list,
+    file.path(outputDir,'Run','reac_list.dat')
+  )
+
+  # Single output file from nominal data
+  reac_params = ''
+  for (i in sel) {
+    reac_params = paste(
+      reac_params,
+      paste(params[[i]], collapse = " "))
+    if( i != sel[length(sel)])
+      reac_params = paste(reac_params,'\n')
+  }
+  writeLines(
+    reac_params,
+    file.path(outputDir,'Run','reac_params.dat')
+  )
+
+  # Treat Nominal Photo-processes ###
+
+  # Reactions list
+  reac_list = ''
+  sel = (1:nbReac)[photo]
+  for (i in sel) {
+    reac_list = paste(reac_list, reacTagFull[[i]])
+    if( i != sel[length(sel)])
+      reac_list = paste(reac_list, '\n')
+  }
+  writeLines(
+    reac_list,
+    file.path(outputDir,'Run','photo_list.dat')
+  )
+
+  if (dim(Dphoto)[1]!=0) {
+    # Convert D & L to triplets (sparse matrices)
+    Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
+    Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
+
+    reac_DL = paste(nrow(Dsp),'\n',
+                    trimws(paste(Dsp, collapse = " ")),'\n',
+                    nrow(Lsp),'\n',
+                    trimws(paste(Lsp, collapse = " ")))
+    writeLines(
+      reac_DL,
+      file.path(outputDir,'Run','photo_DL.dat')
+    )
+
+    reac_params = ''
+    for (i in sel) {
+      sp=species[which(Lphoto[i,]!=0)]
+      if( params[[i]][1] == 0 )
+        reac_params = paste0(reac_params,'se',sp,'.dat')
+      else
+        reac_params = paste(
+          reac_params,
+          paste0('se',sp,'.dat'),
+          paste0('qy',sp,'_',params[[i]][1],'.dat'))
+      if( i != sel[length(sel)])
+        reac_params = paste(reac_params, '\n')
+    }
+    writeLines(
+      reac_params,
+      file.path(outputDir,'Run','photo_params.dat')
+    )
+  }
+}
 # Interactive ####
 output$contentsNmlMsg <- renderPrint({
   if (is.null(reacData()) |
@@ -446,7 +580,9 @@ output$chemistryParams <- renderUI({
   }
   ui
 })
-observeEvent(input$generateNetwork, {
+observeEvent(
+  input$generateNetwork,
+  {
 
     # Initial mixture
 
@@ -495,123 +631,34 @@ observeEvent(input$generateNetwork, {
   })
 observe({
   # Generate data files for reactor code when reacScheme() is ready
+  req(projectDir())
   req(reacScheme())
 
-  # Network params
-  for (n in names(reacScheme()))
-    assign(n, rlist::list.extract(reacScheme(), n))
-
-  # Save files
-  outputDir = projectDir()
-
-  sp_aux =paste(
-    nbSpecies,'\n',
-    paste(species,collapse = ' '), '\n',
-    paste(mass,   collapse = ' '), '\n',
-    paste(rep(0,nbSpecies), collapse = ' ')
+  writeDL(
+    outputDir = projectDir(),
+    RS = reacScheme()
   )
-  writeLines(
-    sp_aux,
-    file.path(outputDir,'Run','species_aux.dat')
-  )
-
-  # Split photodissociations and reactions
-  photo = type == 'photo'
-  Dphoto = matrix(D[ photo,],nrow=sum(photo), ncol=nbSpecies)
-  D      = matrix(D[!photo,],nrow=sum(!photo),ncol=nbSpecies)
-  Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
-  L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
-
-  # Treat Reactions ###
-  # 1/ Convert D & L to triplets (sparse matrices)
-  Dsp = cbind(which(D!=0,arr.ind=TRUE),D[D!=0])
-  Lsp = cbind(which(L!=0,arr.ind=TRUE),L[L!=0])
-
-  reac_DL = paste(nrow(Dsp),'\n',
-                  trimws(paste(Dsp, collapse = " ")),'\n',
-                  nrow(Lsp),'\n',
-                  trimws(paste(Lsp, collapse = " ")))
-  writeLines(
-    reac_DL,
-    file.path(outputDir,'Run','reac_DL.dat')
-  )
-
-  # Reactions list
-  reac_list = ''
-  sel = (1:nbReac)[!photo]
-  for (i in sel) {
-    reac_list = paste(reac_list, reacTagFull[[i]])
-    if( i != sel[length(sel)])
-      reac_list = paste(reac_list, '\n')
-  }
-  writeLines(
-    reac_list,
-    file.path(outputDir,'Run','reac_list.dat')
-  )
-
-  # Single output file from nominal data
-  reac_params = ''
-  for (i in sel) {
-    reac_params = paste(
-      reac_params,
-      paste(params[[i]], collapse = " "))
-    if( i != sel[length(sel)])
-      reac_params = paste(reac_params,'\n')
-  }
-  writeLines(
-    reac_params,
-    file.path(outputDir,'Run','reac_params.dat')
-  )
-
-  # Treat Nominal Photo-processes ###
-
-  # Reactions list
-  reac_list = ''
-  sel = (1:nbReac)[photo]
-  for (i in sel) {
-    reac_list = paste(reac_list, reacTagFull[[i]])
-    if( i != sel[length(sel)])
-      reac_list = paste(reac_list, '\n')
-  }
-  writeLines(
-    reac_list,
-    file.path(outputDir,'Run','photo_list.dat')
-  )
-
-  if (dim(Dphoto)[1]!=0) {
-    # Convert D & L to triplets (sparse matrices)
-    Dsp = cbind(which(Dphoto!=0,arr.ind=TRUE),Dphoto[Dphoto!=0])
-    Lsp = cbind(which(Lphoto!=0,arr.ind=TRUE),Lphoto[Lphoto!=0])
-
-    reac_DL = paste(nrow(Dsp),'\n',
-                    trimws(paste(Dsp, collapse = " ")),'\n',
-                    nrow(Lsp),'\n',
-                    trimws(paste(Lsp, collapse = " ")))
-    writeLines(
-      reac_DL,
-      file.path(outputDir,'Run','photo_DL.dat')
-    )
-
-    reac_params = ''
-    for (i in sel) {
-      sp=species[which(Lphoto[i,]!=0)]
-      if( params[[i]][1] == 0 )
-        reac_params = paste0(reac_params,'se',sp,'.dat')
-      else
-        reac_params = paste(
-          reac_params,
-          paste0('se',sp,'.dat'),
-          paste0('qy',sp,'_',params[[i]][1],'.dat'))
-      if( i != sel[length(sel)])
-        reac_params = paste(reac_params, '\n')
-    }
-    writeLines(
-      reac_params,
-      file.path(outputDir,'Run','photo_params.dat')
-    )
-  }
-
 })
+observe({
+  # Generate graph link matrices when reacScheme() is ready
+  req(reacScheme())
+
+  # Populate stoechList()
+  stoechList(
+    list(
+      L = reacScheme()$L,
+      R = reacScheme()$R
+    )
+  )
+
+  # Populate graphList()
+  graphsList(
+    generateLinks(
+      LR = stoechList()
+    )
+  )
+})
+
 output$summaryScheme <- renderPrint({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -670,10 +717,16 @@ output$summaryScheme <- renderPrint({
   for (i in 0:maxVlpInd)
     cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n\n')
 
+
+  # Graph connectivity ####
+
+  for (n in names(graphsList()))
+    assign(n, rlist::list.extract(graphsList(), n))
+
   cat(' =============================\n',
       'Network connectivity analysis\n',
       '-----------------------------\n\n')
-  # Graph connectivity ####
+
   g = simplify(
     graph_from_adjacency_matrix(
       linksR2,
@@ -681,7 +734,7 @@ output$summaryScheme <- renderPrint({
       weighted = TRUE
     )
   )
-  nodeNames = row.names(linksR2)
+  nodeNames = rownames(linksR2)
   pmax = length(nodeNames)
   # cat(' Connectivity : ',igraph::vertex_connectivity(g),'\n',
   #     'Radius       : ',igraph::radius(g),'\n\n')
@@ -701,14 +754,14 @@ output$summaryScheme <- renderPrint({
         deg[io][i], '\n')
 
   cat('\n Species connectivity distribution\n',
-      '----------------------------------\n')
+         '---------------------------------\n')
   lSpecies = (nbReac + 1):(nbReac + nbSpecies)
   print(table(deg[lSpecies],
               dnn = 'Degree'
               )[1:min(length(unique(deg[lSpecies])),15)])
 
   cat('\n Reactions connectivity distribution\n',
-      '----------------------------------\n')
+         '-----------------------------------\n')
   print(table(deg[1:nbReac],
               dnn = 'Degree'
               )[1:min(length(unique(deg[1:nbReac])),15)])
@@ -845,9 +898,12 @@ output$plotScheme <- renderForceNetwork({
     cat('Please Generate Reactions...')
     return(NULL)
   }
+  req(graphsList())
 
   for (n in names(reacScheme()))
     assign(n, rlist::list.extract(reacScheme(), n))
+  for (n in names(graphsList()))
+    assign(n, rlist::list.extract(graphsList(), n))
   for (n in names(gPars))
     assign(n, rlist::list.extract(gPars, n))
 
@@ -858,16 +914,19 @@ output$plotScheme <- renderForceNetwork({
 
     linksR = linksR2
     helpNames = c(unlist(reacTagFull),species)
+    nbReacs = nbReac
 
     if(sum(!selVp) > 0) {
-      rsel    = rowSums(R[,!selVp]) != 0 |
-                rowSums(L[,!selVp]) != 0
+
+      lR = matrix(R[,!selVp],ncol = sum(!selVp))
+      lL = matrix(L[,!selVp],ncol = sum(!selVp))
+      rsel = rowSums(lR) != 0 | rowSums(lL) != 0
 
       csel    = c(!rsel, selVp)
       linksR  = linksR[csel,csel]
       helpNames = helpNames[csel]
 
-      nbReac  = sum(!rsel)
+      nbReacs = sum(!rsel)
       species = species[selVp]
       nbSpecies = sum(selVp)
     }
@@ -882,6 +941,9 @@ output$plotScheme <- renderForceNetwork({
     arrows = FALSE
 
   }
+
+  if(!is.matrix(linksR))
+    return(NULL)
 
   g = simplify(
     graph_from_adjacency_matrix(
@@ -918,10 +980,12 @@ output$plotScheme <- renderForceNetwork({
   }
 
   if('digraph' %in% input$netCtrl)
-    grp = c(rep('reac',nbReac),grp)
+    grp = c(rep('reac',nbReacs),grp)
 
   graph_d3 <- igraph_to_networkD3(g, group = grp)
-  graph_d3$nodes[['size']] = igraph::degree(g)
+  graph_d3$nodes[['size']] = igraph::degree(g) * 5
+  if('digraph'   %in% input$netCtrl)
+    graph_d3$nodes[['size']][1:nbReacs] = 1
   if('digraph'   %in% input$netCtrl &
      'showNames' %in% input$netCtrl)
     graph_d3$nodes[['name']] = helpNames
@@ -944,7 +1008,7 @@ output$plotScheme <- renderForceNetwork({
     bounded = FALSE,
     zoom    = TRUE,
     arrows  = arrows,
-    opacity = 0.9,
+    opacity = 1.0,
     opacityNoHover = 0.4,
     colourScale = cs,
     clickAction = alert,
@@ -953,7 +1017,6 @@ output$plotScheme <- renderForceNetwork({
     charge   = input$forceNetCharge,
     fontSize = input$fontSizeNet
   )
-
 
 })
 

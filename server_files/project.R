@@ -7,8 +7,9 @@ spectrumData = reactiveVal(NULL)
 reacScheme   = reactiveVal(NULL)
 concList     = reactiveVal(NULL)
 ratesList    = reactiveVal(NULL)
-fluxesList   = reactiveVal(NULL)
-graphsList   = reactiveVal(NULL)
+fluxesList   = reactiveVal(NULL) # flMean, flSd...
+graphsList   = reactiveVal(NULL) # connectivity mats :linksR, linksR2
+stoechList   = reactiveVal(NULL) # stoechiometry mats: L, R
 
 # Open ####
 shinyFiles::shinyDirChoose(

@@ -13,4 +13,5 @@ do
   Scripts/OneRun_Loc.sh $i $3 
 done
 
+echo "==================== All done ! ==================="
 

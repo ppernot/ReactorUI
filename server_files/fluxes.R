@@ -1,33 +1,22 @@
 # Functions ####
-calcFluxes = function(C,R) {
+getLR = function () {
 
-  # Extract conc et al.
-  for (n in names(C))
-    assign(n,rlist::list.extract(C,n))
-  # Extract rates et al.
-  for (n in names(R))
-    assign(n,rlist::list.extract(R,n))
-
-  # MC fluxes
-  allRates   = cbind(photoRates,rates)
-  reacNames  = colnames(allRates)
-  nbReacs    = ncol(allRates)
-  nf         = nrow(allRates)
-  flux       = matrix(NA,nrow=nf,ncol=nbReacs)
-  nbSpecies  = nsp
-
-  # Concentrations at stationary state (last snapshot)
-  conc = matrix(conc[,nt,],nrow=nf,ncol=nbSpecies)
+  SP = readLines(
+    con = file.path(ctrlPars$projectDir,'Run','species_aux.dat'),
+    n = 4
+  )
+  nbSpecies = as.numeric(SP[[1]])
 
   ## get D and L matrices
-  D = L = matrix(0,ncol=nbSpecies,nrow=nbReacs)
   DL  = readLines(
-    con = paste0(ctrlPars$projectDir,'/Run/photo_DL.dat'),
+    con = file.path(ctrlPars$projectDir,'Run','photo_DL.dat'),
     n   = 4
   )
   nnz = as.numeric(DL[1])
   Dsp = as.numeric(unlist(strsplit(trimws(DL[2]), split = ' ')))
   Dsp = matrix(Dsp, nrow = nnz, ncol = 3)
+  nbPhoto = max(Dsp[,1])
+  D = L = matrix(0,ncol=nbSpecies,nrow=nbPhoto)
   for (i in 1:nrow(Dsp))
     D[Dsp[i, 1], Dsp[i, 2]] = Dsp[i, 3]
   nnz = as.numeric(DL[3])
@@ -35,27 +24,61 @@ calcFluxes = function(C,R) {
   Lsp = matrix(Lsp, nrow = nnz, ncol = 3)
   for (i in 1:nrow(Lsp))
     L[Lsp[i, 1], Lsp[i, 2]] = Lsp[i, 3]
-  nPh = ncol(photoRates)
 
   DL  = readLines(
-    con = paste0(ctrlPars$projectDir,'/Run/reac_DL.dat'),
+    con = file.path(ctrlPars$projectDir,'Run','reac_DL.dat'),
     n   = 4
   )
   nnz = as.numeric(DL[1])
   Dsp = as.numeric(unlist(strsplit(trimws(DL[2]), split = ' ')))
   Dsp = matrix(Dsp, nrow = nnz, ncol = 3)
+  nbReac = max(Dsp[,1])
+  Dr = Lr = matrix(0,ncol=nbSpecies,nrow=nbReac)
   for (i in 1:nrow(Dsp))
-    D[nPh + Dsp[i, 1], Dsp[i, 2]] = Dsp[i, 3]
+    Dr[Dsp[i, 1], Dsp[i, 2]] = Dsp[i, 3]
   nnz = as.numeric(DL[3])
   Lsp = as.numeric(unlist(strsplit(trimws(DL[4]), split = ' ')))
   Lsp = matrix(Lsp, nrow = nnz, ncol = 3)
   for (i in 1:nrow(Lsp))
-    L[nPh + Lsp[i, 1], Lsp[i, 2]] = Lsp[i, 3]
+    Lr[Lsp[i, 1], Lsp[i, 2]] = Lsp[i, 3]
 
+  D = rbind(D,Dr)
+  L = rbind(L,Lr)
   R = D + L
 
+  return(
+    list(
+      L = L,
+      R = R
+    )
+  )
+
+}
+calcFluxes = function(coList,reList,stList) {
+
+  # Extract conc et al.
+  for (n in names(coList))
+    assign(n,rlist::list.extract(coList,n))
+  # Extract rates et al.
+  for (n in names(reList))
+    assign(n,rlist::list.extract(reList,n))
+  # Extract L & R mats
+  for (n in names(stList))
+    assign(n,rlist::list.extract(stList,n))
+
+  # MC fluxes
+  allRates   = cbind(photoRates,rates)
+  reacNames  = colnames(allRates)
+  nbReacs    = ncol(allRates)
+  nMC        = nrow(allRates)
+  nbSpecies  = nsp
+
+  # Concentrations at stationary state (last snapshot)
+  conc = matrix(conc[, nt, ], nrow = nMC, ncol = nbSpecies)
+
   ## Compute flux
-  for (i in 1:nf)
+  flux = matrix(NA,nrow=nMC,ncol=nbReacs)
+  for (i in 1:nMC)
     flux[i, ] = allRates[i, ] *
     apply(L, 1, function(x) prod(conc[i, ] ^ x))
 
@@ -85,9 +108,7 @@ calcFluxes = function(C,R) {
       flMed  = flMed,
       flF    = flF,
       flLow  = flLow,
-      flSup  = flSup,
-      L      = L,
-      R      = R
+      flSup  = flSup
     )
   )
 }
@@ -106,19 +127,8 @@ observeEvent(
         type = 'message'
       )
       on.exit(removeNotification(id), add = TRUE)
-
-      C = getConc()
-      concList(C)
+      concList( getConc() )
     }
-    C = concList()
-
-    # test = dim(C$conc)[1] > 1
-    # if(!test) # Rq: validate() would not display message !?!?!?
-    #   showNotification(
-    #     h4('Flux analysis impossible for a single run !'),
-    #     type = 'warning'
-    #   )
-    # req(test)
 
     if(is.null(ratesList())){
       id = shiny::showNotification(
@@ -128,13 +138,20 @@ observeEvent(
         type = 'message'
       )
       on.exit(removeNotification(id), add = TRUE)
-
-      R = getRates()
-      ratesList(R)
+      ratesList( getRates() )
     }
-    R = ratesList()
 
-    future({calcFluxes(C,R)}) %...>% fluxesList()
+    if(is.null(stoechList()))
+      stoechList( getLR() )
+
+    C = concList()
+    R = ratesList()
+    S = stoechList()
+
+    future({
+      calcFluxes(C,R,S)
+    }) %...>% fluxesList()
+
   }
 )
 
@@ -142,6 +159,7 @@ output$viewFlow <- renderPlot({
   if(is.null(concList()) |
      is.null(ratesList()) |
      is.null(fluxesList()) |
+     is.null(stoechList()) |
      is.null(input$flSpec)  )
     return(NULL)
 
@@ -152,6 +170,8 @@ output$viewFlow <- renderPlot({
     assign(n,rlist::list.extract(ratesList(),n))
   for (n in names(fluxesList()))
     assign(n,rlist::list.extract(fluxesList(),n))
+  for (n in names(stoechList()))
+    assign(n,rlist::list.extract(stoechList(),n))
 
   test = input$flSpec %in% species
   if(!test) # Rq: validate() would not display message !?!?!?
@@ -262,11 +282,118 @@ my_igraph_to_networkd3 = function (g, group, what = "both") {
     return(nodes)
   }
 }
+viewFlow = function(sp1,
+                    L,
+                    R,
+                    species,
+                    reacs,
+                    reacType,
+                    reacTypeNames,
+                    flMean,
+                    spInit,
+                    topShow = 0.5,
+                    level = 1,
+                    showLegend = TRUE,
+                    PDF = FALSE,
+                    curved = FALSE) {
+  # Builds digraph of fluxes to and from sp1
+
+  nbSpecies = length(species)
+  nbReacs   = length(reacs)
+
+  nedges = nbReacs + nbSpecies
+  lSpecies = (nbReacs+1):nedges
+  links = matrix(0, ncol = nedges, nrow = nedges)
+  colnames(links) = c(reacs, species)
+  rownames(links) = c(reacs, species)
+
+  KL = L * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
+  KR = R * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
+
+  # Build bi-partite/digraph connectivity matrix
+  for (i in 1:nbReacs) {
+    links[lSpecies, i] = links[lSpecies, i] + KL[i, 1:nbSpecies]
+    links[i, lSpecies] = links[i, lSpecies] + KR[i, 1:nbSpecies]
+  }
+
+  if(sp1 != '') {
+
+  }
+  # if(!is.null(sp1)) {
+    # Build link matrix with first neighbors (reactants and products)
+    # links = addLinks(sp1, links, species, KL, KR, nbReacs, nbSpecies)
+
+    # if (level==2) {
+    #   # Add 2nd neighnors to link matrix ### DOES NOT WORK AS IS !!!
+    #   select = colSums(links[, lSpecies]) != 0 |
+    #            rowSums(links[lSpecies, ]) != 0
+    #   listSp = species[select]
+    #   for (sp2 in listSp)
+    #     if (!(sp2 %in% spInit))
+    #       links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies,
+    #                        wght = 1e-6)
+    # }
+  # }
+
+  # Select most important links if there are too many
+  linksThresh = links
+  # if (sum(links != 0) > 50) {
+  #   lnkThresh = quantile(abs(links)[abs(links) > 0],
+  #                        probs = 1 - topShow,
+  #                        na.rm = TRUE)
+  #   linksThresh[abs(links) < lnkThresh] = 0
+  # }
+  # print(linksThresh)
+
+  g = simplify(
+    graph_from_adjacency_matrix(
+      linksThresh,
+      mode = "directed",
+      weighted = TRUE)
+  )
+
+  cols=brewer.pal(9,"Set3")
+  reacColor=c(cols[6:9])
+
+  V(g)$label = c(reacs,species)
+  V(g)$shape=c(rep("rectangle",nbReacs),rep("circle",nbSpecies))
+  V(g)$size = c(rep(20,nbReacs),rep(20,nbSpecies))
+  V(g)$size2 = 6
+  V(g)$color = c(reacColor[reacType],rep("gold",nbSpecies))
+  V(g)$label.cex = c(rep(1,nbReacs),rep(1,nbSpecies))
+  V(g)$label.color = "black"
+  V(g)$label.font = 2
+  V(g)$type = c(rep(0,nbReacs),rep(1,nbSpecies))
+
+  wid = abs(E(g)$weight)
+  wid = wid^0.1 # Empirical transfo for better scaling...
+  wid = 0.12 + (wid-min(wid))/(max(wid)-min(wid))
+  E(g)$width = wid*5
+  E(g)$color = ifelse(
+    E(g)$weight > 0,
+    col2tr('red',160),
+    col2tr('blue',160))
+  E(g)$arrow.size  = 0.25*max(E(g)$width)
+  E(g)$arrow.width = 0.25*max(E(g)$width)
+  E(g)$curved = curved
+
+  loners = which(degree(g) == 0)
+  g = delete.vertices(g, loners)
+
+  return(g)
+}
 output$viewFlowD3 <- renderForceNetwork({
   if(is.null(concList()) |
      is.null(ratesList()) |
      is.null(fluxesList()) |
-     is.null(input$flSpec)  )
+     is.null(stoechList())
+  )
     return(NULL)
 
   # Extract data from lists
@@ -276,17 +403,22 @@ output$viewFlowD3 <- renderForceNetwork({
     assign(n,rlist::list.extract(ratesList(),n))
   for (n in names(fluxesList()))
     assign(n,rlist::list.extract(fluxesList(),n))
+  for (n in names(stoechList()))
+    assign(n,rlist::list.extract(stoechList(),n))
 
-  test = input$flSpec %in% species
-  if(!test) # Rq: validate() would not display message !?!?!?
-    showNotification(
-      h4('Invalid species name !'),
-      type = 'warning'
-    )
-  req(test)
+  if(!is.null(input$flSpec) & input$flSpec != '' ) {
+    test = input$flSpec %in% species
+    if(!test) # Rq: validate() would not display message !?!?!?
+      showNotification(
+        h4('Invalid species name !'),
+        type = 'warning'
+      )
+    req(test)
+  }
 
   # Remove dummy species
-  sel  = ! species %in% spDummy
+  # sel  = ! species %in% spDummy
+  sel = 1:length(species)
 
   reacTypeNames = c("Ph", "R")
   g = viewFlow(
@@ -294,11 +426,11 @@ output$viewFlowD3 <- renderForceNetwork({
     L[, sel],
     R[, sel],
     species[sel],
-    # reacs    = c(
-    #   paste0('Ph', 1:ncol(photoRates)),
-    #   paste0('R',  1:ncol(rates))
-    # ),
-    reacs = make.unique(trimws(names(flMean))),
+    reacs    = c(
+      paste0('Ph', 1:nPhotoRates),
+      paste0('R',  1:nRates)
+    ),
+    # reacs = make.unique(trimws(names(flMean))),
     reacType = c(
       rep(1, ncol(photoRates)),
       rep(2, ncol(rates))
@@ -309,19 +441,20 @@ output$viewFlowD3 <- renderForceNetwork({
     topShow = input$topShow,
     level = ifelse(input$level, 2, 1),
     showLegend = TRUE,
-    curved = input$curvedArrow
+    curved = FALSE
   )
 
   grp = as.numeric(factor(V(g)$shape))-1
 
   graph_d3 = my_igraph_to_networkd3(g, group = grp)
-  graph_d3$nodes[['size']]  = 2 * igraph::degree(g)
+  graph_d3$nodes[['size']]  = log10(igraph::strength(g))^0.7
+  graph_d3$nodes[['size']][1:(nPhotoRates+nRates)] = 1
   # graph_d3$links[['value']] =
   #   pmax(1,10*abs(E(g)$weight)/max(abs(E(g)$weight)))
 
-  print(E(g)$weight)
-  print(graph_d3$nodes)
-  print(graph_d3$links, max = 1000)
+  # print(E(g)$weight)
+  # print(graph_d3$nodes)
+  # print(graph_d3$links, max = 1000)
 
   # Loss/prod links colors
   target = which(graph_d3$nodes[['name']] == input$flSpec)
@@ -346,6 +479,7 @@ output$viewFlowD3 <- renderForceNetwork({
     Group    = 'group',
     Value    = 'value',
     Nodesize = 'size',
+    radiusCalculation = JS("d.nodesize + 3"),
     bounded  = FALSE,
     zoom     = TRUE,
     arrows   = TRUE,
@@ -356,7 +490,6 @@ output$viewFlowD3 <- renderForceNetwork({
     opacity  = 0.9,
     colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
     clickAction = 'alert(d.name );',
-    # linkColour = "#BBB",
     linkColour = linkColour,
     legend = FALSE,
     opacityNoHover = 0.9,
@@ -364,12 +497,13 @@ output$viewFlowD3 <- renderForceNetwork({
   )
 
 })
-
+# Budget ####
 output$viewBudget <- renderPrint({
-  if(is.null(concList()) |
-     is.null(ratesList()) |
+  if(is.null(concList())   |
+     is.null(ratesList())  |
      is.null(fluxesList()) |
-     is.null(input$flSpec)  )
+     is.null(stoechList())
+  )
     return(NULL)
 
 
@@ -380,12 +514,18 @@ output$viewBudget <- renderPrint({
     assign(n,rlist::list.extract(ratesList(),n))
   for (n in names(fluxesList()))
     assign(n,rlist::list.extract(fluxesList(),n))
+  for (n in names(stoechList()))
+    assign(n,rlist::list.extract(stoechList(),n))
 
-  flSpec = input$flSpec
-  if(flSpec != "") # Check validity
-    validate(
-      need(flSpec %in% species, 'Invalid species !')
-    )
+  if(!is.null(input$flSpec) & input$flSpec != '' ) {
+    test = input$flSpec %in% species
+    if(!test) # Rq: validate() would not display message !?!?!?
+      showNotification(
+        h4('Invalid species name !'),
+        type = 'warning'
+      )
+    req(test)
+  }
 
   # Remove dummy species
   sel  = ! species %in% spDummy
@@ -394,7 +534,7 @@ output$viewBudget <- renderPrint({
   RR   = R[,sel]
 
   budget(
-    flSpec,
+    input$flSpec,
     LR,RR,spec,
     names(flMean),
     flMean,
@@ -403,10 +543,11 @@ output$viewBudget <- renderPrint({
 })
 
 output$viewTarget <- renderPrint({
-  if(is.null(concList()) |
-     is.null(ratesList()) |
+  if(is.null(concList())   |
+     is.null(ratesList())  |
      is.null(fluxesList()) |
-     is.null(input$flSpec)  )
+     is.null(stoechList())
+  )
     return(NULL)
 
   # Extract data from lists
@@ -416,12 +557,18 @@ output$viewTarget <- renderPrint({
     assign(n,rlist::list.extract(ratesList(),n))
   for (n in names(fluxesList()))
     assign(n,rlist::list.extract(fluxesList(),n))
+  for (n in names(stoechList()))
+    assign(n,rlist::list.extract(stoechList(),n))
 
-  flSpec = input$flSpec
-  if(flSpec != "") # Check validity
-    validate(
-      need(flSpec %in% species, 'Invalid species !')
-    )
+  if(!is.null(input$flSpec) & input$flSpec != '' ) {
+    test = input$flSpec %in% species
+    if(!test) # Rq: validate() would not display message !?!?!?
+      showNotification(
+        h4('Invalid species name !'),
+        type = 'warning'
+      )
+    req(test)
+  }
 
   # Remove dummy species
   sel  = ! species %in% spDummy
@@ -430,7 +577,7 @@ output$viewTarget <- renderPrint({
   RR   = R[,sel]
 
   traceBack(
-    flSpec,
+    input$flSpec,
     LR, RR, spec, spInit,
     names(flMean),
     flMean

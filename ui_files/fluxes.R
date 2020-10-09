@@ -96,20 +96,13 @@ sidebarLayout(
           )
         ),
         tabPanel(
-          title=h4("Budget/Target"),
+          title = h4("Budget/Target"),
           br(),
-          # withSpinner(
-            verbatimTextOutput(
-              "viewBudget"
-            # ),
-            # type=4
-          ),
-          # withSpinner(
-            verbatimTextOutput(
-              "viewTarget"
-            # ),
-            # type=4
-          )
+          h5("Productions & Losses"),
+          verbatimTextOutput("viewBudget"),
+          br(),
+          h5("Main production path"),
+          verbatimTextOutput("viewTarget")
         ),
         id="fluxesTabset"
       )

@@ -287,7 +287,7 @@ hsicMat <- function(C,S) {
     V = V / sum(V)
     hMat[,j] = V
   }
-  print('hsicMat OK')
+  # print('hsicMat OK')
   return(hMat)
 }
 dcorMat <- function(C,S) {
@@ -321,58 +321,8 @@ dcorMat <- function(C,S) {
     V = V / sum(V)
     hMat[,j] = V
   }
-  print('dcorMat OK')
+  # print('dcorMat OK')
   return(hMat)
-}
-testAna = function() {
-  concList = getConc()
-  for (n in names(concList))
-    assign(n,rlist::list.extract(concList,n))
-
-  ratesList = getRates()
-  for (n in names(ratesList))
-    assign(n,rlist::list.extract(ratesList,n))
-
-  # Tests
-  conc = conc[,nt,]
-
-  # Filter out undesirable values
-  conc = ifelse(conc==0, NA, log10(conc))
-  sdc  = apply(conc,2,function(x) sd(x))
-  selC = sdc!=0 & is.finite(sdc)
-
-  rates = ifelse(rates==0, NA, log10(rates))
-  sdc = apply(rates,2,function(x) sd(x))
-  selR = sdc!=0 & is.finite(sdc)
-
-  photoRates = ifelse(photoRates==0, NA, log10(photoRates))
-  sdc = apply(photoRates,2,function(x) sd(x))
-  selPR = sdc!=0 & is.finite(sdc)
-
-  C = conc[,selC]
-  S = cbind(photoRates[,selPR],rates[,selR])
-
-  SASpecies = 'CH5+'
-  isp = which(species[selC] == SASpecies)
-  # indRates = as.vector(cor(C[,isp], S, method = "spearman")^2)
-  # indRates = as.vector(hsicMat(C[,isp],S))
-  indRates = as.vector(dcorMat(C[,isp],S))
-  names(indRates) = colnames(S)
-  indx = order(indRates,decreasing=TRUE)[1:9]
-  print(indRates[indx])
-  par(mfrow=c(3,3))
-  for(i in indx) {
-    plot(
-      C[,isp],S[,i],
-      main = names(indRates)[i])
-    legend(
-      'topleft', bty='n',
-      legend = '',
-      title = signif(indRates[i],2),
-      title.col = 4
-    )
-  }
-
 }
 # Interactive ####
 observeEvent(
@@ -685,69 +635,95 @@ observeEvent(
     selPR = sdc!=0 & is.finite(sdc)
     S = cbind(photoRates[,selPR],rates[,selR])
 
-
     SASpecies = input$SASpecies
-    if(SASpecies != "") # Check validity
-      validate(
-        need(SASpecies %in% colnames(C), 'Invalid species !')
-      )
+    if(SASpecies != "") { # Check validity
+      test = SASpecies %in% colnames(C)
+      if(!test) # Rq: validate() would not display message !?!?!?
+        showNotification(
+          h4('Invalid species name, or insufficient data for SA !'),
+          type = 'warning'
+        )
+      req(test)
+    }
+
+    ntop = min(20,ncol(S))
 
     if (input$anaType == 'spearman') {
       # CORR
       if (SASpecies == "") {
-        main = 'TOP20 most influent reactions : Sum(RCC^2)'
+        main = 'TOP20 most influent reactions by Sum(RCC^2)'
         indRates = colSums(cor(C, S, method = "spearman") ^ 2)
         names(indRates) = colnames(S)
-        MR = sort(indRates, decreasing = TRUE)[1:20]
+        MR = sort(indRates, decreasing = TRUE)[1:ntop]
       } else {
         main = paste0(SASpecies,
-                      ' / TOP20 most correlated reactions : RCC')
+                      ' / TOP20 most correlated reactions by RCC')
         isp = which(colnames(C) == SASpecies)
         indRates = as.vector(cor(C[, isp], S, method = "spearman"))
         names(indRates) = colnames(S)
-        indx = order(abs(indRates), decreasing = TRUE)[1:20]
+        indx = order(abs(indRates), decreasing = TRUE)[1:ntop]
         MR   = indRates[indx]
       }
 
     } else if (input$anaType == 'dcorr') {
       # fda.usc::dcor.xy
+      id = shiny::showNotification(
+        h4('Estimating dcor, be patient...'),
+        closeButton = FALSE,
+        duration = 5,
+        type = 'message'
+      )
+      on.exit(removeNotification(id), add = TRUE)
       if(SASpecies == "") {
-        main = 'TOP20 most influent reactions : Sum(dCor)'
+        main = 'TOP20 most influent reactions by Sum(dCor)'
         indRates = rowSums(dcorMat(C,S),na.rm = TRUE)
       } else {
         main = paste0(
           SASpecies,
-          ' / TOP20 most influent reactions : dCor')
+          ' / TOP20 most influent reactions by dCor')
         isp = which(colnames(C) == SASpecies)
         indRates = as.vector(dcorMat(C[,isp],S))
       }
       names(indRates) = colnames(S)
-      MR = sort(indRates,decreasing = TRUE)[1:20]
+      MR = sort(indRates,decreasing = TRUE)[1:ntop]
 
     } else if (input$anaType == 'hsic') {
       # HSIC
+      id = shiny::showNotification(
+        h4('Estimating HSIC, be patient...'),
+        closeButton = FALSE,
+        duration = 5,
+        type = 'message'
+      )
+      on.exit(removeNotification(id), add = TRUE)
       if (SASpecies == "") {
-        main = 'TOP20 most influent reactions : Sum(HSIC)'
+        main = 'TOP20 most influent reactions by Sum(HSIC)'
         indRates = rowSums(hsicMat(C, S), na.rm = TRUE)
       } else {
         main = paste0(SASpecies,
-                      ' / TOP20 most influent reactions : HSIC')
+                      ' / TOP20 most influent reactions by HSIC')
         isp = which(colnames(C) == SASpecies)
         indRates = as.vector(hsicMat(C[, isp], S))
       }
       names(indRates) = colnames(S)
-      MR = sort(indRates, decreasing = TRUE)[1:20]
+      MR = sort(indRates, decreasing = TRUE)[1:ntop]
 
     } else {
       NULL
     }
 
-    MRList(list(MR=MR, main=main, C = C, S = S))
-    # print('MRList updated !')
+    MRList(
+      list(
+        MR=MR,
+        main=main,
+        C = C,
+        S = S
+      )
+    )
+
   })
 output$sensitivity <- renderPlot({
-  if(is.null(MRList()))
-    return(NULL)
+  req(MRList())
 
   # Extract global lists
   for (n in names(MRList()))
@@ -789,16 +765,16 @@ output$sensitivity <- renderPlot({
   } else {
     # Barplot
     par(mfrow = c(1,1),
-        cex = cex, cex.main = 0.6*cex, mar = c(3,20,2,1),
+        cex = 0.75*cex, cex.main = 0.8*cex, mar = c(3,20,2,1),
         mgp = mgp, tcl = tcl, pty = pty, lwd = lwd ,lend=2)
 
-    MR = rev(MR)
+    MR = rev(MR) # To get largest at top of graph
 
     colbr = rep(col_tr2[5],length(MR))
     colbr[MR<0] = col_tr2[3]
 
     xlim = c(0,1.2*max(MR))
-    if(sum(MR<0) !=0 )
+    if(sum(MR<0) != 0 )
       xlim = c(-1,1)
 
     barplot(MR,
@@ -807,10 +783,9 @@ output$sensitivity <- renderPlot({
             beside    = FALSE,
             col       = colbr,
             border    = NA,
-            names.arg = names(MR),
             main      = ''
     )
-    grid(ny=0)
+    grid(ny=0); box()
     mtext(main,side = 3, line = 0)
   }
 

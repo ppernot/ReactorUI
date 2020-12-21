@@ -74,6 +74,15 @@ sidebarLayout(
     wellPanel(
       tabsetPanel(
         tabPanel(
+          title = h4("Budget/Target"),
+          br(),
+          h5("Productions & Losses"),
+          verbatimTextOutput("viewBudget"),
+          br(),
+          h5("Main production path"),
+          verbatimTextOutput("viewTarget")
+        ),
+        tabPanel(
           title=h4("ViewFlow"),
           br(),
           # withSpinner(
@@ -95,15 +104,7 @@ sidebarLayout(
             # type=4
           )
         ),
-        tabPanel(
-          title = h4("Budget/Target"),
-          br(),
-          h5("Productions & Losses"),
-          verbatimTextOutput("viewBudget"),
-          br(),
-          h5("Main production path"),
-          verbatimTextOutput("viewTarget")
-        ),
+
         id="fluxesTabset"
       )
     )

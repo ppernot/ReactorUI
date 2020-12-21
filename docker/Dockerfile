@@ -1,39 +1,13 @@
-# Base image https://hub.docker.com/u/rocker/
-FROM rocker/shiny:3.6.3
+#FROM  ppernot1/reactorui:base
+FROM  ppernot1/test
 
-# system libraries of general use
-## install debian packages
-RUN apt-get update -qq && apt-get -y --no-install-recommends install \
-    libxml2-dev \
-    libcairo2-dev \
-    libsqlite3-dev \
-    libmariadbd-dev \
-    libpq-dev \
-    libssh2-1-dev \
-    unixodbc-dev \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    gfortran \
-    libgdal-dev \
-    gdal-bin\
-    libgsl0-dev\
-    libudunits2-dev
-
-# Probably useless, to be removed...
-RUN apt-get -y install libgfortran4
-
-## update system libraries
-RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get clean
-
-# Add necessary files
+WORKDIR /
 
 ## data
 ADD Reactor_Runs/ChemDB.tar.gz /
 
 # Mounting point for local Projects folder
-RUN mkdir /Projects
+#RUN mkdir /Projects
 
 ## reactor
 COPY Reactor /Reactor/

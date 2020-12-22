@@ -507,8 +507,8 @@ output$chemistryParams <- renderUI({
   nslots = 6
   if(nsp > nslots)
     showModal(modalDialog(
-      title = ">>>> Too many initail species <<<< ",
-      paste0('Your control data nb os species (',nsp,
+      title = ">>>> Too many initial species <<<< ",
+      paste0('Your control data nb of species (',nsp,
              ') exceeds the capacity of the interface(',nslots,').\n',
              'If you need more, please raise an issue.'),
       easyClose = TRUE,
@@ -635,6 +635,12 @@ observe({
 
   file = file.path(projectDir(),'Run','reacScheme.Rda')
   if(file.exists(file)) {
+    id = shiny::showNotification(
+      h4('Loading chemistry, be patient...'),
+      closeButton = FALSE,
+      duration = 5,
+      type = 'message'
+    )
     load(file)     # Load RD list
     reacScheme(RS) # Populate reacScheme()
   }
@@ -991,11 +997,13 @@ output$plotScheme <- renderForceNetwork({
     grp = radic
   } else if (input$netColoring == 'C/N/O') {
     azot = grepl("N",species)
-    oxy  = grepl("O",species)
+    oxy  = grepl("O",species) & !grepl("SOOT",species)
     grp  = rep('!N!O',length(species))
     sel  = azot & !oxy
     grp[sel] = 'N!O'
     grp[oxy] = 'O'
+  }  else if (input$netColoring == 'Mass') {
+    grp = paste0('C',nbHeavyAtoms(species))
   }
 
   if('digraph' %in% input$netCtrl)

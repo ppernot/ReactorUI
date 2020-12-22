@@ -4,6 +4,20 @@
 Graphical User Interface for the [reactor](https://github.com/ppernot/Reactor) 
 code.
 
+## How to cite
+
+> Z. Peng, N. Carrasco and P. Pernot (2014) 
+> "Modeling of synchrotron-based laboratory simulations of 
+> Titan's ionospheric photochemistry", _GeoResJ_ __1-2__:33–53.
+> <http://dx.doi.org/10.1016/j.grj.2014.03.002>
+
+and
+    
+> Pernot, P. (2020) ReactorUI: graphical UI for the 
+> simulation of photochemical reactors
+> (Version 1.1). <https://doi.org/10.5281/zenodo.3946078>
+   
+
 ## New Release (v_1.0)
 
 * First release with full functionalities

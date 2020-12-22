@@ -808,11 +808,10 @@ output$sanity <- renderPrint({
   lconc = ifelse(conc <= 0, NA, log10(conc))
   sdc  = apply(lconc, 2, function(x) sd(x,na.rm=TRUE))
   sel  = which(sdc == 0 | !is.finite(sdc))
-print(sdc)
 
   if(length(sel) != 0) {
-    cat(' Species with suspicious concentrations\n',
-        '--------------------------------------\n\n')
+    cat(' Species with suspicious final concentrations\n',
+        '---------------------------------------------\n\n')
     nMC = nrow(conc)
     sd0 = nzero = ninf = c()
     for (ii in 1:length(sel)) {

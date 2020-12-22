@@ -57,7 +57,7 @@ sidebarLayout(
                         'digraph','showNames','legend'
                       ),
                       inline = TRUE,
-                      selected = c('digraph','showNames','legend')
+                      selected = c('showNames','legend')
                     ),
                     sliderInput(
                       'forceNetCharge',
@@ -79,10 +79,10 @@ sidebarLayout(
                       'netColoring',
                       'Nodes colors',
                       choiceNames = list(
-                        'Volpert','Charge','Radicals','C/N/O'
+                        'Volpert','Charge','Radicals','C/N/O','Mass'
                       ),
                       choiceValues = list(
-                        'volpert','charge','radicals','C/N/O'
+                        'volpert','charge','radicals','C/N/O','Mass'
                       )
                     ),
                     sliderInput(

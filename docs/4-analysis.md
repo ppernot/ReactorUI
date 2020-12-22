@@ -40,8 +40,8 @@ of heavy atoms in a species.
 
 A plot of (pseudo) mass spectra. 
 The MS for neutrals and ions are presented separately.
-__For neutral species, these are not the usual electronic impact
-fragmentation mass spectra, but unfragmented abundances at the
+__For neutral species, these are not electronic impact (EI)
+fragmentation mass spectra, but abundances at the unfragmented 
 species mass.__
 
 * `Show error bars` to display the 95% uncertainty bars

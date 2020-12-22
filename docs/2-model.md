@@ -87,13 +87,15 @@ Two controls are available:
     + Typing a species name into the `Target sp.` textbox on the left 
     selects the subset of reactions involving this species.
 
-* `Checks` lists the especies for which no loss reactions have been 
+* `Checks` lists the species for which no loss reactions have been 
 found. These will act as sinks.
 
 * `Sample` is used to assemble Monte-Carlo samples from the generated network.
+The data are gathered from `ChemDBPublic`, a repository of database samples
+generated from `MC-ChemDB` (see <https://github.com/ppernot/MC-ChemDB>).
 
     + `#MC samples` enables to define the desired number 
-    (_N_, currently 500 max). The data are gathered from ChemDBPublic.
+    (_N_, currently 500 max). 
     
     + `Generate Samples` starts the generation of MC samples. 
     

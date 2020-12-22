@@ -10,7 +10,7 @@ of the chemistry for which the code is to be run.
     + if set to 0, only the nominal run is performed.
 
     + for positive numbers, an additional control appears,
-    asking if one wishes to append thos runs to the exisiting
+    asking if one wishes to append those runs to the exisiting
     ones. In this case, the sample numbers will be chosen 
     accordingly, to avoid double runs with the same sample...
 
@@ -42,6 +42,7 @@ populated according to your expectations...
 
 There is provision for a `Cloud` mode to launch the
 simulations on the Virtual Data cloud. To be done...
+For now, one needs to do it externally from the ReactorUI interface.
 
 __Note__: to run `reactor` on the Virtual Data openstack cloud:
 

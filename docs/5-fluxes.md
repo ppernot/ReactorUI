@@ -26,6 +26,22 @@ for the graph (`ViewFlow`)
 
 ## Outputs
 
+### __Budget/Target__ tab
+
+List of the main production and loss paths for the target species. 
+The main production path from the initial mixture is also estimated.
+The relative weight/contribution of each reaction is shown;
+it is based on the fluxes.
+
+### __ViewFlow-D3__ tab
+
+An interactive graph representation of the fluxes, 
+where the size of arrows increases with the flux.
+
+The reactions are tagged by their index given in 
+`Model > Chemistry > Reactions`.
+
+
 ### __ViewFlow__ tab
 
 A graph representation of the fluxes, where the size of arrows 
@@ -37,18 +53,3 @@ The reactions are tagged by their index given in
 `Model > Chemistry > Reactions`,
 and color coded (orange: photoprocesses; green: reactions).
 
-### __ViewFlow-D3__ tab
-
-An interactive graph representation of the fluxes, 
-where the size of arrows increases with the flux.
-
-The reactions are tagged by their index given in 
-`Model > Chemistry > Reactions`.
-
-
-### __Budget/Target__ tab
-
-List of the main production and loss paths for the target species. 
-The main production path from the initial mixture is also estimated.
-The relative weight/contribution of each reaction is shown;
-it is based on the fluxes.

@@ -83,17 +83,6 @@ sidebarLayout(
           verbatimTextOutput("viewTarget")
         ),
         tabPanel(
-          title=h4("ViewFlow"),
-          br(),
-          # withSpinner(
-            plotOutput(
-              "viewFlow",
-              height = 700
-            # ),
-            # type=4
-          )
-        ),
-        tabPanel(
           title=h4("ViewFlow-D3"),
           br(),
           # withSpinner(
@@ -104,7 +93,17 @@ sidebarLayout(
             # type=4
           )
         ),
-
+        tabPanel(
+          title=h4("ViewFlow (WIP)"),
+          br(),
+          # withSpinner(
+            plotOutput(
+              "viewFlow",
+              height = 700
+            # ),
+            # type=4
+          )
+        ),
         id="fluxesTabset"
       )
     )

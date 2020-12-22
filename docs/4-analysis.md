@@ -40,9 +40,9 @@ of heavy atoms in a species.
 
 A plot of (pseudo) mass spectra. 
 The MS for neutrals and ions are presented separately.
-For neutral species, these are not the usual electronic impact
+__For neutral species, these are not the usual electronic impact
 fragmentation mass spectra, but unfragmented abundances at the
-species mass.
+species mass.__
 
 * `Show error bars` to display the 95% uncertainty bars
 resulting from the Monte-Carlo runs.
@@ -69,7 +69,8 @@ of the mass-spectra.
 This is where one performs sensitivity analysis (SA)
 to identify key reactions. In the Monte-Carlo framework, key reactions
 are those which have the largest impact on the prediction uncertainty
-of a quantity of interest.
+of a quantity of interest. 
+This will run only if MC runs have been performed.
 
 * `Sensitivity indices` presents a choice of  sensitivity index (SI)
 quantifying the dependence between the concentrations and reaction 
@@ -111,5 +112,17 @@ For `Rank correl.`, the square of the correlation matrix is used.
     It draws scatterplots between the MC concentrations of the
     target species and the 20 MC reaction rates with largest SI. 
     The value of the SI is reported in red.
+  
+## __Sanity__ tab  
     
-    
+This module checks in MC samples if final concentrations, photorates 
+or reaction rates present numerical exceptions (zero, infinity, NaN...). 
+
+The following statistics are reported for each problematic variable:
+
+* `Var=0`: a logical indicaticating if the variance over the MC sample is null
+
+* `Nzero`: fraction of the MC samples with a null value
+
+* `Ninf`: fraction of the MC samples with infinite value
+

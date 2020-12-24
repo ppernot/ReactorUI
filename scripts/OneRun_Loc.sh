@@ -27,6 +27,7 @@ cd -
 ./reactor
 
 # Save results
-cp ./fracmol_out.dat ../MC_Output/fracmol_${NUM4}.dat
-cp ./rrates.out      ../MC_Output/reacs_rates_${NUM4}.dat
-cp ./phrates.out     ../MC_Output/photo_rates_${NUM4}.dat
+gzip -c9kf ./fracmol_out.dat  > ../MC_Output/fracmol_${NUM4}.dat.gz
+gzip -c9kf ./rrates.out       > ../MC_Output/reacs_rates_${NUM4}.dat.gz
+gzip -c9kf ./phrates.out      > ../MC_Output/photo_rates_${NUM4}.dat.gz
+gzip -c9kf ./integ_stats.out  > ../MC_Output/integ_stats_${NUM4}.dat.gz

@@ -202,10 +202,10 @@ observeEvent(
     generateUpdatedControl()
 
     # Clean standard outputs
-    stdout = file.path(ctrlPars$projectDir,'Run','runOut.txt')
+    stdout = file.path(projectDir(),'Run','runOut.txt')
     if(file.exists(stdout))
       file.remove(stdout)
-    stderr = file.path(ctrlPars$projectDir,'Run','runErr.txt')
+    stderr = file.path(projectDir(),'Run','runErr.txt')
     if(file.exists(stderr))
       file.remove(stderr)
 

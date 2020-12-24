@@ -132,9 +132,9 @@ sidebarLayout(
                   "timeMS",
                   "Log sampling time",
                   min = -10,
-                  max =   5,
+                  max =   8,
                   step =  1,
-                  value = 5
+                  value = 8
                 ),
                 sliderInput(
                   "threshMS",
@@ -226,26 +226,27 @@ sidebarLayout(
           )
         ),
         tabPanel(
-          title=h4("Sanity"),
-          br(),
-          fluidRow(
-            column(
-              width = 3,
-              wellPanel(
-                # radioButtons(
-                #   "anaType",
-                #   "Sensitivity indices",
-                #   choices = c(
-                #     "Rank Correl." = "spearman",
-                #     "dCorr"        = "dcorr",
-                #     "dHSIC"        = "hsic"
-                #   )
-                # )
+          title=h4("Sanity checks"),
+          wellPanel(
+            tabsetPanel(
+              tabPanel(
+                "Outputs",
+                verbatimTextOutput(
+                  "sanityOutputs"
+                )
+              ),
+              tabPanel(
+                "Integration",
+                plotOutput(
+                  "sanityInteg",
+                  dblclick = "sanity_dblclick",
+                  brush = brushOpts(
+                    id = "sanity_brush",
+                    resetOnNew = TRUE
+                  ),
+                  height = plotHeight
+                )
               )
-            ),
-            column(
-              width = 9,
-              verbatimTextOutput("sanity")
             )
           )
         ),

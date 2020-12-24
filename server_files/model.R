@@ -1104,18 +1104,6 @@ observeEvent(input$sampleChem, {
     neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
     ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
 
-    # # Generate data files for reactor code ###
-    # sp_aux =paste(
-    #   nbSpecies,'\n',
-    #   paste(species,collapse = ' '), '\n',
-    #   paste(mass,   collapse = ' '), '\n',
-    #   paste(rep(0,nbSpecies), collapse = ' ')
-    # )
-    # writeLines(
-    #   sp_aux,
-    #   file.path(outputDir,'Run','species_aux.dat')
-    # )
-
     # Split photodissociations and reactions
     photo = type == 'photo'
     Dphoto = matrix(D[ photo,],nrow=sum(photo), ncol=nbSpecies)
@@ -1123,7 +1111,8 @@ observeEvent(input$sampleChem, {
     Lphoto = matrix(L[ photo,],nrow=sum(photo), ncol=nbSpecies)
     L      = matrix(L[!photo,],nrow=sum(!photo),ncol=nbSpecies)
 
-    # Treat Reactions ###
+    # Treat Reactions ---
+    # Reduce full database and save to compressed file
 
     if(nMC > 1) {
       # Clean target dir
@@ -1139,20 +1128,20 @@ observeEvent(input$sampleChem, {
         sel = !photo
         origs = unique(unlist(orig[sel]))
         for (iMC in 0:nMC) {
+
           sampleFile = paste0('run_', sprintf('%04i', iMC), '.csv')
+
           data = ''
           for (io in origs) {
+
+            # Get full database
             sourceDir = io
             filename = file.path(sourceDir, sampleFile)
-            # scheme   = read.csv(file = filename,
-            #                    header = FALSE,
-            #                    sep = ';')
             scheme   = as.data.frame(
               data.table::fread(file = filename,
                                 header = FALSE,
                                 sep = ';')
             )
-
             scheme  = t(apply(scheme, 1, function(x)
               gsub(" ", "", x)))
             paramsLoc = list()
@@ -1162,6 +1151,8 @@ observeEvent(input$sampleChem, {
               terms = scheme[i, 8:ncol(scheme)]
               paramsLoc[[ii]] = terms[!is.na(terms) & terms != '']
             }
+
+            # Select and collate data for reduced scheme (locnum)
             selOrig = which (orig == io)
             paramsLoc = paramsLoc[unlist(locnum[selOrig])]
             for (j in 1:length(paramsLoc))
@@ -1170,17 +1161,25 @@ observeEvent(input$sampleChem, {
                 paste(paramsLoc[[j]], collapse = ' '),
                 '\n')
           }
+
+          # Save zipped data
           writeLines(
             data,
-            file.path(targetMCDir, 'Reactions', sampleFile)
+            gzfile(
+              file.path(targetMCDir, 'Reactions',
+                        paste0(sampleFile,'.gz'))
+            )
+            # file.path(targetMCDir, 'Reactions', sampleFile) # Unzipped
           )
 
           incProgress(1/nMC, detail = paste('Sample', iMC))
+
         }
       })
     }
 
-    # Treat Photo-processes ###
+    # Treat Photo-processes ---
+    # On a file copy basis (compression is managed beforehand)
 
     if (dim(Dphoto)[1]!=0) {
 
@@ -1196,21 +1195,30 @@ observeEvent(input$sampleChem, {
 
         withProgress(message = 'PhotoProcs', {
           for (iMC in 0:nMC) {
+
             prefix=paste0(sprintf('%04i',iMC),'_')
+
             for (i in (1:nbReac)[photo]) {
               sp=species[which(Lphoto[i,]!=0)]
-              file = paste0(prefix,'se',sp,'.dat')
+
+              # Cross-sections
+              file = paste0(prefix,'se',sp,'.dat.gz')
               fromFile = file.path(photoSourceDir, file)
               toFile   = file.path(targetMCDir, 'Photoprocs', file)
               file.copy(from = fromFile, to = toFile)
+
+              # Branching ratios
               if( params[[i]][1] != 0 ) {
-                file = paste0(prefix,'qy',sp,'_',params[[i]][1],'.dat')
+                file = paste0(prefix,'qy',sp,'_',params[[i]][1],'.dat.gz')
                 fromFile = file.path(photoSourceDir, file)
                 toFile   = file.path(targetMCDir, 'Photoprocs', file)
                 file.copy(from = fromFile, to = toFile)
               }
+
             }
+
             incProgress(1/nMC, detail = paste('Sample', iMC))
+
           }
         })
 
@@ -1218,18 +1226,22 @@ observeEvent(input$sampleChem, {
         # + Remove run prefix
         iMC = 0
         prefix=paste0(sprintf('%04i',iMC),'_')
+
         for (i in (1:nbReac)[photo]) {
+
           sp=species[which(Lphoto[i,]!=0)]
-          file = paste0('se',sp,'.dat')
+          file = paste0('se',sp,'.dat.gz')
           fromFile = file.path(photoSourceDir, prefix, file)
           toFile   = file.path(outputDir, 'Run','Photo', file)
           file.copy(from = fromFile, to = toFile)
+
           if( params[[i]][1] != 0 ) {
-            file = paste0('qy',sp,'_',params[[i]][1],'.dat')
+            file = paste0('qy',sp,'_',params[[i]][1],'.dat.gz')
             fromFile = file.path(photoSourceDir, prefix, file)
             toFile   = file.path(outputDir, 'Run','Photo', file)
             file.copy(from = fromFile, to = toFile)
           }
+
         }
       }
     }

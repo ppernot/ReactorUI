@@ -1,5 +1,6 @@
 #FROM  ppernot1/reactorui:base
-FROM  ppernot1/test
+#FROM  ppernot1/test
+FROM  ppernot1/shiny_base
 
 WORKDIR /
 

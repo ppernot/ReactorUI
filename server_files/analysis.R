@@ -154,6 +154,57 @@ getRates = function() {
     )
   )
 }
+getIntegStats = function() {
+  # Load integrator stats
+  files = list.files(
+    path    = paste0(ctrlPars$projectDir,'/MC_Output'),
+    pattern = 'integ_stats_',
+    full.names=TRUE)
+  nf = length(files)
+
+  ## Get MC values
+  x = as.data.frame(
+    data.table::fread(files[1], header=FALSE, skip=0)
+  )
+  time = x[,1]
+  nstat = ncol(x)-1
+  ntime = nrow(x)
+  stats = array(0,dim=c(nf,ntime,nstat))
+  for(i in seq_along(files) ) {
+    tab = as.data.frame(
+      data.table::fread(files[i], header=FALSE,
+                        skip=0, colClasses='numeric')
+    )
+    stats[i,1:ntime,1:nstat] = as.matrix(tab[,-1])
+  }
+
+  yMean = apply(stats,c(2,3),
+                function(x) mean(x,na.rm=TRUE))
+  ySd   = apply(stats,c(2,3),
+                function(x) sd(x,na.rm=TRUE))
+  yLow95= apply(stats,c(2,3),
+                function(x) quantile(x,probs = 0.025,na.rm=TRUE))
+  ySup95= apply(stats,c(2,3),
+                function(x) quantile(x,probs = 0.975,na.rm=TRUE))
+
+  statNames = c('NFE', 'NFI', 'NSTEPS', 'NACCPT',
+                'NREJCT', 'NFESIG', 'MAXM')
+
+  return(
+    list(
+      nfStat   = nf,
+      nt       = ntime,
+      nStat    = nstat,
+      time     = time,
+      stats    = stats,
+      statNames= statNames,
+      statMean = yMean,
+      statSd   = ySd,
+      statLow  = yLow95,
+      statSup  = ySup95
+    )
+  )
+}
 selectSpecies <- function(species, categs) {
   # Select species to plot from categsPlot
 
@@ -791,7 +842,106 @@ output$sensitivity <- renderPlot({
 
 })
 # Sanity ####
-output$sanity <- renderPrint({
+rangesSanityInteg <- reactiveValues(x = NULL, y = NULL)
+output$sanityInteg <- renderPlot({
+  if(is.null(concList()))
+    return(NULL)
+
+  if(is.null(statsList()))
+    statsList(getIntegStats())
+
+  # Extract stats
+  for (n in names(statsList()))
+    assign(n,rlist::list.extract(statsList(),n))
+
+  # Extract graphical params
+  for (n in names(gPars))
+    assign(n,rlist::list.extract(gPars,n))
+
+  sel = rep(TRUE, nStat)
+  sel[3] = FALSE # do not show NSTEPS (=NACCPT+NREJCT)
+
+  # Define zoom range
+  if (is.null(rangesSanityInteg$x)) {
+    xlim <- range(time)# * 100 # expand for labels
+  } else {
+    xlim <- rangesSanityInteg$x
+  }
+  if (is.null(rangesSanityInteg$y)) {
+    ylim = range(c(0, statSup[, sel]), na.rm = TRUE)
+  } else {
+    ylim <- rangesSanityInteg$y
+  }
+
+  # Generate colors per stat
+  colors = assignColorsToSpecies(
+    input$colSel, statNames, sel, nf=1,
+    cols, col_tr, col_tr2)
+
+  # Show uncertainty bands ?
+  showBands = (nfStat > 1)
+
+  # Plot
+  par(mfrow = c(1, 1),
+      cex = cex, cex.main = cex, mar = mar,
+      mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
+
+  plot(time, time,
+       type = 'n',
+       log  = 'x',
+       main = ifelse(!showBands,
+                     'Mean values',
+                     'Mean and 95 % Proba. Intervals'),
+       xlab = 'Time / s',
+       xlim = xlim,
+       xaxs = 'i',
+       ylab = 'Integrator statistics',
+       ylim = ylim,
+       yaxs = 'i')
+  grid()
+
+
+  # CI
+  if(showBands) {
+    for(isp in (1:nStat)[sel])
+      polygon(c(time     , rev(time      )),
+              c(statLow[,isp],rev(statSup[,isp])),
+              col = colors$col_trSp[isp],
+              border = NA)
+  }
+
+  # Mean concentrations
+  matplot(time, statMean[,sel], type='l', lty = 1,
+          col = colors$colsSp[sel],
+          lwd = 1.2*lwd, add = TRUE)
+
+  legend(
+    'topleft', bty = 'n',
+    legend = statNames[sel],
+    col    = if(showBands) colors$col_trSp[sel] else colors$colsSp[sel],
+    lty    = 1,
+    lwd    = ifelse(showBands,20,4)
+  )
+  box()
+
+})
+outputOptions(output, "sanityInteg",
+              suspendWhenHidden = FALSE)
+observeEvent(
+  input$sanity_dblclick,
+  {
+    brush <- input$sanity_brush
+    if (!is.null(brush)) {
+      rangesSanityInteg$x <- c(brush$xmin, brush$xmax)
+      rangesSanityInteg$y <- c(brush$ymin, brush$ymax)
+    } else {
+      rangesSanityInteg$x <- NULL
+      rangesSanityInteg$y <- NULL
+    }
+  }
+)
+
+output$sanityOutputs <- renderPrint({
   if(is.null(concList())   |
      is.null(ratesList())
   )
@@ -803,16 +953,25 @@ output$sanity <- renderPrint({
   for (n in names(ratesList()))
     assign(n,rlist::list.extract(ratesList(),n))
 
+  nMC = nf
+
   # Analyze final concentrations
   conc = conc[, nt, ]
-  lconc = ifelse(conc <= 0, NA, log10(conc))
-  sdc  = apply(lconc, 2, function(x) sd(x,na.rm=TRUE))
+  if(nMC == 1) {
+    conc = matrix(conc,nrow=1)
+    lconc = ifelse(conc <= 0, NA, log10(conc))
+    sdc  = rep(1,ncol(conc))
+  } else {
+    lconc = ifelse(conc <= 0, NA, log10(conc))
+    sdc  = apply(lconc, 2, function(x) sd(x,na.rm=TRUE))
+  }
   sel  = which(sdc == 0 | !is.finite(sdc))
+
 
   if(length(sel) != 0) {
     cat(' Species with suspicious final concentrations\n',
         '---------------------------------------------\n\n')
-    nMC = nrow(conc)
+
     sd0 = nzero = ninf = c()
     for (ii in 1:length(sel)) {
       i = sel[ii]

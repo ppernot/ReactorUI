@@ -88,8 +88,8 @@ REAC_DATA_default = list(
   reactantsComposition = c(0.9,0.1),
   reactionTime         = 3600,
   nbSnapshots          = 100,
-  relativeError        = 1e-4,
-  absoluteError        = 1e-2
+  relativeError        = 1e-6,
+  absoluteError        = 1e-6
 )
 
 REAC_DATA_Titan = list(

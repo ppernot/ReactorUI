@@ -113,8 +113,11 @@ For `Rank correl.`, the square of the correlation matrix is used.
     target species and the 20 MC reaction rates with largest SI. 
     The value of the SI is reported in red.
   
-## __Sanity__ tab  
-    
+## __Sanity checks__ tab
+
+
+### __Outputs __ tab    
+
 This module checks in MC samples if final concentrations, photorates 
 or reaction rates present numerical exceptions (zero, infinity, NaN...). 
 
@@ -126,3 +129,20 @@ The following statistics are reported for each problematic variable:
 
 * `Ninf`: fraction of the MC samples with infinite value
 
+## __Integration__ tab
+ 
+This module plots statistics about the IRKC implicit-explicit integrator
+(_cf._ <https://github.com/ppernot/Reactor>):
+
+* `NFE` :  number of evaluations of F_E
+
+* `NFI` :  number of evaluations of F_I
+
+* `NACCPT` :  number of accepted steps
+
+* `NREJCT` :  number of rejected steps
+
+* `NFESIG` : number of evaluations of F_E used 
+  in estimating the spectral radius
+  
+* `MAXM` : maximum number of stages used

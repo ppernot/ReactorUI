@@ -116,7 +116,7 @@ For `Rank correl.`, the square of the correlation matrix is used.
 ## __Sanity checks__ tab
 
 
-### __Outputs __ tab    
+### __Outputs__ tab    
 
 This module checks in MC samples if final concentrations, photorates 
 or reaction rates present numerical exceptions (zero, infinity, NaN...). 
@@ -129,7 +129,7 @@ The following statistics are reported for each problematic variable:
 
 * `Ninf`: fraction of the MC samples with infinite value
 
-## __Integration__ tab
+### __Integration__ tab
  
 This module plots statistics about the IRKC implicit-explicit integrator
 (_cf._ <https://github.com/ppernot/Reactor>):

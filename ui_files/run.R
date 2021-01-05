@@ -10,7 +10,15 @@ sidebarLayout(
         h3(' '),
         fluidRow(
           column(
-            width=12,
+            width=6,
+            checkboxInput(
+              'logTail',
+              'Log tail only',
+              value = TRUE
+            )
+          ),
+          column(
+            width=6,
             actionButton(
               'reactorRun',
               'Start',

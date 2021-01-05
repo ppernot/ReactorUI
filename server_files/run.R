@@ -274,6 +274,7 @@ observeEvent(
           silent = TRUE
         )
       )
+
       # # Tried to use progressbar by managing the loop internally,
       # # PB: have to put "wait = TRUE" to avoid process mingling
       # #     and the output of the runs is not displayed in RT
@@ -302,17 +303,18 @@ observeEvent(
   }
 )
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# PB: reactiveFileReader does not work in container
+# PB: reactiveFileReader works hapazardly in container
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 stdErr = reactiveFileReader(
-  500, session,
-  file.path(ctrlPars$projectDir,'Run','runErr.txt'),
-  readLines
+  intervalMillis = 500,
+  session  = session,
+  filePath = file.path(ctrlPars$projectDir,'Run','runErr.txt'),
+  readFunc = readLines
 )
 output$reactorErrors <- renderPrint({
   if (is.null(running())) {
     cat('Please run code ...')
-    return()
+    return(base::invisible())
   }
   cat('Error messages:\n')
   runMsg =''
@@ -332,12 +334,14 @@ stdOut = reactiveFileReader(
 output$reactorOutput <- renderPrint({
   if (is.null(running())) {
     cat('Please run code ...')
-    return()
+    return(base::invisible())
   }
-  # cat(running(),'\n') # OK
-  # cat(readLines(file.path(ctrlPars$projectDir,'Run','runOut.txt')),
-  #     '\n\n')         # OK
-  cat(stdOut(),sep = '\n')
+
+  if(input$logTail)
+    cat(tail(stdOut(),n=23),sep = '\n')
+  else
+    cat(stdOut(),sep = '\n')
+
 })
 
 # Cloud ####

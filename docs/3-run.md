@@ -28,6 +28,10 @@ the error levels of the  IRKC implicit-explicit integrator
 
 ## __Local__ tab
 
+* `Log tail only` enables to see the last lines of the reactor code
+log when ckecked or the full log when unchecked. It is checked by 
+default to enable to visualize the progress of the task.
+
 The `Start` button in the `Local` tab will launch the simulations
 on the local computer. 
 The text outputs and error messages should be captured and displayed 

@@ -1,3 +1,120 @@
+traceBack = function(sp1,
+                     L,
+                     R,
+                     species,
+                     spInit,
+                     reacTags,
+                     flMean,
+                     vlpInd = NULL,
+                     loopAvoid = TRUE,
+                     maxVolpert = TRUE) {
+
+  # Build (maximal flux / shortest) production pathway
+  # from one of spInit to sp1
+
+  nbSpecies = length(species)
+  nbReacs = length(reacTags)
+
+  Fl = matrix(flMean,
+              nrow = nbReacs,
+              ncol = nbSpecies,
+              byrow = FALSE)
+  KL = L * Fl
+  KR = R * Fl
+
+  if(maxVolpert)
+    cat(paste('Shortest production path for ', sp1, '\n'))
+  else
+    cat(paste('Main production path for ', sp1, '\n'))
+
+  start = sp1
+  path = start
+  stoppers =spInit # Primordial mixture species
+  while (!(start %in% stoppers)) {
+
+    # Define target species
+    target = which(species == start)
+    if (length(target) == 0)
+      break
+    vlpIndTarg = vlpInd[target]
+
+    # Identify main productions
+    fl = KR[, target]
+    fl[!is.finite(fl)] = 0
+    productions = order(fl, decreasing = TRUE) # Reactions producing target
+    productions = productions[1:sum(fl !=0 )]
+
+    ip = 1
+    if(length(productions) > 1 & (loopAvoid | maxVolpert)) {
+      # Search for reac implying at least one species
+      # with Volpert's indices smaller than target's one
+      vlpSum = c()
+      for(ip in 1: length(productions)) {
+        mainReac = productions[ip]
+        sp = which(KL[mainReac,] != 0)
+        vlpSum[ip] = sum(vlpInd[sp])
+      }
+      ip = which.min(vlpSum)[1]
+
+      # for(ip in 1: length(productions)) {
+      #   mainReac = productions[ip]
+      #   sp = which(KL[mainReac,] != 0)
+      #
+      #   # Avoid loop
+      #   if(any(names(sp) %in% path) & loopAvoid)
+      #     next
+      #
+      #   # Select only reactants with smaller Volpert's index
+      #   # (shortest path)
+      #   if(all(vlpInd[sp] < vlpIndTarg) & maxVolpert)
+      #     break
+      #
+      # }
+
+      if(ip > length(productions)) # Failed. Might as well take main flux
+        ip = 1
+
+      # # Check if chosen reac produces a loop
+      # if(length(KL[productions[ip], path]) != 0)
+      #   while(any(KL[productions[ip], path] != 0) &
+      #         ip < length(productions)) # Reac loops back
+      #     ip = ip+1
+    }
+    mainReac = productions[ip]
+    wgt = flMean[mainReac] / sum(flMean[productions])
+
+    cat('  ', reacTags[mainReac], ' : ', signif(wgt, 2), '\n')
+
+    # Prepare iteration
+
+    if(!is.null(vlpInd) & maxVolpert) {
+      # Select species with largest Volpert's index
+      sp = which(KL[mainReac,] != 0)
+      sel = which.max(vlpInd[sp])
+      start = species[sp[sel]]
+      # cat('Reactants:',sp,'; Volpert:',vlpInd[sp],'; Select:',start)
+
+    } else {
+      ## Select next target as max. flux reactant
+      io = order(KL[mainReac,], decreasing = TRUE)
+      start = species[io[1]]
+      if (start %in% stoppers & KL[mainReac, io[2]] != 0)
+        start = species[io[2]]
+
+    }
+
+    ## Stopping criteria
+    start = start[!(start %in% stoppers)]
+    if (length(start) == 0) # Reached primordial photolysis
+      break
+
+    if (start %in% path)    # Avoid loops
+      break
+
+    # Memorize path
+    path = c(path, start)
+  }
+}
 # Functions ####
 getLR = function () {
 
@@ -203,7 +320,7 @@ output$viewFlow <- renderPlot({
     reacTypeNames = reacTypeNames,
     flMean = flMean,
     spInit = spInit,
-    topShow = input$topShow,
+    topShow = 10^input$topShow,
     level = ifelse(input$level, 2, 1),
     showLegend = TRUE,
     curved = input$curvedArrow
@@ -214,9 +331,9 @@ output$viewFlow <- renderPlot({
     FR  = layout_with_fr(g),
     LGL = layout_with_lgl(g,
       root = input$flSpec,
-      repulserad = vcount(g)^3 * input$topShow),
+      repulserad = vcount(g)^3 * 10^input$topShow),
     Bipartite = layout_as_bipartite(g,
-      vgap = 100 * input$topShow),
+      vgap = 100 * 10^input$topShow),
     layout_with_gem(g) # Default
   )
   plot(g, layout=layout)
@@ -291,7 +408,7 @@ viewFlow = function(sp1,
                     reacTypeNames,
                     flMean,
                     spInit,
-                    topShow = 0.5,
+                    topShow = 0.1,
                     level = 1,
                     showLegend = TRUE,
                     PDF = FALSE,
@@ -438,7 +555,7 @@ output$viewFlowD3 <- renderForceNetwork({
     reacTypeNames = reacTypeNames,
     flMean = flMean,
     spInit = spInit,
-    topShow = input$topShow,
+    topShow = 10^input$topShow,
     level = ifelse(input$level, 2, 1),
     showLegend = TRUE,
     curved = FALSE
@@ -538,7 +655,7 @@ output$viewBudget <- renderPrint({
     LR,RR,spec,
     names(flMean),
     flMean,
-    weightThresh=input$topShow
+    weightThresh=10^input$topShow
   )
 })
 
@@ -580,6 +697,9 @@ output$viewTarget <- renderPrint({
     input$flSpec,
     LR, RR, spec, spInit,
     names(flMean),
-    flMean
+    flMean,
+    reacScheme()$vlpInd,
+    loopAvoid = input$loopAvoid,
+    maxVolpert = input$maxVolpert
   )
 })

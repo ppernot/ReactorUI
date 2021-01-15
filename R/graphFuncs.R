@@ -905,85 +905,103 @@ viewFlowClust = function(clust,L,R,species,colSp,
   dev.off()
 }
 
-traceBack = function(sp1,L,R,species,spInit,reacTags,flMean) {
 
-  # Builds digraph of fluxes to and from sp1
-
-  nbSpecies=length(species)
-  nbReacs=length(reacTags)
-
-  Fl = matrix(flMean,nrow=nbReacs,ncol=nbSpecies,byrow=FALSE)
-  KL = L * Fl
-  KR = R * Fl
-
-  cat(paste('Main prod path for ', sp1, '\n'))
-  start = sp1
-  path = start
-  stoppers = spInit
-  while (!(start %in% stoppers)) {
-    center = which(species == start)
-    if (center == 0)
-      break
-    prods  = which(KR[, center] != 0)
-    mainReac = prods[which.max(flMean[prods])]
-    wgt = flMean[mainReac] / sum(flMean[prods])
-    cat(paste0('  ', reacTags[mainReac], ' : ', signif(wgt, 2), '\n'))
-    io = order(KL[mainReac, ], decreasing = TRUE)
-    start = species[io[1]]
-    if(start %in% stoppers & KL[mainReac,io[2]] != 0)
-      start = species[io[2]]
-    start = start[!(start %in% stoppers)]
-
-    if (length(start) == 0)
-      break
-    if (start %in% path)
-      break
-    path = c(path, start)
-  }
-}
 budget = function(sp1,L,R,species,reacTags,flMean,weightThresh=0.01) {
 
+  nbSpecies = length(species)
+  nbReacs = length(reacTags)
+
+  nedges = nbReacs + nbSpecies
+  links = matrix(0, ncol = nedges, nrow = nedges)
+  dimnames(links)[[1]] = c(reacTags, species)
+  dimnames(links)[[2]] = c(reacTags, species)
+
+
+  KL = L * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
+  KR = R * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
+
+  target = which(species == sp1)
+  if (length(target) == 0L)
+    return()
+
+  cat('Main productions for ', sp1, '\n')
+  productions  = which(KR[, target] != 0) # Reactions producing target
+  wgt = flMean[productions] / sum(flMean[productions])
+  io = order(wgt,decreasing = TRUE)
+  sel = wgt[io] >= weightThresh
+  for(i in 1:sum(sel))
+  cat('  ', reacTags[productions[io][i]], ' : ', signif(wgt[io][i], 2), '\n')
+
+  cat('\n')
+  cat('Main losses for ', sp1, '\n')
+  losses  = which(KL[, target] != 0) # Reactions consuming target
+  wgt = flMean[losses] / sum(flMean[losses])
+  io = order(wgt,decreasing = TRUE)
+  sel = wgt[io] >= weightThresh
+  if(sum(sel!=0)) # Manage sinks
+    for(i in 1:sum(sel))
+      cat('  ', reacTags[losses[io][i]], ' : ', signif(wgt[io][i], 2), '\n')
+  else
+    cat('*** This species is a sink ***')
+
+}
+budgetOld = function(sp1,L,R,species,reacTags,flMean,weightThresh=0.01) {
+
   # Builds digraph of fluxes to and from sp1
 
-  nbSpecies=length(species)
-  nbReacs=length(reacTags)
+  nbSpecies = length(species)
+  nbReacs = length(reacTags)
 
-  nedges=nbReacs+nbSpecies
-  links=matrix(0,ncol=nedges,nrow=nedges)
-  dimnames(links)[[1]]=c(reacTags,species)
-  dimnames(links)[[2]]=c(reacTags,species)
+  nedges = nbReacs + nbSpecies
+  links = matrix(0, ncol = nedges, nrow = nedges)
+  dimnames(links)[[1]] = c(reacTags, species)
+  dimnames(links)[[2]] = c(reacTags, species)
 
-  KL=L*matrix(flMean,nrow=nbReacs,ncol=nbSpecies,byrow=FALSE)
-  KR=R*matrix(flMean,nrow=nbReacs,ncol=nbSpecies,byrow=FALSE)
 
-  links = addLinks(sp1,links,species,KL,KR,nbReacs,nbSpecies)
+  KL = L * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
+  KR = R * matrix(flMean,
+                  nrow = nbReacs,
+                  ncol = nbSpecies,
+                  byrow = FALSE)
 
-  g = graph.adjacency(links, mode = "directed",weighted=TRUE)
+  links = addLinks(sp1, links, species, KL, KR, nbReacs, nbSpecies)
 
-  reacLab=paste0('R',1:nbReacs)
-  V(g)$label = c(reacLab,species)
+  g = graph.adjacency(links, mode = "directed", weighted = TRUE)
 
-  center=which(V(g)$label==sp1)
-  for (mode in c('in','out')) {
-    reac=incident(g,v=center,mode=mode)
-    tags=sapply(reac, function(x)
-      get.edge(g,x)[ifelse(mode=='in',1,2)])
-    if(length(tags)==0) next
-    name=reacTags[tags]
-    wgt=abs(E(g)[reac]$weight)
-    wgt=wgt/sum(wgt)
-    iord= order(wgt,decreasing=TRUE)
-    wgt=wgt[iord]
-    name=name[iord]
-    len=sum(wgt>weightThresh)
-    tab = cbind(name[1:len],signif(wgt[1:len],digits=2))
-    colnames(tab)=c('Reaction','Weight')
-    rownames(tab)=rep('',len)
+  reacLab = paste0('R', 1:nbReacs)
+  V(g)$label = c(reacLab, species)
+
+  center = which(V(g)$label == sp1)
+  for (mode in c('in', 'out')) {
+    reac = incident(g, v = center, mode = mode)
+    tags = sapply(reac, function(x)
+      get.edge(g, x)[ifelse(mode == 'in', 1, 2)])
+    if (length(tags) == 0)
+      next
+    name = reacTags[tags]
+    wgt = abs(E(g)[reac]$weight)
+    wgt = wgt / sum(wgt)
+    iord = order(wgt, decreasing = TRUE)
+    wgt  = wgt[iord]
+    name = name[iord]
+    len = sum(wgt > weightThresh)
+    tab = cbind(name[1:len], signif(wgt[1:len], digits = 2))
+    colnames(tab) = c('Reaction', 'Weight')
+    rownames(tab) = rep('', len)
     cat('\n')
     if (mode == 'in')
-      cat(paste('Main productions for ',sp1,'\n'))
+      cat(paste('Main productions for ', sp1, '\n'))
     else
-      cat(paste('Main losses for ',sp1,'\n'))
+      cat(paste('Main losses for ', sp1, '\n'))
     print(as.table(tab))
   }
 

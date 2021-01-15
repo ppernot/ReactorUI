@@ -140,7 +140,34 @@ output$nMCRunSelect <- renderUI({
         )
       )
     ),
-    h3('')
+    h3(''),
+    fluidRow(
+      column(
+        width = 6,
+        checkboxInput(
+          'useSR',
+          label = 'Use SR',
+          value = ifelse(
+            is.null(reacData()$useSR),
+            REAC_DATA_default$useSR,
+            reacData()$useSR
+          )
+        )
+      ),
+      column(
+        width = 6,
+        numericInput(
+          'SRmax',
+          label = 'Max. SR',
+          value = ifelse(
+            is.null(reacData()$SRmax),
+            REAC_DATA_default$SRmax,
+            reacData()$SRmax
+          ),
+          width = '200px'
+        )
+      )
+    )
   )
   ui
 })
@@ -161,13 +188,22 @@ observeEvent(
   })
 )
 observeEvent(
-  # Update integrator absolute error
-  input$logAbsErr, ({
+  # Update use of spectral range function
+  input$useSR, ({
     ll = reacData()
-    ll$absoluteError = 10^input$logAbsErr
+    ll$useSR = input$useSR
     reacData(ll)
   })
 )
+observeEvent(
+  # Update integrator spectral range
+  input$SRmax, ({
+    ll = reacData()
+    ll$SRmax = input$SRmax
+    reacData(ll)
+  })
+)
+
 # observeEvent(
 #   # Empty MC_Output dir
 #   input$mcClean, ({

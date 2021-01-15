@@ -131,10 +131,10 @@ sidebarLayout(
                 sliderInput(
                   "timeMS",
                   "Log sampling time",
-                  min = -10,
-                  max =   8,
-                  step =  1,
-                  value = 8
+                  min   = -10,
+                  max   =  10,
+                  step  =   1,
+                  value =  10
                 ),
                 sliderInput(
                   "threshMS",
@@ -242,6 +242,18 @@ sidebarLayout(
                   dblclick = "sanity_dblclick",
                   brush = brushOpts(
                     id = "sanity_brush",
+                    resetOnNew = TRUE
+                  ),
+                  height = plotHeight
+                )
+              ),
+              tabPanel(
+                "Spectral radius",
+                plotOutput(
+                  "sanitySR",
+                  dblclick = "sanitySR_dblclick",
+                  brush = brushOpts(
+                    id = "sanitySR_brush",
                     resetOnNew = TRUE
                   ),
                   height = plotHeight

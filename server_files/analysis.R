@@ -188,7 +188,7 @@ getIntegStats = function() {
                 function(x) quantile(x,probs = 0.975,na.rm=TRUE))
 
   statNames = c('NFE', 'NFI', 'NSTEPS', 'NACCPT',
-                'NREJCT', 'NFESIG', 'MAXM')
+                'NREJCT', 'NFESIG', 'MAXM', 'SPRAD')
 
   return(
     list(
@@ -395,6 +395,11 @@ observeEvent(
   ignoreInit = TRUE,
   input$loadMC,
   future({getRates()}) %...>% ratesList()
+)
+observeEvent(
+  ignoreInit = TRUE,
+  input$loadMC,
+  future({getIntegStats()}) %...>% statsList()
 )
 
 output$loadMsg <- renderPrint({
@@ -863,12 +868,12 @@ output$sanityInteg <- renderPlot({
 
   # Define zoom range
   if (is.null(rangesSanityInteg$x)) {
-    xlim <- range(time)# * 100 # expand for labels
+    xlim <- range(time)
   } else {
     xlim <- rangesSanityInteg$x
   }
   if (is.null(rangesSanityInteg$y)) {
-    ylim = range(c(0, statSup[, sel]), na.rm = TRUE)
+    ylim = range(c(0, 1.2*statSup[, sel]), na.rm = TRUE)
   } else {
     ylim <- rangesSanityInteg$y
   }
@@ -937,6 +942,104 @@ observeEvent(
     } else {
       rangesSanityInteg$x <- NULL
       rangesSanityInteg$y <- NULL
+    }
+  }
+)
+# Spectral radius
+rangesSanitySR <- reactiveValues(x = NULL, y = NULL)
+output$sanitySR <- renderPlot({
+  if(is.null(concList()))
+    return(NULL)
+
+  if(is.null(statsList()))
+    statsList(getIntegStats())
+
+  # Extract stats
+  for (n in names(statsList()))
+    assign(n,rlist::list.extract(statsList(),n))
+
+  # Extract graphical params
+  for (n in names(gPars))
+    assign(n,rlist::list.extract(gPars,n))
+
+  sel = which( statNames == 'SPRAD')
+
+  # Define zoom range
+  if (is.null(rangesSanitySR$x)) {
+    xlim <- range(time)
+  } else {
+    xlim <- rangesSanitySR$x
+  }
+  if (is.null(rangesSanitySR$y)) {
+    ylim = range(c(0, 1.2*statSup[, sel]), na.rm = TRUE)
+  } else {
+    ylim <- rangesSanitySR$y
+  }
+
+  # Generate colors per stat
+  colors = assignColorsToSpecies(
+    input$colSel, statNames, sel, nf=1,
+    cols, col_tr, col_tr2)
+
+  # Show uncertainty bands ?
+  showBands = (nfStat > 1)
+
+  # Plot
+  par(mfrow = c(1, 1),
+      cex = cex, cex.main = cex, mar = mar,
+      mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
+
+  plot(time, time,
+       type = 'n',
+       log  = 'x',
+       main = ifelse(!showBands,
+                     'Mean value(s)',
+                     'Mean and 95 % Proba. Interval(s)'),
+       xlab = 'Time / s',
+       xlim = xlim,
+       xaxs = 'i',
+       ylab = 'Spectral Radius',
+       ylim = ylim,
+       yaxs = 'i')
+  grid()
+
+
+  # CI
+  if(showBands) {
+    for(isp in (1:nStat)[sel])
+      polygon(c(time     , rev(time      )),
+              c(statLow[,isp],rev(statSup[,isp])),
+              col = colors$col_trSp[isp],
+              border = NA)
+  }
+
+  # Mean concentrations
+  matplot(time, statMean[,sel], type='l', lty = 1,
+          col = colors$colsSp[sel],
+          lwd = 1.2*lwd, add = TRUE)
+
+  legend(
+    'topleft', bty = 'n',
+    legend = statNames[sel],
+    col    = if(showBands) colors$col_trSp[sel] else colors$colsSp[sel],
+    lty    = 1,
+    lwd    = ifelse(showBands,20,4)
+  )
+  box()
+
+})
+outputOptions(output, "sanitySR",
+              suspendWhenHidden = FALSE)
+observeEvent(
+  input$sanitySR_dblclick,
+  {
+    brush <- input$sanitySR_brush
+    if (!is.null(brush)) {
+      rangesSanitySR$x <- c(brush$xmin, brush$xmax)
+      rangesSanitySR$y <- c(brush$ymin, brush$ymax)
+    } else {
+      rangesSanitySR$x <- NULL
+      rangesSanitySR$y <- NULL
     }
   }
 )

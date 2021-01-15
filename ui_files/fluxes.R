@@ -24,11 +24,29 @@ sidebarLayout(
         ),
         sliderInput(
           "topShow",
-          "Threshold",
-          min   = 0.001,
-          max   = 1.00,
-          step  = 0.01,
-          value = 0.05
+          "Log-Threshold",
+          min   = -15,
+          max   =   0,
+          step  =   1,
+          value =  -1
+        ),
+        fluidRow(
+          column(
+            width = 6,
+            checkboxInput(
+              "loopAvoid",
+              "Avoid loops",
+              value = TRUE
+            )
+          ),
+          column(
+            width = 6,
+            checkboxInput(
+              "maxVolpert",
+              "Shortest path",
+              value = TRUE
+            )
+          )
         ),
         checkboxInput(
           "curvedArrow",
@@ -76,11 +94,18 @@ sidebarLayout(
         tabPanel(
           title = h4("Budget/Target"),
           br(),
-          h5("Productions & Losses"),
-          verbatimTextOutput("viewBudget"),
-          br(),
-          h5("Main production path"),
-          verbatimTextOutput("viewTarget")
+          fluidRow(
+            column(
+              width = 6,
+              h5("Productions & Losses"),
+              verbatimTextOutput("viewBudget")
+            ),
+            column(
+              width = 6,
+              h5("Main production path"),
+              verbatimTextOutput("viewTarget")
+            )
+          )
         ),
         tabPanel(
           title=h4("ViewFlow-D3"),

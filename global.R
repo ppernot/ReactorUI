@@ -89,7 +89,9 @@ REAC_DATA_default = list(
   reactionTime         = 3600,
   nbSnapshots          = 100,
   relativeError        = 1e-6,
-  absoluteError        = 1e-6
+  absoluteError        = 1e-6,
+  useSR                = FALSE,
+  SRmax                = 1e-8
 )
 
 REAC_DATA_Titan = list(
@@ -112,8 +114,10 @@ REAC_DATA_Titan = list(
   reactantsComposition = c(0.90, 0.10),
   reactionTime         = 2e8,
   nbSnapshots          = 110,
-  relativeError        = 1e-4,
-  absoluteError        = 1e-2
+  relativeError        = 1e-6,
+  absoluteError        = 1e-6,
+  useSR                = FALSE,
+  SRmax                = 1e-8
 )
 
 listParsReac <- c(

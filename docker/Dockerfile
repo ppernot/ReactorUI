@@ -1,5 +1,3 @@
-#FROM  ppernot1/reactorui:base
-#FROM  ppernot1/test
 FROM  ppernot1/shiny_base
 
 WORKDIR /
@@ -8,14 +6,9 @@ WORKDIR /
 ADD Reactor_Runs/ChemDB.tar.gz /
 
 # Mounting point for local Projects folder
-#RUN mkdir /Projects
+RUN mkdir /Projects
 
-## reactor
-COPY Reactor /Reactor/
-RUN  cd Reactor \
-  && ./compil \
-  && mv reactor /ReactorCodes \
-  && cd /
+# Install packages
 
 ## renv
 ENV RENV_VERSION 0.11.0-17
@@ -29,6 +22,14 @@ WORKDIR /ReactorUI
 RUN R -e 'renv::consent(TRUE)' \
  && R -e 'renv::restore()'
 
+# Install code and App
+
+## reactor
+COPY Reactor /Reactor/
+WORKDIR /Reactor
+RUN  ./compil \
+  && mv reactor /ReactorCodes 
+
 ## app files
 COPY ReactorUI/global.R /ReactorUI/
 COPY ReactorUI/ui.R /ReactorUI/
@@ -37,9 +38,8 @@ COPY ReactorUI/ui_files /ReactorUI/ui_files/
 COPY ReactorUI/server_files /ReactorUI/server_files/
 COPY ReactorUI/R /ReactorUI/R/
 
-# expose port
-EXPOSE 3838
+# Expose port & run app on container start
 
-# run app on container start
+EXPOSE 3838
 WORKDIR /ReactorUI
 CMD ["R", "-e", "shiny::runApp(host = '0.0.0.0', port = 3838)"]

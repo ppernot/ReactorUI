@@ -26,6 +26,20 @@ the error levels of the  IRKC implicit-explicit integrator
     reasonable results. Fot a better accuracy on the minor species,
     it might be better to lower these values.
 
+* `Use SR` and `Max. SR`: by default (`Use SR` unchecked), 
+the reactor code estimates the spectral radius (SR) of the 
+jacobian of the explicit contribution 
+(see <https://github.com/ppernot/Reactor>). The estimation can fail,
+with a "Convergence failure in estimating the spectral radius."
+message. To circumvent this, one might shortcut the automatized 
+estimation of SR by checking `Use SR` and providing a value in `Max. SR`.
+If an appropriate integration statistics file exists, 
+and if the reported value of SPRAD is not constant, SRmax
+is estimated as 1.2*max(SPRAD). This choice can be overridden
+by providing a value in `Max. SR`. If available, evolution of SPRAD can 
+be seen in `Analysis>Sanity checks>Spectral radius`.
+
+
 ## __Local__ tab
 
 * `Log tail only` enables to see the last lines of the reactor code

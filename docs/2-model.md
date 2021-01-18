@@ -24,6 +24,10 @@ mixture.
     a set of reactions specific to the species present in the initial 
     gaz mixture. 
     
+       __Note__: if a file `reacScheme.Rda` exists in the `Run` directory,
+       it is downloaded and the reaction scheme is initialized automatically,
+       without the need to hit `Generate Reactions`.
+    
     + the results of the Volpert analysis used to generate the reaction
     network are proveded in the right panel, showing the new species 
     added at each iteration. The Volpert index (VlpI) is the number of 
@@ -55,7 +59,6 @@ mixture.
               else 
                 iterate at 3. 
         ```
-    
 
 * `Network` presents a zoomable and active graphical view of the network. 
 Two controls are available:

@@ -146,3 +146,10 @@ This module plots statistics about the IRKC implicit-explicit integrator
   in estimating the spectral radius
   
 * `MAXM` : maximum number of stages used
+
+### __Spectral radius__ tab
+ 
+This module plots statistics about the IRKC implicit-explicit integrator
+(_cf._ <https://github.com/ppernot/Reactor>):
+
+* `SPRAD` :  spectral radius of the jacobian of F_E

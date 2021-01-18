@@ -4,7 +4,7 @@ This is where one chooses the project to be worked on.
 
 A project is a folder with the following structure:
 
-```
+``` r
 ├── MC_Input/ : Monte-Carlo samples of the chemistry 
 │   │
 |   ├── PhotoProcs/ : cross-sections and branching ratios

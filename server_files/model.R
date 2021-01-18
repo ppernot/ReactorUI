@@ -641,7 +641,7 @@ observe({
       duration = 5,
       type = 'message'
     )
-    load(file)     # Load RD list
+    load(file)     # Load RS list
     reacScheme(RS) # Populate reacScheme()
   }
 

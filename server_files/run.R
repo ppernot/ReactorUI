@@ -193,6 +193,21 @@ observeEvent(
     ll = reacData()
     ll$useSR = input$useSR
     reacData(ll)
+
+    if(input$useSR &
+       input$SRmax == REAC_DATA_default$SRmax) {
+      # Auto override of default value if possible
+      SPRAD = try(
+        getIntegStats()$statSup[,'SPRAD'],
+        silent = TRUE
+      )
+      if( class(SPRAD) != 'try-error' & sd(SPRAD) != 0) {
+        # If SPRAD is constant or inaccessible, do not modify SRmax,
+        # otherwise, take a majoring value
+        SRmax = 1.2 * max(SPRAD)
+        updateNumericInput(session,'SRmax',value = SRmax)
+      }
+    }
   })
 )
 observeEvent(

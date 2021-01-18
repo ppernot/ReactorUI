@@ -188,7 +188,13 @@ getIntegStats = function() {
                 function(x) quantile(x,probs = 0.975,na.rm=TRUE))
 
   statNames = c('NFE', 'NFI', 'NSTEPS', 'NACCPT',
-                'NREJCT', 'NFESIG', 'MAXM', 'SPRAD')
+                'NREJCT', 'NFESIG', 'MAXM', 'SPRAD')[1:nstat]
+
+  colnames(yMean) =
+    colnames(ySd) =
+    colnames(yLow95) =
+    colnames(ySup95) =
+    statNames
 
   return(
     list(
@@ -949,7 +955,7 @@ observeEvent(
 rangesSanitySR <- reactiveValues(x = NULL, y = NULL)
 output$sanitySR <- renderPlot({
   if(is.null(concList()))
-    return(NULL)
+    return(invisible())
 
   if(is.null(statsList()))
     statsList(getIntegStats())
@@ -963,6 +969,16 @@ output$sanitySR <- renderPlot({
     assign(n,rlist::list.extract(gPars,n))
 
   sel = which( statNames == 'SPRAD')
+  if(length(sel) == 0) {
+    id = shiny::showNotification(
+      h4('SPRAD unavailable'),
+      closeButton = TRUE,
+      # duration = 5,
+      type = 'warning'
+    )
+    # on.exit(removeNotification(id), add = TRUE)
+    return(invisible())
+  }
 
   # Define zoom range
   if (is.null(rangesSanitySR$x)) {

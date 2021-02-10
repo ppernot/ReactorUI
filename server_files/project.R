@@ -114,6 +114,22 @@ observeEvent(
       DB_DATA = DB_DATA_default
     else
       DB_DATA = ctrlList$DB_DATA
+
+    # Check for newer version of reactor
+    from = file.path(dir, '..', '..', 'ReactorCodes', 'reactor')
+    to   = file.path(dir, 'Run', 'reactor')
+    if(file.mtime(from) > file.mtime(to)) {
+      showModal(modalDialog(
+        'Do you want to update ?',
+        title = '>>>> Newer version of reactor available <<<< ',
+        easyClose = FALSE,
+        footer = tagList(
+          modalButton("No, thanks..."),
+          actionButton("reactorUpdateOk", "Yes !")
+        ),
+        size = 'm'
+      ))
+    }
   }
 
   # Populate/Update reactive values
@@ -136,6 +152,15 @@ observeEvent(
   chemDBDir(dir)
 
 })
+# Update reactor at user's request
+observeEvent(
+  input$reactorUpdateOk, {
+    req(dir <-projectDir())
+    from = file.path(dir, '..', '..', 'ReactorCodes', 'reactor')
+    to   = file.path(dir, 'Run', 'reactor')
+    file.copy(from, to, overwrite = TRUE)
+  }
+)
 # Save ####
 
 # Outputs ####

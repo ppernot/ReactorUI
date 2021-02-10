@@ -618,7 +618,7 @@ observeEvent(
       duration = 5,
       type = 'message'
     )
-   # on.exit(removeNotification(id), add = TRUE)
+   # on.exit(removeNotification(id), add = TRUE) # Too quick...
 
     future({
       generateNetwork(
@@ -630,15 +630,15 @@ observeEvent(
     }) %...>% reacScheme()
   })
 observe({
-  # Load reacScheme() from project if it exists
+  # Load reacScheme() from project, if it exists
   req(projectDir())
 
   file = file.path(projectDir(),'Run','reacScheme.Rda')
   if(file.exists(file)) {
     id = shiny::showNotification(
       h4('Loading chemistry, be patient...'),
-      closeButton = FALSE,
-      duration = 5,
+      closeButton = TRUE,
+      duration = 10,
       type = 'message'
     )
     load(file)     # Load RS list

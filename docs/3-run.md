@@ -54,7 +54,9 @@ in the right panels.
 __Warning__: it might happen that no output is displayed, although
 the simulations are perfectly running in the background.
 If this happens, check that the `MC_Output` folder is being 
-populated according to your expectations...
+populated according to your expectations... 
+__Never press the `Start` button twice__, as this might start 
+several concurrent runs of `reactor` and mix up their outputs.
 
 ## __Cloud__ tab
 

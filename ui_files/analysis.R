@@ -50,6 +50,7 @@ sidebarLayout(
                   "categsPlot",
                   "Categories",
                   choices = c(
+                    "All"          = "all",
                     "Neutrals"     = "neutrals",
                     "Ions"         = "ions",
                     "Radicals only"= "radicals",
@@ -65,8 +66,9 @@ sidebarLayout(
                     "C6"           = "C6",
                     "C>6"          = "Cmore"
                   ),
-                  selected = c("neutrals","hydrocarbons","N-bearing",
-                               "C0","C1","C2")
+                  selected = "all"
+                  # selected = c("neutrals","hydrocarbons","N-bearing",
+                  #              "C0","C1","C2")
                 )
               )
             ),

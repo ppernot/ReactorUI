@@ -220,70 +220,77 @@ selectSpecies <- function(species, categs) {
   # Remove dummy species
   sel0 = ! species %in% spDummy
 
-  # Charge
-  charge = rep(0,length(species))
-  ions   = grepl("\\+$",species)
-  charge[ions] = 1
-  neus = !ions
-  sel  = rep(FALSE,length(species))
-  for (cl in categs) {
-    if (cl == "neutrals") {
-      sel = sel | neus
-    } else if (cl == "ions") {
-      sel = sel | ions
-    }
-  }
-  selCharge = sel
+  if ('all' %in% categs) {
+    return ( sel0)
 
-  # Radicals
-  radic = (apply(compo,1,numElec)-charge)%%2
-  for (cl in categs) {
-    if (cl == "radicals") {
-      sel = radic
-    }
-  }
-  selRadic = sel
+  } else {
 
-  # Composition Elementale
-  azot = grepl("N",species)
-  oxy  = grepl("O",species)
-  sel  = rep(FALSE,length(species))
-  for (cl in categs) {
-    if (cl == "hydrocarbons") {
-      sel = sel | (!azot & !oxy)
-    } else if (cl == "N-bearing") {
-      sel = sel | azot
-    } else if (cl == "O-bearing") {
-      sel = sel | oxy
+    # Charge
+    charge = rep(0,length(species))
+    ions   = grepl("\\+$",species)
+    charge[ions] = 1
+    neus = !ions
+    sel  = rep(FALSE,length(species))
+    for (cl in categs) {
+      if (cl == "neutrals") {
+        sel = sel | neus
+      } else if (cl == "ions") {
+        sel = sel | ions
+      }
     }
-  }
-  selElem = sel
+    selCharge = sel
 
-  # Heavy elements
-  nHeavy = nbHeavyAtoms(species)
-  sel    = rep(FALSE,length(species))
-  for (cl in categs) {
-    if (cl == "C0") {
-      sel = sel | nHeavy == 0
-    } else if (cl == "C1") {
-      sel = sel | nHeavy == 1
-    } else if (cl == "C2") {
-      sel = sel | nHeavy == 2
-    } else if (cl == "C3") {
-      sel = sel | nHeavy == 3
-    } else if (cl == "C4") {
-      sel = sel | nHeavy == 4
-    } else if (cl == "C5") {
-      sel = sel | nHeavy == 5
-    } else if (cl == "C6") {
-      sel = sel | nHeavy == 6
-    } else if (cl == "Cmore") {
-      sel = sel | nHeavy > 6
+    # Radicals
+    radic = (apply(compo,1,numElec)-charge)%%2
+    for (cl in categs) {
+      if (cl == "radicals") {
+        sel = radic
+      }
     }
-  }
-  selHeavy = sel
+    selRadic = sel
 
-  return(sel0 & selCharge & selRadic & selElem & selHeavy)
+    # Composition Elementale
+    azot = grepl("N",species)
+    oxy  = grepl("O",species)
+    sel  = rep(FALSE,length(species))
+    for (cl in categs) {
+      if (cl == "hydrocarbons") {
+        sel = sel | (!azot & !oxy)
+      } else if (cl == "N-bearing") {
+        sel = sel | azot
+      } else if (cl == "O-bearing") {
+        sel = sel | oxy
+      }
+    }
+    selElem = sel
+
+    # Heavy elements
+    nHeavy = nbHeavyAtoms(species)
+    sel    = rep(FALSE,length(species))
+    for (cl in categs) {
+      if (cl == "C0") {
+        sel = sel | nHeavy == 0
+      } else if (cl == "C1") {
+        sel = sel | nHeavy == 1
+      } else if (cl == "C2") {
+        sel = sel | nHeavy == 2
+      } else if (cl == "C3") {
+        sel = sel | nHeavy == 3
+      } else if (cl == "C4") {
+        sel = sel | nHeavy == 4
+      } else if (cl == "C5") {
+        sel = sel | nHeavy == 5
+      } else if (cl == "C6") {
+        sel = sel | nHeavy == 6
+      } else if (cl == "Cmore") {
+        sel = sel | nHeavy > 6
+      }
+    }
+    selHeavy = sel
+
+    return(sel0 & selCharge & selRadic & selElem & selHeavy)
+
+  }
 
 }
 assignColorsToSpecies <- function(colSel, species, sel, nf,
@@ -670,7 +677,7 @@ observeEvent(
     test = dim(conc)[1] > 1
     if(!test) # Rq: validate() would not display message !?!?!?
       showNotification(
-        h4('SA impossible for a single run !'),
+        h4('SA impossible for a single MC run !'),
         type = 'warning'
       )
     req(test)

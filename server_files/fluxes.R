@@ -54,7 +54,7 @@ traceBack = function(sp1,
         sp = which(KL[mainReac,] != 0)
         vlpSum[ip] = sum(vlpInd[sp])
       }
-      ip = which.min(vlpSum)[1]
+      ip = which.min(vlpSum) # Largest flux with smallest vlpSum
 
       # for(ip in 1: length(productions)) {
       #   mainReac = productions[ip]

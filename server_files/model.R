@@ -341,6 +341,40 @@ writeDL = function(outputDir,RS) {
     )
   }
 }
+setGroups <- function(species, netColoring, vlpI) {
+  # Define groups for network coloring
+  compo = t(apply(as.matrix(species, ncol = 1), 1, get.atoms))
+  colnames(compo) = elements
+
+  if (netColoring == 'volpert') {
+    grp = vlpI
+
+  } else if (netColoring == 'charge') {
+    grp = spCharge(species)
+
+  } else if (netColoring == 'radicals') {
+    radic = (apply(compo,1,numElec)-spCharge(species)) %% 2
+    radic[which(species == 'E')] = 1
+    radic[is.na(radic)] = 0
+    grp = radic
+
+  } else if (netColoring == 'C/N/O') {
+    azot = grepl("N",species)
+    oxy  = grepl("O",species) & !grepl("SOOT",species)
+    grp  = rep('!N!O',length(species))
+    sel  = azot & !oxy
+    grp[sel] = 'N!O'
+    grp[oxy] = 'O'
+
+  }  else if (netColoring == 'Mass') {
+    nbh = nbHeavyAtoms(species)
+    nbh[is.na(nbh)] = 0
+    grp = paste0('C',nbh)
+
+  }
+  return(grp)
+}
+
 # Interactive ####
 output$contentsNmlMsg <- renderPrint({
   if (is.null(reacData()) |
@@ -472,6 +506,7 @@ output$checkChanges <- renderPrint({
   req(input$speReso)
 
   if(!is.null(reacData())) {
+    print(input$speReso)
 
     numReso = as.numeric(sub('nm','',input$speReso))
 
@@ -481,6 +516,45 @@ output$checkChanges <- renderPrint({
       reacData(ll)
     }
 
+  }
+
+  req(input$phoVers)
+  if(!is.null(chemDBData())) {
+    print(input$phoVers)
+    ll = chemDBData()
+    vers = sub('PhotoProcs_','',input$phoVers)
+    if(vers == 'latest')
+      vers = 0
+    else
+      vers = sub('v_','',vers)
+    ll$photoVersion = vers
+    chemDBData(ll)
+  }
+
+  req(input$neuVers)
+  if(!is.null(chemDBData())) {
+    print(input$neuVers)
+    ll = chemDBData()
+    vers = sub('Neutrals_','',input$neuVers)
+    if(vers == 'latest')
+      vers = 0
+    else
+      vers = sub('v_','',vers)
+    ll$neutralsVersion = vers
+    chemDBData(ll)
+  }
+
+  req(input$ionVers)
+  if(!is.null(chemDBData())) {
+    print(input$ionVers)
+    ll = chemDBData()
+    vers = sub('Ions_','',input$ionVers)
+    if(vers == 'latest')
+      vers = 0
+    else
+      vers = sub('v_','',vers)
+    ll$ionsVersion = vers
+    chemDBData(ll)
   }
 
 })
@@ -811,12 +885,12 @@ output$quality   <- renderPrint({
     sp = species[sel]
     ms = mass[sel]
     io = order(ms)
-    for (i in 1:length(sp)) {
+    for (i in seq_along(sp)) {
       ind = io[i]
       s = sp[ind]
       prods = which(R[,s] != 0)
       cat(s,' (mass = ',round(ms[ind],digits=2),')\n  Productions :\n')
-      for(j in 1:length(prods))
+      for(j in seq_along(prods))
         cat('    ',reacTagFull[[prods[j]]],'\n')
       cat('\n')
     }
@@ -843,7 +917,7 @@ output$tabScheme <- renderDataTable({
     sel = L[i, ] != 0
     react = colnames(L)[sel]
     stoec = L[i, ][sel]
-    for (j in 1:length(react))
+    for (j in seq_along(react))
       if (stoec[j] != 1)
         react[j] = paste(rep(react[j], stoec[j]), collapse = ' + ')
     if (reacScheme()$type[[i]] == 'photo')
@@ -853,7 +927,7 @@ output$tabScheme <- renderDataTable({
     sel = R[i, ] != 0
     prods = colnames(R)[sel]
     stoec = R[i, ][sel]
-    for (j in 1:length(prods))
+    for (j in seq_along(prods))
       prods[j] = paste(rep(prods[j], stoec[j]), collapse = ' + ')
     prods = paste(prods, collapse = ' + ')
     # Print reaction
@@ -880,7 +954,7 @@ output$tabScheme <- renderDataTable({
   )
   if (is.na(input$targetSpecies) |
       input$targetSpecies == "") {
-    for (i in 1:length(id))
+    for (i in seq_along(id))
       dat = rbind(dat, formatReac(i))
 
   } else {
@@ -918,6 +992,135 @@ options = list(
   scroller = TRUE
 ))
 # Network ####
+output$netScheme <- renderVisNetwork({
+  if (is.null(reacScheme())) {
+    cat('Please Generate Reactions...')
+    return(NULL)
+  }
+  req(graphsList())
+
+  for (n in names(reacScheme()))
+    assign(n, rlist::list.extract(reacScheme(), n))
+  for (n in names(graphsList()))
+    assign(n, rlist::list.extract(graphsList(), n))
+  for (n in names(gPars))
+    assign(n, rlist::list.extract(gPars, n))
+
+  # Select max Volpert index to display
+  selVp = vlpInd <= input$vlpMax
+  vlpInd = vlpInd[selVp]
+
+  if('digraph' %in% input$netCtrl) {
+
+    linksR = linksR2
+    helpNames = c(unlist(reacTagFull),species)
+    nbReacs = nbReac
+
+    if(sum(!selVp) > 0) {
+
+      lR = matrix(R[,!selVp],ncol = sum(!selVp))
+      lL = matrix(L[,!selVp],ncol = sum(!selVp))
+      rsel = rowSums(lR) != 0 | rowSums(lL) != 0
+
+      csel    = c(!rsel, selVp)
+      linksR  = linksR[csel,csel]
+      helpNames = helpNames[csel]
+
+      nbReacs = sum(!rsel)
+      species = species[selVp]
+      nbSpecies = sum(selVp)
+    }
+
+    arrows = TRUE
+
+  } else {
+
+    species = species[selVp]
+    linksR = linksR[selVp,selVp]
+
+    arrows = FALSE
+
+  }
+
+  if(!is.matrix(linksR))
+    return(NULL)
+
+  g = simplify(
+    graph_from_adjacency_matrix(
+      linksR,
+      mode = "directed",
+      weighted = TRUE
+    )
+  )
+
+  # Coloring by group
+  grp = setGroups(species,input$netColoring,vlpInd)
+  if('digraph' %in% input$netCtrl)
+    grp = c(rep('reac',nbReacs),grp)
+
+  data = toVisNetworkData(g)
+  nodes = cbind(
+    data$nodes,
+    group = grp,                 # Nodes coloring
+    value =  igraph::degree(g),  # Nodes size
+    title = data$nodes$label     # Popup text
+  )
+  edges = data$edges
+  col = paste0("rgba(100,100,100,", input$linkDensNet, ")")
+  visNetwork(nodes,edges)  %>%
+    visLegend(
+      enabled = 'legend' %in% input$netCtrl,
+      position = 'left',
+      stepX = 75,
+      stepY = 75) %>%
+    visGroups(
+      groupname = "reac",
+      color = "lightblue",
+      shape = "diamond",
+      size  = 1) %>%
+    visEdges(
+      arrows = "middle",
+      smooth = FALSE,
+      color  = col) %>%
+    visPhysics(
+      solver = "forceAtlas2Based",
+      forceAtlas2Based = list(
+        gravitationalConstant = input$forceNetCharge,
+        avoidOverlap = 0.2,
+        damping = 0.2
+      ),
+      # solver = "barnesHut",
+      # barnesHut = list(
+      #   avoidOverlap = 1,
+      #   gravitationalConstant = 100*input$forceNetCharge,
+      #   damping = 0.8
+      # ),
+      minVelocity = 20,
+      stabilization = list(
+        enabled = TRUE,
+        iterations = 100,
+        fit = TRUE
+      )) %>%
+    visExport() %>%
+    visOptions(
+      clickToUse = FALSE,
+      highlightNearest = list(
+        enabled = TRUE,
+        degree = if('digraph' %in% input$netCtrl) 2 else 1,
+        hover = FALSE,
+        algorithm = 'hierarchical',
+        hideColor = 'rgba(200,200,200,0.4)')
+    )
+
+})
+# observe({
+#   col = paste0("rgba(100,100,100,", input$linkDensNet, ")")
+#   newEdges <- data.frame(id = 1:nrow(edges), color = col)
+#   visNetworkProxy("netScheme") %>%
+#     visUpdateEdges(newEdges)
+# })
+
+
 output$plotScheme <- renderForceNetwork({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -1155,7 +1358,7 @@ observeEvent(input$sampleChem, {
             # Select and collate data for reduced scheme (locnum)
             selOrig = which (orig == io)
             paramsLoc = paramsLoc[unlist(locnum[selOrig])]
-            for (j in 1:length(paramsLoc))
+            for (j in seq_along(paramsLoc))
               data = paste0(
                 data,
                 paste(paramsLoc[[j]], collapse = ' '),

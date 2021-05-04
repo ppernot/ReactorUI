@@ -18,7 +18,8 @@ libs <- c(
   "future",
   "future.apply",
   "rlist",
-  "data.table"
+  "data.table",
+  "visNetwork"
 )
 for  (lib in libs) {
   # # Installation is managed in the container

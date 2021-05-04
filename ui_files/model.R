@@ -62,10 +62,10 @@ sidebarLayout(
                     sliderInput(
                       'forceNetCharge',
                       'Nodes attraction',
-                      min   = -500,
+                      min   = -100,
                       max   =    0,
-                      step  =   25,
-                      value = -100
+                      step  =   10,
+                      value =  -50
                     ),
                     sliderInput(
                       'vlpMax',
@@ -77,7 +77,7 @@ sidebarLayout(
                     ),
                     shiny::radioButtons(
                       'netColoring',
-                      'Nodes colors',
+                      'Color scheme',
                       choiceNames = list(
                         'Volpert','Charge','Radicals','C/N/O','Mass'
                       ),
@@ -96,17 +96,21 @@ sidebarLayout(
                     sliderInput(
                       'linkDensNet',
                       'Links opacity',
-                      min   = 1,
-                      max   = 9,
-                      step  = 1,
-                      value = 3
+                      min   = 0,
+                      max   = 1,
+                      step  = 0.1,
+                      value = 0.5
                     )
                   ),
                   column(
                     width = 9,
                     # plotOutput(
-                    forceNetworkOutput(
-                      "plotScheme",
+                    # forceNetworkOutput(
+                    #   "plotScheme",
+                    #   height = plotHeight
+                    # )
+                    visNetworkOutput(
+                      "netScheme",
                       height = plotHeight
                     )
                   )

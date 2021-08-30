@@ -57,21 +57,51 @@ getConc  = function(concThresh = -50) {
   ySup95= apply(moleFrac,c(2,3),
                 function(x) quantile(x,probs = 0.975,na.rm=TRUE))
 
+  # Separate neutrals and ions
+  charge = rep(0,length(species))
+  ions   = grepl("\\+$",species)
+  neus = !ions
+
+  # Calculate mass
+  compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
+  colnames(compo)=elements
+  mass  = apply(compo,1,massFormula)
+
   # Save final mole fractions to disk
   dirOut = file.path(ctrlPars$projectDir, 'Outputs')
   if(!dir.exists(dirOut))
     dir.create(dirOut, showWarnings = FALSE)
   cnv = log10(exp(1))
   mmol = 10^yMean[nt,]
+
+  # Save Neutrals
+  df = data.frame(
+    mass  = mass[neus],
+    mean  = mmol[neus],
+    sd    = cnv * mmol[neus] * ySd[nt,neus],
+    low95 = 10^yLow95[nt,neus],
+    sup95 = 10^ySup95[nt,neus],
+    row.names = species[neus]
+  )
+  io = order(mass[neus],na.last = TRUE)
   write.csv(
-    data.frame(
-      mean  = mmol,
-      sd    = cnv * mmol * ySd[nt,],
-      low95 = 10^yLow95[nt,],
-      sup95 = 10^ySup95[nt,],
-      row.names = species
-    ),
-    file = file.path(dirOut,'MoleFrac_tFinal.csv')
+    df[io,],
+    file = file.path(dirOut,'MoleFracNeutrals_tFinal.csv')
+  )
+
+  # Save Ions
+  df = data.frame(
+    mass  = mass[ions],
+    mean  = mmol[ions],
+    sd    = cnv * mmol[ions] * ySd[nt,ions],
+    low95 = 10^yLow95[nt,ions],
+    sup95 = 10^ySup95[nt,ions],
+    row.names = species[ions]
+  )
+  io = order(mass[ions],na.last = TRUE)
+  write.csv(
+    df[io,],
+    file = file.path(dirOut,'MoleFracIons_tFinal.csv')
   )
 
   return(

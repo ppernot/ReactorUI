@@ -391,8 +391,7 @@ output$reactorOutput <- renderPrint({
   if(input$logTail)
     cat(tail(stdOut(), n = 23), sep = '\n')
   else
-    cat(stdOut(), sep = '\n'
-    )
+    cat(stdOut(), sep = '\n')
 
 })
 

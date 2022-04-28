@@ -1,5 +1,39 @@
 # Function  ####
 ## Chemistry
+getChemDataSource = function(phoVers, speReso, neuVers, ionVers) {
+
+  if(grepl('Local_',phoVers)) {
+    dir = chemDBDirLoc()
+    phoVers = sub('Local_','',phoVers)
+  } else {
+    dir = chemDBDir()
+    phoVers = sub('Public_','',phoVers)
+  }
+
+  if(grepl('Local_',neuVers)) {
+    dir = chemDBDirLoc()
+    neuVers = sub('Local_','',neuVers)
+  } else {
+    dir = chemDBDir()
+    neuVers = sub('Public_','',neuVers)
+  }
+
+  if(grepl('Local_',ionVers)) {
+    dir = chemDBDirLoc()
+    ionVers = sub('Local_','',ionVers)
+  } else {
+    dir = chemDBDir()
+    ionVers = sub('Public_','',ionVers)
+  }
+
+  return(
+    list(
+      photoSourceDir    = file.path(dir,phoVers,speReso),
+      neutralsSourceDir = file.path(dir,neuVers),
+      ionsSourceDir     = file.path(dir,ionVers)
+    )
+  )
+}
 generateNetwork <- function(
   spInit,
   photoSourceDir    = NULL,
@@ -411,7 +445,19 @@ output$chemDBVersions <- renderUI({
     assign(n, rlist::list.extract(chemDBData(), n))
 
   allAvailable = list.dirs(path = chemDBDir(),recursive = FALSE)
-  allVersions  = basename(allAvailable)
+  allVersions  = paste0('Public_',basename(allAvailable))
+  # allSources   = dirname(allAvailable)
+
+  if(!is.null(chemDBDirLoc())) {
+    allAvailable = c(
+      allAvailable,
+      list.dirs(path = chemDBDirLoc(),recursive = FALSE)
+    )
+    allVersions  = c(
+      allVersions,
+      paste0('Local_',basename(allAvailable)))
+    # allSources   = c(allSources, dirname(allAvailable))
+  }
 
   photoDir = file.path(chemDBDir(), 'PhotoProcs_latest')
   allReso  = list.dirs(path = photoDir,recursive = FALSE)
@@ -682,9 +728,15 @@ observeEvent(
     reacData(ll)
 
     # Databases
-    photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
-    neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
-    ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
+    # photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
+    # neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
+    # ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
+
+    so = getChemDataSource(input$phoVers, input$speReso,
+                           input$neuVers, input$ionVers)
+    photoSourceDir    = so$photoSourceDir
+    neutralsSourceDir = so$neutralsSourceDir
+    ionsSourceDir     = so$ionsSourceDir
 
    id = shiny::showNotification(
       h4('Generating chemistry, be patient...'),
@@ -1257,9 +1309,14 @@ output$nMCButton <- renderUI({
   }
 
   # Get max number of samples
-  photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
-  neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
-  ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
+  # photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
+  # neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
+  # ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
+  so = getChemDataSource(input$phoVers, input$speReso,
+                         input$neuVers, input$ionVers)
+  photoSourceDir    = so$photoSourceDir
+  neutralsSourceDir = so$neutralsSourceDir
+  ionsSourceDir     = so$ionsSourceDir
 
   maxNeutrals = length(
     list.files(path = neutralsSourceDir, pattern = '.csv'))
@@ -1303,9 +1360,15 @@ observeEvent(input$sampleChem, {
       assign(n, rlist::list.extract(reacScheme(), n))
 
     # Databases
-    photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
-    neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
-    ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
+    # photoSourceDir    = file.path(chemDBDir(),input$phoVers,input$speReso)
+    # neutralsSourceDir = file.path(chemDBDir(),input$neuVers)
+    # ionsSourceDir     = file.path(chemDBDir(),input$ionVers)
+
+    so = getChemDataSource(input$phoVers, input$speReso,
+                           input$neuVers, input$ionVers)
+    photoSourceDir    = so$photoSourceDir
+    neutralsSourceDir = so$neutralsSourceDir
+    ionsSourceDir     = so$ionsSourceDir
 
     # Split photodissociations and reactions
     photo = type == 'photo'

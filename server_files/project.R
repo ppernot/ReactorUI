@@ -1,6 +1,7 @@
 # Global reactive values
 projectDir   = reactiveVal(NULL)
 chemDBDir    = reactiveVal(NULL)
+chemDBDirLoc = reactiveVal(NULL) # Local ChemDB for docker version
 reacData     = reactiveVal(NULL) # Content of namelist REAC_DATA
 chemDBData   = reactiveVal(NULL) # Content of namelist DB_DATA
 spectrumData = reactiveVal(NULL)
@@ -9,8 +10,8 @@ concList     = reactiveVal(NULL)
 ratesList    = reactiveVal(NULL)
 statsList    = reactiveVal(NULL)
 fluxesList   = reactiveVal(NULL) # flMean, flSd...
-graphsList   = reactiveVal(NULL) # connectivity mats :linksR, linksR2
-stoechList   = reactiveVal(NULL) # stoechiometry mats: L, R
+graphsList   = reactiveVal(NULL) # connectivity matrices :linksR, linksR2
+stoechList   = reactiveVal(NULL) # stoechiometry matrices: L, R
 
 # Open ####
 shinyFiles::shinyDirChoose(
@@ -150,6 +151,13 @@ observeEvent(
   if(!dir.exists(dir)) # When run in container, dirs are at the top...
     dir = '/ChemDBPublic'
   chemDBDir(dir)
+
+  # Set ChemDBDirLoc
+  dir = file.path(projectDir(),'..','..','ChemDBLocal')
+  if(!dir.exists(dir))
+    dir = '/ChemDBLocal'
+  if(length(dir(dir)) != 0) # Assign only if not empty
+     chemDBDirLoc(dir)
 
 })
 # Update reactor at user's request

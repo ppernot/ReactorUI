@@ -11,6 +11,8 @@ RUN :
    UI :
        1/ cd Projects
        2/ docker run -d -p 3838:3838 --mount type=bind,source="$(pwd)",target=/Projects --name reactorui ppernot1/reactorui
+          or, if using a local ChemDB version,
+          docker run -d -p 3838:3838 --mount type=bind,source="$(pwd)",target=/Projects --mount type=bind,source="$(pwd)"/../ChemDBPublic,target=/ChemDBLocal --name reactorui ppernot1/reactorui
        3/ access http://localhost:3838 in browser
 
    BASH :

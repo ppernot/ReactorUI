@@ -4,6 +4,7 @@ chemDBDir    = reactiveVal(NULL)
 chemDBDirLoc = reactiveVal(NULL) # Local ChemDB for docker version
 reacData     = reactiveVal(NULL) # Content of namelist REAC_DATA
 chemDBData   = reactiveVal(NULL) # Content of namelist DB_DATA
+isReadCtrl   = reactiveVal(NULL)
 spectrumData = reactiveVal(NULL)
 reacScheme   = reactiveVal(NULL)
 concList     = reactiveVal(NULL)
@@ -133,10 +134,13 @@ observeEvent(
     }
   }
 
+
+
   # Populate/Update reactive values
   reacData(REAC_DATA)
   chemDBData(DB_DATA)
   spectrumData(NULL) # Reinit
+  isReadCtrl(TRUE) # Flag for ChemDB
 
   # Save status to file
   if(!is.null(projectDir())) {

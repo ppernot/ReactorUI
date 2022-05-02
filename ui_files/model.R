@@ -142,7 +142,7 @@ sidebarLayout(
                 )
               ),
               tabPanel(
-                title=h4("Checks"),
+                title=h4("Sinks"),
                 br(),
                 fixedRow(
                   column(

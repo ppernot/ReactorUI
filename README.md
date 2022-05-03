@@ -38,14 +38,14 @@ To run the container:
 
   docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
     --name reactorui ppernot1/reactorui:v1.3
-
-to use a local database (in myChemDB, at the same level as Projects), 
-it should be mounted:
-
+```
+to use a local database (in repertory `myChemDB`, at the same level as `Projects`), 
+it should also be mounted
+```
   docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
     --mount type=bind,source="$(pwd)"/../myChemDB,target=/ChemDBLocal \
     --name reactorui ppernot1/reactorui:v1.3
-
+```
     
 2. Access ReactorUI at http://localhost:3838 in your favorite browser
 

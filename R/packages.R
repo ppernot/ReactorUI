@@ -22,7 +22,7 @@ libs <- c(
   "visNetwork"
 )
 for  (lib in libs) {
-  # # Installation is managed in the container
+  # Installation is managed in the container
   # if (!require(lib, character.only = TRUE, quietly = TRUE)) {
   #   install.packages(
   #     lib,

@@ -75,19 +75,13 @@ output$nMCRunSelect <- renderUI({
   InputMCDir = file.path(projectDir(),'MC_Input','Reactions')
   maxMC = length(
     list.files(path = InputMCDir, pattern = '.csv'))
-  maxMC = maxMC - 1 # Do not count nominal run
-
-  choices = c(0, maxMC)
-  if (maxMC > 10 & maxMC <= 100)
-    choices = c(0, seq(10, maxMC, by = 10))
-  if (maxMC > 100)
-    choices = c(0, 10, seq(100, maxMC, by = 100))
 
   ui <- list(
     selectInput(
       'nMCRun',
       label    = '# MC Runs (0: nominal)',
-      choices  = choices,
+      choices  = setMCSeq(maxMC),
+      selected = 0,
       width    = '200px'
     ),
     conditionalPanel(

@@ -908,6 +908,7 @@ output$sanityInteg <- renderPlot({
 
   sel = rep(TRUE, nStat)
   sel[3] = FALSE # do not show NSTEPS (=NACCPT+NREJCT)
+  sel[length(sel)] = FALSE # SPRAD has its own plot...
 
   # Define zoom range
   if (is.null(rangesSanityInteg$x)) {
@@ -947,8 +948,6 @@ output$sanityInteg <- renderPlot({
        ylim = ylim,
        yaxs = 'i')
   grid()
-
-
   # CI
   if(showBands) {
     for(isp in (1:nStat)[sel])
@@ -957,8 +956,7 @@ output$sanityInteg <- renderPlot({
               col = colors$col_trSp[isp],
               border = NA)
   }
-
-  # Mean concentrations
+  # Mean stats
   matplot(time, statMean[,sel], type='l', lty = 1,
           col = colors$colsSp[sel],
           lwd = 1.2*lwd, add = TRUE)
@@ -1055,8 +1053,6 @@ output$sanitySR <- renderPlot({
        ylim = ylim,
        yaxs = 'i')
   grid()
-
-
   # CI
   if(showBands) {
     for(isp in (1:nStat)[sel])
@@ -1065,8 +1061,7 @@ output$sanitySR <- renderPlot({
               col = colors$col_trSp[isp],
               border = NA)
   }
-
-  # Mean concentrations
+  # Mean stat
   matplot(time, statMean[,sel], type='l', lty = 1,
           col = colors$colsSp[sel],
           lwd = 1.2*lwd, add = TRUE)
@@ -1110,6 +1105,7 @@ output$sanityOutputs <- renderPrint({
     assign(n,rlist::list.extract(ratesList(),n))
 
   nMC = nf
+  sTot = 0
 
   # Analyze final concentrations
   conc = conc[, nt, ]
@@ -1122,12 +1118,10 @@ output$sanityOutputs <- renderPrint({
     sdc  = apply(lconc, 2, function(x) sd(x,na.rm=TRUE))
   }
   sel  = which(sdc == 0 | !is.finite(sdc))
-
-
+  sTot = sTot + length(sel)
   if(length(sel) != 0) {
     cat(' Species with suspicious final concentrations\n',
         '---------------------------------------------\n\n')
-
     sd0 = nzero = ninf = c()
     for (ii in 1:length(sel)) {
       i = sel[ii]
@@ -1146,8 +1140,8 @@ output$sanityOutputs <- renderPrint({
 
   sdc = apply(photoRates,2,function(x) sd(x))
   sel = which(sdc==0 & !is.finite(sdc))
+  sTot = sTot + length(sel)
   if(length(sel) != 0) {
-
     cat('\n\n')
     cat(' Photorates with suspicious samples\n',
         '-----------------------------------\n\n')
@@ -1167,15 +1161,13 @@ output$sanityOutputs <- renderPrint({
     print(df)
   }
 
-
   sdc = apply(rates,2,function(x) sd(x))
   sel = which(sdc==0 & !is.finite(sdc))
-
+  sTot = sTot + length(sel)
   if(length(sel) != 0) {
     cat('\n\n')
     cat(' Reaction rates with suspicious samples\n',
         '---------------------------------------\n\n')
-
     sd0 = nzero = ninf = c()
     for (ii in 1:length(sel)) {
       i = sel[ii]
@@ -1192,4 +1184,6 @@ output$sanityOutputs <- renderPrint({
     print(df)
   }
 
+  if(sTot == 0)
+    cat('=> No anomaly detected...\n')
 })

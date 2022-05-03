@@ -408,7 +408,19 @@ setGroups <- function(species, netColoring, vlpI) {
   }
   return(grp)
 }
+setMCSeq = function(M) {
+  # Set choices of MC runs given the number of sample files
+  # M = 1 => Seq = 0 (nominal run)
 
+  Seq = 0
+  if(M > 1 & M <= 10)
+    Seq = c(0,1:(M-1))                   # 0, 1, 2, 3...
+  if(M > 10 & M <= 100)
+    Seq = c(0,5,seq(10,M,by=10))         # 0, 5, 10, 20,...
+  if(M > 100)
+    Seq = c(0, 5, 10, seq(100,M,by=100)) # 0, 5, 10, 100, 200...
+  return(Seq)
+}
 # Interactive ####
 output$contentsNmlMsg <- renderPrint({
   if (is.null(reacData()) |
@@ -824,6 +836,8 @@ output$summaryScheme <- renderPrint({
       resu[chem,type] = sum(
         selectSpecies(species,c(type,chem,heavy)))
 
+  resu['total','total'] = sum(resu[,'total'])
+
   cat('Compositions (excl. dummies)\n')
   cat('----------------------------\n\n')
   print(resu)
@@ -840,7 +854,7 @@ output$summaryScheme <- renderPrint({
   maxVlpInd = max(vlpInd)
   # cat('Max. Volpert Index = ', maxVlpInd,'\n\n')
   for (i in 0:maxVlpInd)
-    cat('VlpI = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n\n')
+    cat('vlpInd = ',i,' / Species : ',names(vlpInd[vlpInd == i]),'\n\n')
 
 
   # Graph connectivity ####
@@ -903,8 +917,8 @@ output$quality   <- renderPrint({
   for (n in names(reacScheme()))
     assign(n, rlist::list.extract(reacScheme(), n))
 
-  cat(' Mass sorted sinks / Species with no loss:\n',
-      '-----------------------------')
+  cat(' Species with no loss (sinks), sorted by mass)\n',
+      '----------------------------------------------')
   cat('\n\n')
   sel = colSums(L) == 0
   if(sum(sel) != 0) {
@@ -915,9 +929,10 @@ output$quality   <- renderPrint({
       ind = io[i]
       s = sp[ind]
       prods = which(R[,s] != 0)
-      cat(s,' (mass = ',round(ms[ind],digits=2),')\n  Productions :\n')
+      # cat(s,' (mass = ',round(ms[ind],digits=2),')\n   Productions :\n')
+      cat(s,' (mass = ',round(ms[ind],digits=2),')\n')
       for(j in seq_along(prods))
-        cat('    ',reacTagFull[[prods[j]]],'\n')
+        cat('   ',reacTagFull[[prods[j]]],'\n')
       cat('\n')
     }
   } else {
@@ -1298,12 +1313,6 @@ output$nMCButton <- renderUI({
   maxPhoto = as.numeric(substr(files[nFiles],1,4))
   maxMC = min(maxNeutrals, maxIons, maxPhoto)
 
-  nMCSeq = 0
-  if(maxMC > 10 & maxMC <= 100)
-    nMCSeq = c(0,seq(10,maxMC,by=10))
-  if(maxMC > 100)
-    nMCSeq = c(0, 10, seq(100,maxMC,by=100))
-
   nMC = chemDBData()$nMC
   if(is.null(nMC))
     nMC = DB_DATA_default$nMC
@@ -1312,7 +1321,7 @@ output$nMCButton <- renderUI({
     selectInput(
       'nMC',
       label    = '# MC samples (0: nominal)',
-      choices  = nMCSeq,
+      choices  = setMCSeq(maxMC),
       selected = nMC,
       width    = '200px'
     )

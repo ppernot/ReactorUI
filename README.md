@@ -15,40 +15,18 @@ and
     
 > Pernot, P. (2020) ReactorUI: graphical UI for the 
 > simulation of photochemical reactors
-> (Version 1.1). <https://doi.org/10.5281/zenodo.3946078>
+> (Version 1.3). <https://doi.org/10.5281/zenodo.3946078>
    
 
-## New Release (v_1.0)
+## New Release (v_1.3)
 
-* First release with full functionalities
-
-    + Create new projects / open existing ones
-    
-    + Modify project parameters (chemistry, irradiation, reactor)
-    
-    + Run the [reactor](https://github.com/ppernot/Reactor) code 
-    (local execution only at the moment)
-    
-    + Analyse the results
-
-## Install
-
-1. Get the latest version of the [reactor](https://github.com/ppernot/Reactor) 
-code an compile it
-
-2. Install 
-[ChemDBPublic](http://dx.doi.org/10.5281/zenodo.3946044) 
-from Zenodo (follow the instruction in ReadMe.txt)
-
-3. Download and extract
-[ReactorUI](https://github.com/ppernot/ReactorUI/archive/master.zip) and run `global.R`
+* Enables the use of a local chemical DB (for nominal run)
 
     
 ## Docker container
 
 The [reactorui](https://hub.docker.com/repository/docker/ppernot1/reactorui)
 [Docker](https://www.docker.com/) container has all elements preinstalled.
-It avoids you the trouble of installing `R`, `reactor` and `chemDBPublic`.
 
 To run the container:
 
@@ -56,24 +34,32 @@ To run the container:
 
 1. Type the following commands in a terminal
 ```
-cd Projects    # This is the home of your `reactor` projects   
-docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
-  --name reactorui ppernot1/reactorui
-```      
+  cd Projects    # This is the home of your `reactor` projects   
 
+  docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
+    --name reactorui ppernot1/reactorui:v1.3
+
+to use a local database (in myChemDB, at the same level as Projects), 
+it should be mounted:
+
+  docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects \
+    --mount type=bind,source="$(pwd)"/../myChemDB,target=/ChemDBLocal \
+    --name reactorui ppernot1/reactorui:v1.3
+
+    
 2. Access ReactorUI at http://localhost:3838 in your favorite browser
 
 3. When finished
 ```
-docker kill reactorui
+  docker kill reactorui
 ```
 
 4. For further sessions
 ```
-docker restart reactorui
+  docker restart reactorui
 ```
 
 4. To cleanup
 ```
-docker remove -v reactorui
+  docker remove -v reactorui
 ```

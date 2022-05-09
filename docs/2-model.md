@@ -127,7 +127,8 @@ defined here.
 * `Spectrum Range` enables to define the irradiation spectral range
 (by default the range of the spectrum file, in nanometers)
 
-* `Beam intensity (ph.cm^-2.s^-1)` defines the intensity of the beam.
+* `Beam intensity (ph.cm^-2.s^-1)` defines the intensity of the beam. 
+   If negative, the intensities in the spectrum file are used.
 
 * `Beam Section (cm^2)` defines the  beam's cross-section.
 

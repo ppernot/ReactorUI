@@ -1712,6 +1712,13 @@ output$irradParams <- renderPrint({
   )
   cat("*******************************")
 
+  # Update data
+  ll = reacData()
+  ll$spectrumRange = input$spectrumRange
+  ll$beamIntensity = input$beamIntensity
+  ll$beamSection   = input$beamSection
+  reacData(ll)
+
 })
 output$irradSpectrum <- renderPlot({
   req(reacData())

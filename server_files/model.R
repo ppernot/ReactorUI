@@ -1652,7 +1652,7 @@ output$irradUI2 <- renderUI({
       "Spectrum Range (nm)",
       min   = min(wavelength),
       max   = max(wavelength),
-      value = range(wavelength),
+      value = spectrumRange,
       step  = 10
     ),
     numericInput(
@@ -1718,6 +1718,7 @@ output$irradParams <- renderPrint({
   ll$beamIntensity = input$beamIntensity
   ll$beamSection   = input$beamSection
   reacData(ll)
+
 
 })
 output$irradSpectrum <- renderPlot({

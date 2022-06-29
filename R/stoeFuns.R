@@ -28,6 +28,7 @@ filterFormula <- function(sp) {
   sp1 = sub("N1D", "N", sp1)
   sp1 = sub("N2P", "N", sp1)
   sp1 = sub("N3P", "N", sp1)
+  sp1 = sub("O1S", "O", sp1)
   sp1 = sub("O1D", "O", sp1)
   sp1 = sub("O3P", "O", sp1)
   sp1 = sub("S1D", "S", sp1)

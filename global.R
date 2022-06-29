@@ -91,7 +91,8 @@ REAC_DATA_default = list(
   relativeError        = 1e-6,
   absoluteError        = 1e-6,
   useSR                = FALSE,
-  SRmax                = 1e-8
+  SRmax                = 1e-8,
+  wallFactor           = 1
 )
 
 REAC_DATA_Titan = list(
@@ -117,7 +118,8 @@ REAC_DATA_Titan = list(
   relativeError        = 1e-6,
   absoluteError        = 1e-6,
   useSR                = FALSE,
-  SRmax                = 1e-8
+  SRmax                = 1e-8,
+  wallFactor           = 1
 )
 
 listParsReac <- c(
@@ -128,7 +130,8 @@ listParsReac <- c(
   "totalPressure",
   "reactantsPressure",
   "reactantsFlux",
-  "reactionTime"
+  "reactionTime",
+  "wallFactor"
 )
 
 listParsReacUnits <- c(
@@ -139,7 +142,8 @@ listParsReacUnits <- c(
   totalPressure = 'Pa',
   reactantsPressure = 'Pa',
   reactantsFlux = 'sccm',
-  reactionTime = 's'
+  reactionTime = 's',
+  wallFactor   = 'unitless'
 )
 
 spectrumData_default = list(

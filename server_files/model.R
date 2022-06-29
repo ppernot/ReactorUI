@@ -1789,7 +1789,7 @@ output$reactorUI <- renderUI({
     fixedRow(
       column(
         width = 4,
-        ui[[1]],ui[[2]],ui[[3]],ui[[4]],
+        ui[[1]],ui[[2]],ui[[3]],ui[[4]],ui[[9]],
       ),
       column(
         width = 4,

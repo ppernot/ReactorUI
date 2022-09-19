@@ -25,6 +25,43 @@ sidebarLayout(
     wellPanel(
       tabsetPanel(
         tabPanel(
+          title=h4("Sanity checks"),
+          wellPanel(
+            tabsetPanel(
+              tabPanel(
+                "Outputs",
+                verbatimTextOutput(
+                  "sanityOutputs"
+                )
+              ),
+              tabPanel(
+                "Integration",
+                plotOutput(
+                  "sanityInteg",
+                  dblclick = "sanity_dblclick",
+                  brush = brushOpts(
+                    id = "sanity_brush",
+                    resetOnNew = TRUE
+                  ),
+                  height = plotHeight
+                )
+              ),
+              tabPanel(
+                "Spectral radius",
+                plotOutput(
+                  "sanitySR",
+                  dblclick = "sanitySR_dblclick",
+                  brush = brushOpts(
+                    id = "sanitySR_brush",
+                    resetOnNew = TRUE
+                  ),
+                  height = plotHeight
+                )
+              )
+            )
+          )
+        ),
+        tabPanel(
           title=h4("Kinetics"),
           br(),
           fluidRow(
@@ -223,43 +260,6 @@ sidebarLayout(
                   height = plotHeight
                 # ),
                 # type=4
-              )
-            )
-          )
-        ),
-        tabPanel(
-          title=h4("Sanity checks"),
-          wellPanel(
-            tabsetPanel(
-              tabPanel(
-                "Outputs",
-                verbatimTextOutput(
-                  "sanityOutputs"
-                )
-              ),
-              tabPanel(
-                "Integration",
-                plotOutput(
-                  "sanityInteg",
-                  dblclick = "sanity_dblclick",
-                  brush = brushOpts(
-                    id = "sanity_brush",
-                    resetOnNew = TRUE
-                  ),
-                  height = plotHeight
-                )
-              ),
-              tabPanel(
-                "Spectral radius",
-                plotOutput(
-                  "sanitySR",
-                  dblclick = "sanitySR_dblclick",
-                  brush = brushOpts(
-                    id = "sanitySR_brush",
-                    resetOnNew = TRUE
-                  ),
-                  height = plotHeight
-                )
               )
             )
           )

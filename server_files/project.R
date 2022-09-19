@@ -171,6 +171,7 @@ observeEvent(
     from = file.path(dir, '..', '..', 'ReactorCodes', 'reactor')
     to   = file.path(dir, 'Run', 'reactor')
     file.copy(from, to, overwrite = TRUE)
+    removeModal()
   }
 )
 # Save ####

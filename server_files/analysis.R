@@ -28,19 +28,29 @@ getConc  = function(concThresh = -50) {
                  strip.white=TRUE, quiet=TRUE)[-1]
 
   # Get all data
+  alert = FALSE
   nf   = length(files)
   nsp  = length(species)
   nt   = length(time)
-  conc = moleFrac = array(0,dim=c(nf,nt,nsp))
-  for(i in seq_along(files[1:nf]) ) {
+  conc = moleFrac = array(0, dim = c(nf, nt, nsp))
+  for (i in seq_along(files[1:nf])) {
     # tab  = read.table(files[i], header=TRUE, skip=0)
     tab  = as.data.frame(
-      data.table::fread(files[i], header=TRUE, skip=0)
+      data.table::fread(files[i], header = TRUE, skip = 0)
     )
-    time = tab[-1,1]
-    y    = as.matrix(tab[-1,-1])
-    conc[i,1:nt,1:nsp]     = y[1:nt,1:nsp]
-    moleFrac[i,1:nt,1:nsp] = y[1:nt,1:nsp] / rowSums(y)
+    time = tab[-1, 1]
+    y    = as.matrix(tab[-1, -1])
+    if (nrow(y) < nt) {
+      alert = TRUE
+      conc[i, 1:nt, 1:nsp]          = NA
+      conc[i, 1:nrow(y), 1:nsp]     = y
+      moleFrac[i, 1:nt, 1:nsp]      = NA
+      moleFrac[i, 1:nrow(y), 1:nsp] = y / rowSums(y)
+
+    } else {
+      conc[i, 1:nt, 1:nsp]     = y[1:nt, 1:nsp]
+      moleFrac[i, 1:nt, 1:nsp] = y[1:nt, 1:nsp] / rowSums(y)
+    }
   }
 
   # Pretreat moleFrac for plots
@@ -116,7 +126,8 @@ getConc  = function(concThresh = -50) {
       mfMean   = yMean,
       mfSd     = ySd,
       mfLow    = yLow95,
-      mfSup    = ySup95
+      mfSup    = ySup95,
+      alert    = alert
     )
   )
 }
@@ -193,6 +204,7 @@ getIntegStats = function() {
   nf = length(files)
 
   ## Get MC values
+  alert = FALSE
   x = as.data.frame(
     data.table::fread(files[1], header=FALSE, skip=0)
   )
@@ -205,7 +217,14 @@ getIntegStats = function() {
       data.table::fread(files[i], header=FALSE,
                         skip=0, colClasses='numeric')
     )
-    stats[i,1:ntime,1:nstat] = as.matrix(tab[,-1])
+    y = as.matrix(tab[,-1])
+    if (nrow(y) < ntime) {
+      stats[i,1:ntime,1:nstat] = NA
+      stats[i,1:nrow(y),1:nstat] = y
+      alert = TRUE
+    } else {
+      stats[i,1:ntime,1:nstat] = y
+    }
   }
 
   yMean = apply(stats,c(2,3),
@@ -237,7 +256,8 @@ getIntegStats = function() {
       statMean = yMean,
       statSd   = ySd,
       statLow  = yLow95,
-      statSup  = ySup95
+      statSup  = ySup95,
+      alert    = alert
     )
   )
 }
@@ -902,9 +922,18 @@ output$sanityInteg <- renderPlot({
   for (n in names(statsList()))
     assign(n,rlist::list.extract(statsList(),n))
 
+  if(alert)
+    id = shiny::showNotification(
+      h4('Some simulations were incomplete. Please check...'),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'warning'
+    )
+
   # Extract graphical params
   for (n in names(gPars))
     assign(n,rlist::list.extract(gPars,n))
+
 
   sel = rep(TRUE, nStat)
   sel[3] = FALSE # do not show NSTEPS (=NACCPT+NREJCT)
@@ -1101,6 +1130,11 @@ output$sanityOutputs <- renderPrint({
   # Extract data from lists
   for (n in names(concList()))
     assign(n,rlist::list.extract(concList(),n))
+
+  if(alert)
+    cat(' Warning: some simulations stopped prematurely.\n',
+        'Probably a spectral radius convergence problem... \n\n')
+
   for (n in names(ratesList()))
     assign(n,rlist::list.extract(ratesList(),n))
 
@@ -1184,6 +1218,6 @@ output$sanityOutputs <- renderPrint({
     print(df)
   }
 
-  if(sTot == 0)
+  if(sTot == 0 & !alert)
     cat('=> No anomaly detected...\n')
 })

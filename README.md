@@ -36,12 +36,12 @@ To run the container:
 ```
   cd Projects    # This is the home of your `reactor` projects   
 
-  docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects --name reactorui ppernot1/reactorui
+  docker run -d -p 3838:3838 --mount type=bind,source="$(pwd)",target=/Projects --name reactorui ppernot1/reactorui
 ```
 If you want to use a local database (e.g. in repertory `myChemDB`, at the same level as `Projects`), 
 it should also be mounted
 ```
-  docker run -d -p 3838:3838 --mount type=bind,source=".",target=/Projects --mount type=bind,source="$(pwd)"/../myChemDB,target=/ChemDBLocal --name reactorui ppernot1/reactorui
+  docker run -d -p 3838:3838 --mount type=bind,source="$(pwd)",target=/Projects --mount type=bind,source="$(pwd)"/../myChemDB,target=/ChemDBLocal --name reactorui ppernot1/reactorui
 ```
     
 2. Access ReactorUI at http://localhost:3838 in your favorite browser

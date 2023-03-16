@@ -38,7 +38,8 @@ generateNetwork <- function(
   spInit,
   photoSourceDir    = NULL,
   neutralsSourceDir = NULL,
-  ionsSourceDir     = NULL
+  ionsSourceDir     = NULL,
+  ionsKill          = FALSE
   ) {
 
   # Kinetic Parser
@@ -59,6 +60,14 @@ generateNetwork <- function(
         terms=scheme[i,3:6]
         products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
         terms=scheme[i,7:12]
+        if(ionsKill) {# Remove all ions in network by forbidding photo-ionization
+          spr = levels(as.factor(unlist(c(reactants[[nbReac]],products[[nbReac]]))))
+          anyIons = any(spCharge(spr) != 0)
+          if(anyIons) {
+            nbReac = nbReac - 1
+            next
+          }
+        }
         params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
         type[[nbReac]]      = 'photo'
         locnum[[nbReac]]    = i
@@ -107,6 +116,7 @@ generateNetwork <- function(
   colnames(compo)=elements
   mass  = apply(compo,1,massFormula)
   names(mass) = species
+  # spIons = species[which(spCharge(species) != 0)]
 
   ## Attribute mass to dummy species
   dummySpecies = spDummy # From global variables
@@ -117,9 +127,9 @@ generateNetwork <- function(
   L = R = D = matrix(0,ncol=nbSpecies,nrow=nbReac)
   for (m in 1:nbReac) {
     reac = unlist(reactants[m])
-    prod = unlist(products[m] )
+    prod = unlist(products[m])
     for (n in 1:nbSpecies) {
-      search=species[n]
+      search = species[n]
       L[m,n] = length(which( search == reac )) # Loss
       R[m,n] = length(which( search == prod )) # Prod
     }
@@ -128,6 +138,7 @@ generateNetwork <- function(
   colnames(L)=species
   colnames(R)=species
   colnames(D)=species
+
 
   # Volpert analysis
   # Build species list and reactions list
@@ -146,6 +157,9 @@ generateNetwork <- function(
 
   spProds  = species[colSums(R[lReacs,]) != 0 ]
   spProds  = spProds[!(spProds %in% spInit)]
+  # if(ionsKill)
+  #   spProds  = spProds[!(spProds %in% spIons)]
+
 
   vlpInd  = rep(NA,length(species))
   names(vlpInd)   = species
@@ -161,6 +175,8 @@ generateNetwork <- function(
     reacList = c(reacList,reacs[lReacs])
     spProds  = species[colSums(R[lReacs,]) != 0]
     spProds  = spProds[!(spProds %in% spInit)]
+    # if(ionsKill)
+    #   spProds  = spProds[!(spProds %in% spIons)]
     ncount   = ncount + 1
     vlpInd[spProds] = ncount
   }
@@ -719,13 +735,15 @@ observeEvent(
       type = 'message'
     )
    # on.exit(removeNotification(id), add = TRUE) # Too quick...
+    ionsKill = input$killIons
 
     future({
       generateNetwork(
         spInit = spInit,
         photoSourceDir    = photoSourceDir,
         neutralsSourceDir = neutralsSourceDir,
-        ionsSourceDir     = ionsSourceDir
+        ionsSourceDir     = ionsSourceDir,
+        ionsKill          = ionsKill
       )
     }) %...>% reacScheme()
   })

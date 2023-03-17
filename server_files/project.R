@@ -7,6 +7,7 @@ chemDBData   = reactiveVal(NULL) # Content of namelist DB_DATA
 isReadCtrl   = reactiveVal(NULL)
 spectrumData = reactiveVal(NULL)
 reacScheme   = reactiveVal(NULL)
+reacScheme0  = reactiveVal(NULL)
 concList     = reactiveVal(NULL)
 ratesList    = reactiveVal(NULL)
 statsList    = reactiveVal(NULL)
@@ -34,6 +35,7 @@ observeEvent(
   # Prevent msg from irradUI when switching projects
   reacData(NULL)
   reacScheme(NULL)
+  reacScheme0(NULL)
   concList(NULL)
   ratesList(NULL)
   fluxesList(NULL)

@@ -62,10 +62,12 @@ if (!is.null(ctrlPars$projectDir) &
 
 # Defaults for MC-ChemDB
 DB_DATA_default = list(
-  nMC = 100,
+  nMC = 10,
   photoVersion = 0,
   neutralsVersion = 0,
-  ionsVersion = 0
+  ionsVersion = 0,
+  ionsKill = FALSE,
+  speciesToRemove= ''
 )
 
 REAC_DATA_default = list(

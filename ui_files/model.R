@@ -20,11 +20,6 @@ sidebarLayout(
                   column(
                     width = 3,
                     uiOutput("chemistryParams"),
-                    shiny::checkboxInput(
-                      inputId = 'killIons',
-                      label = 'Remove ions !',
-                      value = FALSE
-                    ),
                     actionButton(
                       'generateNetwork',
                       'Generate Reactions',
@@ -47,7 +42,12 @@ sidebarLayout(
                 )
               ),
               tabPanel(
-                title=h4("Network"),
+                title=h4("Simplify"),
+                br(),
+                uiOutput("chemistrySimplify")
+              ),
+              tabPanel(
+                title=h4("Visualize"),
                 br(),
                 fixedRow(
                   column(

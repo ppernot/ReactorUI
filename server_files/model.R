@@ -39,13 +39,16 @@ generateNetwork <- function(
   photoSourceDir    = NULL,
   neutralsSourceDir = NULL,
   ionsSourceDir     = NULL,
-  ionsKill          = FALSE
+  ionsKill          = FALSE,
+  speciesToRemove   = ""
   ) {
 
   # Kinetic Parser
   nbReac=0
   reactants = products = params =
     type = orig = locnum = reacTagFull = list()
+
+  removeSp = any(speciesToRemove != "")
 
   ## Photo processes
   photoData = file.path(photoSourceDir,'..','PhotoScheme.dat')
@@ -60,10 +63,16 @@ generateNetwork <- function(
         terms=scheme[i,3:6]
         products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
         terms=scheme[i,7:12]
+        spr = levels(as.factor(unlist(c(reactants[[nbReac]],products[[nbReac]]))))
         if(ionsKill) {# Remove all ions in network by forbidding photo-ionization
-          spr = levels(as.factor(unlist(c(reactants[[nbReac]],products[[nbReac]]))))
           anyIons = any(spCharge(spr) != 0)
           if(anyIons) {
+            nbReac = nbReac - 1
+            next
+          }
+        }
+        if(removeSp) {
+          if(any(spr %in% speciesToRemove)) {
             nbReac = nbReac - 1
             next
           }
@@ -93,6 +102,15 @@ generateNetwork <- function(
       reactants[[nbReac]] = terms[!is.na(terms) & terms!=""]
       terms=scheme[i,4:7]
       products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
+
+      spr = levels(as.factor(unlist(c(reactants[[nbReac]],products[[nbReac]]))))
+      if(removeSp) {
+        if(any(spr %in% speciesToRemove)) {
+          nbReac = nbReac - 1
+          next
+        }
+      }
+
       terms=scheme[i,8:ncol(scheme)]
       params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
       type[[nbReac]]      = terms[length(terms)]
@@ -139,6 +157,16 @@ generateNetwork <- function(
   colnames(R)=species
   colnames(D)=species
 
+  # Check spInit validity
+  out = !(spInit %in% species)
+  if(any(out))
+    return(
+      list(
+        alert = paste('Incorrect initial species :',
+                      paste0(spInit[out], collapse = ',')
+        )
+      )
+    )
 
   # Volpert analysis
   # Build species list and reactions list
@@ -157,9 +185,6 @@ generateNetwork <- function(
 
   spProds  = species[colSums(R[lReacs,]) != 0 ]
   spProds  = spProds[!(spProds %in% spInit)]
-  # if(ionsKill)
-  #   spProds  = spProds[!(spProds %in% spIons)]
-
 
   vlpInd  = rep(NA,length(species))
   names(vlpInd)   = species
@@ -175,8 +200,6 @@ generateNetwork <- function(
     reacList = c(reacList,reacs[lReacs])
     spProds  = species[colSums(R[lReacs,]) != 0]
     spProds  = spProds[!(spProds %in% spInit)]
-    # if(ionsKill)
-    #   spProds  = spProds[!(spProds %in% spIons)]
     ncount   = ncount + 1
     vlpInd[spProds] = ncount
   }
@@ -233,7 +256,8 @@ generateNetwork <- function(
       mass    = mass,
       vlpInd  = vlpInd,
       reacTagFull = reacTagFull,
-      reacTags = reacTags
+      reacTags = reacTags,
+      alert    = NULL
     )
   )
 }
@@ -601,9 +625,7 @@ output$checkChanges <- renderPrint({
 
 # Generate Reacs ####
 output$chemistryParams <- renderUI({
-  if (is.null(reacData())) {
-    return(NULL)
-  }
+  req(reacData())
 
   for (n in names(reacData()))
     assign(n, rlist::list.extract(reacData(), n))
@@ -692,8 +714,44 @@ output$chemistryParams <- renderUI({
       )
     }
   }
+
   ui
 })
+# Simplify reacs list ####
+output$chemistrySimplify <- renderUI({
+  req(reacData())
+  req(chemDBData())
+
+  ui = list()
+
+  ui[[1]] =
+    checkboxInput(
+      inputId = 'ionsKill',
+      label = 'Remove ions !',
+      value = if(!is.null(chemDBData()$ionsKill))
+        chemDBData()$ionsKill
+      else
+        FALSE
+    )
+
+  ui[[2]] =
+    textAreaInput(
+      inputId = 'speciesToRemove',
+      label = 'Species to remove:',
+      value = if(!is.null(chemDBData()$speciesToRemove))
+        chemDBData()$speciesToRemove
+      else
+        "",
+      width = '400px',
+      rows = 2,
+      placeholder = 'Enter comma-separated species list...',
+      resize = "both"
+    )
+
+  ui
+})
+# outputOptions(output, "chemistrySimplify",suspendWhenHidden = FALSE)
+# Generate network ####
 observeEvent(
   input$generateNetwork,
   {
@@ -721,6 +779,22 @@ observeEvent(
     ll$reactantsComposition = cInit
     reacData(ll)
 
+    ionsKill = input$ionsKill
+    if(!is.null(chemDBData())) {
+      ll = chemDBData()
+      ll$ionsKill = ionsKill
+      chemDBData(ll)
+    }
+
+    sp = input$speciesToRemove
+    speciesToRemove = unlist(stringr::str_split(sp,','))
+    speciesToRemove = trimws(sort(unique(speciesToRemove)))
+    if(!is.null(chemDBData())) {
+      ll = chemDBData()
+      ll$speciesToRemove = paste0(speciesToRemove, collapse=',')
+      chemDBData(ll)
+    }
+
     # Databases
     so = getChemDataSource(input$phoVers, input$speReso,
                            input$neuVers, input$ionVers)
@@ -735,7 +809,12 @@ observeEvent(
       type = 'message'
     )
    # on.exit(removeNotification(id), add = TRUE) # Too quick...
-    ionsKill = input$killIons
+
+   if(!is.null(chemDBData())) {
+     ll = chemDBData()
+     ll$date = date()
+     chemDBData(ll)
+   }
 
     future({
       generateNetwork(
@@ -743,10 +822,29 @@ observeEvent(
         photoSourceDir    = photoSourceDir,
         neutralsSourceDir = neutralsSourceDir,
         ionsSourceDir     = ionsSourceDir,
-        ionsKill          = ionsKill
+        ionsKill          = ionsKill,
+        speciesToRemove   = speciesToRemove
       )
-    }) %...>% reacScheme()
+    }) %...>% reacScheme0()
   })
+observe({
+  # Check absence of alert while generating reacScheme
+  req(reacScheme0())
+
+  if(!is.null(reacScheme0()$alert)) {
+    id = shiny::showNotification(
+      h4(reacScheme0()$alert),
+      closeButton = TRUE,
+      type = 'error'
+    )
+    reacScheme0(NULL)
+
+  } else {
+    ll = reacScheme0()
+    reacScheme(ll)
+
+  }
+})
 observe({
   # Load reacScheme() from project, if it exists
   req(projectDir())
@@ -773,6 +871,8 @@ observe({
     outputDir = projectDir(),
     RS = reacScheme()
   )
+
+
 })
 observe({
   # Generate graph link matrices when reacScheme() is ready
@@ -807,6 +907,7 @@ output$summaryScheme <- renderPrint({
     cat('Please Generate Reactions...')
     return()
   }
+  req(chemDBData())
 
   isolate({
     so = getChemDataSource(input$phoVers, input$speReso,
@@ -819,11 +920,20 @@ output$summaryScheme <- renderPrint({
   for (n in names(reacScheme()))
     assign(n, rlist::list.extract(reacScheme(), n))
 
-  cat('Summary\n')
-  cat('-------\n\n')
+  cat('Summary -',chemDBData()$date,'\n')
+  cat('---------------------------------\n\n')
   cat('Photoprocs DB :',photoSourceDir,'\n')
   cat('Neutrals   DB :',neutralsSourceDir,'\n')
   cat('Ions       DB :',ionsSourceDir,'\n\n')
+
+  if(!is.null(chemDBData()$ionsKill))
+    if(chemDBData()$ionsKill)
+      cat('Ions Kill Switch is on !\n\n')
+
+  if(!is.null(chemDBData()$speciesToRemove))
+      cat('Species to remove:',
+          paste0(chemDBData()$speciesToRemove,collapse =','),
+          '\n\n')
 
   cat('Nb species         = ', nbSpecies,'\n')
   cat('Nb reactions       = ', nbReac   ,'\n\n')
@@ -1019,7 +1129,12 @@ output$tabScheme <- renderDataTable({
   } else {
     # Species-specific reaction list
     if (!input$targetSpecies %in% species)
-      return(cat('Species not in list : ', input$targetSpecies))
+      return(
+        data.frame(
+          Warning = paste0('Species not in list : ', input$targetSpecies)
+        )
+      )
+
     indx = which(species == input$targetSpecies)
     # Losses
     sel = which(L[, indx] != 0)

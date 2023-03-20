@@ -34,14 +34,14 @@ getChemDataSource = function(phoVers, speReso, neuVers, ionVers) {
     )
   )
 }
-generateNetwork <- function(
-  spInit,
-  photoSourceDir    = NULL,
-  neutralsSourceDir = NULL,
-  ionsSourceDir     = NULL,
-  ionsKill          = FALSE,
-  speciesToRemove   = ""
-  ) {
+kinParse = function(
+  sourceDir,
+  photoSourceDir,
+  neutralsSourceDir,
+  ionsSourceDir,
+  ionsKill = FALSE,
+  speciesToRemove = ""
+) {
 
   # Kinetic Parser
   nbReac=0
@@ -63,7 +63,7 @@ generateNetwork <- function(
         terms=scheme[i,3:6]
         products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
         terms=scheme[i,7:12]
-        spr = levels(as.factor(unlist(c(reactants[[nbReac]],products[[nbReac]]))))
+        spr = unique(unlist(c(reactants[[nbReac]],products[[nbReac]])))
         if(ionsKill) {# Remove all ions in network by forbidding photo-ionization
           anyIons = any(spCharge(spr) != 0)
           if(anyIons) {
@@ -102,15 +102,13 @@ generateNetwork <- function(
       reactants[[nbReac]] = terms[!is.na(terms) & terms!=""]
       terms=scheme[i,4:7]
       products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
-
-      spr = levels(as.factor(unlist(c(reactants[[nbReac]],products[[nbReac]]))))
+      spr = unique(unlist(c(reactants[[nbReac]],products[[nbReac]])))
       if(removeSp) {
         if(any(spr %in% speciesToRemove)) {
           nbReac = nbReac - 1
           next
         }
       }
-
       terms=scheme[i,8:ncol(scheme)]
       params[[nbReac]]    = terms[!is.na(terms) & terms!=""]
       type[[nbReac]]      = terms[length(terms)]
@@ -123,23 +121,8 @@ generateNetwork <- function(
   }
 
   # Build species list from reactants and products
-  species   = levels(as.factor(unlist(c(reactants,products))))
+  species   = unique(unlist(c(reactants,products)))
   nbSpecies = length(species)
-
-  # Elements in initial species
-  elInit = names(CHNOSZ::count.elements(paste0(spInit,collapse='')))
-
-  # Stoechiometry
-  compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
-  colnames(compo)=elements
-  mass  = apply(compo,1,massFormula)
-  names(mass) = species
-  # spIons = species[which(spCharge(species) != 0)]
-
-  ## Attribute mass to dummy species
-  dummySpecies = spDummy # From global variables
-  dummyMass   = round(max(mass,na.rm=TRUE)+2)
-  mass[dummySpecies] = dummyMass
 
   # Full R, L, D matrices
   L = R = D = matrix(0,ncol=nbSpecies,nrow=nbReac)
@@ -157,6 +140,41 @@ generateNetwork <- function(
   colnames(R)=species
   colnames(D)=species
 
+  return(
+    list(
+      nbReac      = nbReac,
+      reactants   = reactants,
+      products    = products,
+      params      = params,
+      type        = type,
+      locnum      = locnum,
+      orig        = orig,
+      reacTagFull = reacTagFull,
+      nbSpecies   = nbSpecies,
+      species     = species,
+      L           = L,
+      R           = R,
+      D           = D
+    )
+  )
+
+}
+generateNetwork <- function(
+  spInit,
+  photoSourceDir    = NULL,
+  neutralsSourceDir = NULL,
+  ionsSourceDir     = NULL,
+  ionsKill          = FALSE,
+  speciesToRemove   = "",
+  dummySinks        = TRUE
+) {
+
+  KP = kinParse(
+    sourceDir, photoSourceDir, neutralsSourceDir, ionsSourceDir,
+    ionsKill, speciesToRemove)
+  for (n in names(KP))
+    assign(n, rlist::list.extract(KP, n))
+
   # Check spInit validity
   out = !(spInit %in% species)
   if(any(out))
@@ -168,10 +186,24 @@ generateNetwork <- function(
       )
     )
 
-  # Volpert analysis
-  # Build species list and reactions list
-  # from initial species list by
-  # iterations over the reaction network
+  # Elements in initial species
+  elInit = names(CHNOSZ::count.elements(paste0(spInit,collapse='')))
+
+  # Stoechiometry
+  compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
+  colnames(compo)=elements
+  mass  = apply(compo,1,massFormula)
+  names(mass) = species
+  # spIons = species[which(spCharge(species) != 0)]
+
+  ## Attribute mass to dummy species
+  dummySpecies = spDummy # From global variables
+  dummyMass   = round(max(mass,na.rm=TRUE)+2)
+  mass[dummySpecies] = dummyMass
+
+  # Volpert analysis :
+  # Build species list and reactions list from initial species list by
+  # iterations over the reaction network.
   reacs    = 1:nbReac
   spInit0  = spInit
   lReacs   =
@@ -204,14 +236,6 @@ generateNetwork <- function(
     vlpInd[spProds] = ncount
   }
 
-  # Orphan species: species without parents in scheme
-  ## For info only. At the moment, they are not rejected from scheme
-  # reject = apply(compo, 1, function(x)
-  #   sum(x[elInit],na.rm=TRUE) != sum(x,na.rm=TRUE) )
-  # orphans = species[!species %in% spInit &
-  #                     !reject &
-  #                     !species %in% dummySpecies ]
-
   # Reduce reactions and species list to accessible species
   species   = spInit
   nbSpecies = length(species)
@@ -239,6 +263,50 @@ generateNetwork <- function(
   rownames(R) = reacTags
   rownames(D) = reacTags
 
+  # Any sink to dummify ?
+  dummifiedSinks = ''
+  target = 'Products'
+  if(dummySinks) {
+    sinks = ""
+    sel = colSums(L) == 0
+    if(any(sel)) {
+      sinks = species[sel]
+      # Exception for dummy species
+      sel = ! sinks %in% spDummy
+      if(any(sel)) {
+        if(! target %in% species) {
+          species = c(species,target)
+          mass    = c(mass,dummyMass)
+          vlpInd  = c(vlpInd,max(vlpInd))
+          L       = cbind(L,0)
+          R       = cbind(R,0)
+        }
+        dummifiedSinks = sinks[sel]
+        for(sp in dummifiedSinks) {
+          isp      = which(species == sp)
+          ita      = which(species == target)
+          L        = L[ ,-isp]
+          ireacs   = which(R[ ,isp] != 0)
+          R[ ,ita] = R[ ,ita] + R[ ,isp]
+          R        = R[ ,-isp]
+          species  = species[-isp]
+          mass     = mass[-isp]
+          vlpInd   = vlpInd[-isp]
+          for (ir in ireacs)
+            reacTagFull[ir] = gsub(sp,target,reacTagFull[ir])
+        }
+        D = R - L
+        rownames(D) = reacTags
+      }
+    }
+  }
+  colnames(L) = species
+  colnames(R) = species
+  colnames(D) = species
+  names(vlpInd) = species
+  names(mass) = species
+  nbSpecies = length(species)
+
   return(
     list(
       spInit  = spInit0,
@@ -257,6 +325,7 @@ generateNetwork <- function(
       vlpInd  = vlpInd,
       reacTagFull = reacTagFull,
       reacTags = reacTags,
+      dummifiedSinks = dummifiedSinks,
       alert    = NULL
     )
   )
@@ -748,6 +817,16 @@ output$chemistrySimplify <- renderUI({
       resize = "both"
     )
 
+  ui[[3]] =
+    checkboxInput(
+      inputId = 'dummySinks',
+      label = 'Dummify sinks !',
+      value = if(!is.null(chemDBData()$dummySinks))
+        chemDBData()$dummySinks
+      else
+        TRUE
+    )
+
   ui
 })
 # outputOptions(output, "chemistrySimplify",suspendWhenHidden = FALSE)
@@ -780,9 +859,11 @@ observeEvent(
     reacData(ll)
 
     ionsKill = input$ionsKill
+    dummySinks = input$dummySinks
     if(!is.null(chemDBData())) {
       ll = chemDBData()
       ll$ionsKill = ionsKill
+      ll$dummySinks = dummySinks
       chemDBData(ll)
     }
 
@@ -808,7 +889,6 @@ observeEvent(
       duration = 5,
       type = 'message'
     )
-   # on.exit(removeNotification(id), add = TRUE) # Too quick...
 
    if(!is.null(chemDBData())) {
      ll = chemDBData()
@@ -823,7 +903,8 @@ observeEvent(
         neutralsSourceDir = neutralsSourceDir,
         ionsSourceDir     = ionsSourceDir,
         ionsKill          = ionsKill,
-        speciesToRemove   = speciesToRemove
+        speciesToRemove   = speciesToRemove,
+        dummySinks        = dummySinks
       )
     }) %...>% reacScheme0()
   })
@@ -901,7 +982,7 @@ observe({
     )
   )
 })
-
+# Summary ####
 output$summaryScheme <- renderPrint({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -928,19 +1009,28 @@ output$summaryScheme <- renderPrint({
 
   if(!is.null(chemDBData()$ionsKill))
     if(chemDBData()$ionsKill)
-      cat('Ions Kill Switch is on !\n\n')
+      cat('>>> All ions have been removed...\n\n')
 
   if(!is.null(chemDBData()$speciesToRemove))
-      cat('Species to remove:',
+    if(chemDBData()$speciesToRemove != "")
+      cat('>>> ',length(chemDBData()$speciesToRemove),
+          ' species have been removed:\n',
           paste0(chemDBData()$speciesToRemove,collapse =','),
           '\n\n')
+
+  if(!is.null(reacScheme()$dummifiedSinks))
+     if(dummifiedSinks != "")
+       cat('>>> ',length(dummifiedSinks),
+           ' species have been dummified as "Products":\n',
+           paste0(dummifiedSinks,collapse =','),
+           '\n\n')
 
   cat('Nb species         = ', nbSpecies,'\n')
   cat('Nb reactions       = ', nbReac   ,'\n\n')
 
   # Nature of species
   types = c("neutrals","ions")
-  chems = c("hydrocarbons","N-bearing","O-bearing")
+  chems = c("hydrocarbons","N-bearing","O-bearing","S-bearing")
   heavy = c("C0","C1","C2","C3","C4","C5","C6","Cmore")
   resu = matrix(0,
                 nrow = 1 + length(chems),
@@ -1015,17 +1105,19 @@ output$summaryScheme <- renderPrint({
       '---------------\n\n',
     'Node\t\t Out\t In\t Total\n')
   for (i in 1:min(pmax,20))
-    cat(nodeNames[io][i], '\t\t',
-        degOut[io][i],'\t',
-        degIn[io][i],'\t',
-        deg[io][i], '\n')
+    if(!nodeNames[io][i] %in% spDummy)
+      cat(nodeNames[io][i], '\t\t',
+          degOut[io][i],'\t',
+          degIn[io][i],'\t',
+          deg[io][i], '\n')
 
   cat('\n Species connectivity distribution\n',
          '---------------------------------\n')
   lSpecies = (nbReac + 1):(nbReac + nbSpecies)
-  print(table(deg[lSpecies],
-              dnn = 'Degree'
-              )[1:min(length(unique(deg[lSpecies])),15)])
+  print(table(
+    deg[lSpecies],
+    dnn = 'Degree'
+  )[1:min(length(unique(deg[lSpecies])),15)])
 
   cat('\n Reactions connectivity distribution\n',
          '-----------------------------------\n')
@@ -1049,7 +1141,7 @@ output$quality   <- renderPrint({
       '----------------------------------------------')
   cat('\n\n')
   sel = colSums(L) == 0
-  if(sum(sel) != 0) {
+  if(any(sel)) {
     sp = species[sel]
     ms = mass[sel]
     io = order(ms)
@@ -1057,7 +1149,6 @@ output$quality   <- renderPrint({
       ind = io[i]
       s = sp[ind]
       prods = which(R[,s] != 0)
-      # cat(s,' (mass = ',round(ms[ind],digits=2),')\n   Productions :\n')
       cat(s,' (mass = ',round(ms[ind],digits=2),')\n')
       for(j in seq_along(prods))
         cat('   ',reacTagFull[[prods[j]]],'\n')

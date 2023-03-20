@@ -1,15 +1,12 @@
-# Get data from CHNOSZ package
-# data("thermo") # Obsolete
-
 # Set global variables
+
 elements    = c("H", "C", "N", "O", "S", "Ar")
 numElecElem = c( 1 ,  6 ,  7 ,  8 , 16 ,  18 )
 massElem    = mass(elements)
 spDummy     = c('E', 'He',
                 "SOOT",'SOOTC','SOOTN','SOOTC+','SOOTS','SOOTO',
                 'CxHy+','CxHy','CxHyNz+','CxHyNz',
-                'C4H2X',
-                'HC3NX','HC5NX',
+                'C4H2X','HC3NX','HC5NX',
                 'Products')
 
 # Functions

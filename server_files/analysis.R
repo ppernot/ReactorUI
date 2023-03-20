@@ -300,8 +300,9 @@ selectSpecies <- function(species, categs) {
     selRadic = sel
 
     # Composition Elementale
-    azot = grepl("N",species)
-    oxy  = grepl("O",species)
+    azot = compo[,"N"] != 0
+    oxy  = compo[,"O"] != 0
+    sulf = compo[,"S"] != 0
     sel  = rep(FALSE,length(species))
     for (cl in categs) {
       if (cl == "hydrocarbons") {
@@ -310,6 +311,8 @@ selectSpecies <- function(species, categs) {
         sel = sel | azot
       } else if (cl == "O-bearing") {
         sel = sel | oxy
+      } else if (cl == "S-bearing") {
+        sel = sel | sulf
       }
     }
     selElem = sel

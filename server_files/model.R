@@ -484,10 +484,16 @@ writeDL = function(outputDir,RS) {
     )
   }
 }
-setGroups <- function(species, netColoring, vlpI) {
+setGroups = function(species, netColoring, vlpI) {
+
   # Define groups for network coloring
   compo = t(apply(as.matrix(species, ncol = 1), 1, get.atoms))
   colnames(compo) = elements
+
+  # Set composition of dummies to 0 (it is NA by default)
+  sel = species %in% spDummy
+  if(any(sel))
+    compo[sel,] = 0
 
   if (netColoring == 'volpert') {
     grp = vlpI
@@ -501,15 +507,43 @@ setGroups <- function(species, netColoring, vlpI) {
     radic[is.na(radic)] = 0
     grp = radic
 
-  } else if (netColoring == 'C/N/O') {
-    azot = grepl("N",species)
-    oxy  = grepl("O",species) & !grepl("SOOT",species)
-    grp  = rep('!N!O',length(species))
-    sel  = azot & !oxy
-    grp[sel] = 'N!O'
-    grp[oxy] = 'O'
+  } else if (netColoring == 'compo') {
+    # Define species groups according to composition
+    grp = rep('Misc.',length(species))
+    sel = colSums(compo) != 0
+    ns  = sum(sel)
+    elt = elements[sel]
+    com = compo[,sel]
+    cop = com != 0
+    for(i in 1:ns) { # 1 element
+      e1 = elt[i]
+      grp[cop[,i]] = e1
+    }
+    if(ns >= 2)
+      for(i in 1:(ns-1)) { # 2 elements
+        e1 = elt[i]
+        for(j in (i+1):ns) {
+          e2 = elt[j]
+          sel = cop[,i] & cop[,j]
+          if(any(sel))
+            grp[sel] = paste0(e1,'&',e2)
+        }
+      }
+    if(ns >= 3)
+      for(i in 1:(ns-2)) { # 3 elements
+        e1 = elt[i]
+        for(j in (i+1):(ns-1)) {
+          e2 = elt[j]
+          for(k in (j+1):ns) {
+            e3 = elt[k]
+            sel = cop[,i] & cop[,j] & cop[,k]
+            if(any(sel))
+              grp[sel] = paste0(e1,'&',e2,'&',e3)
+          }
+        }
+      }
 
-  }  else if (netColoring == 'Mass') {
+  }  else if (netColoring == 'mass') {
     nbh = nbHeavyAtoms(species)
     nbh[is.na(nbh)] = 0
     grp = paste0('C',nbh)
@@ -1256,7 +1290,7 @@ options = list(
   scrollY = 550,
   scroller = TRUE
 ))
-# Network ####
+# Visualize ####
 output$netScheme <- renderVisNetwork({
   if (is.null(reacScheme())) {
     cat('Please Generate Reactions...')
@@ -1319,16 +1353,16 @@ output$netScheme <- renderVisNetwork({
   )
 
   # Coloring by group
-  grp = setGroups(species,input$netColoring,vlpInd)
-  if('digraph' %in% input$netCtrl)
-    grp = c(rep('reac',nbReacs),grp)
+  grp = setGroups(species, input$netColoring, vlpInd)
+  if ('digraph' %in% input$netCtrl)
+    grp = c(rep('reac', nbReacs), grp)
 
   data = toVisNetworkData(g)
   nodes = cbind(
     data$nodes,
-    group = grp,                 # Nodes coloring
-    value =  igraph::degree(g),  # Nodes size
-    title = data$nodes$label     # Popup text
+    group = grp,                # Nodes coloring
+    value = igraph::degree(g),  # Nodes size
+    title = data$nodes$label    # Popup text
   )
   edges = data$edges
   col = paste0("rgba(100,100,100,", input$linkDensNet, ")")
@@ -1340,7 +1374,7 @@ output$netScheme <- renderVisNetwork({
       stepY = 75) %>%
     visGroups(
       groupname = "reac",
-      color = "lightblue",
+      color = "green",
       shape = "diamond",
       size  = 1) %>%
     visEdges(
@@ -1352,18 +1386,12 @@ output$netScheme <- renderVisNetwork({
       forceAtlas2Based = list(
         gravitationalConstant = input$forceNetCharge,
         avoidOverlap = 0.2,
-        damping = 0.2
+        damping = 0.95
       ),
-      # solver = "barnesHut",
-      # barnesHut = list(
-      #   avoidOverlap = 1,
-      #   gravitationalConstant = 100*input$forceNetCharge,
-      #   damping = 0.8
-      # ),
       minVelocity = 20,
       stabilization = list(
         enabled = TRUE,
-        iterations = 100,
+        iterations = 10,
         fit = TRUE
       )) %>%
     visExport() %>%

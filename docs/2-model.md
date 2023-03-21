@@ -60,6 +60,19 @@ mixture.
                 iterate at 3. 
         ```
 
+* `Simplify` offers options to reduce the initial reaction scheme:
+
+    + `Remove ions !` enables to keep a purely neutral network. This can be
+    used to estimate the impact of ions chemistry on neutral species...
+    
+    + `Species to remove` enables to enter a list of comma separated 
+    species names. All the reactions in which the species participate,
+    either as reactants or products, are removed from the scheme.
+    
+    + `Dummify sinks !` transforms all loss-less species, if any, into a
+    dummy 'Products' species. Other dummy species are not affected. This
+    has no impact on the reactions scheme.
+    
 * `Network` presents a zoomable and active graphical view of the network. 
 Two controls are available:
 

@@ -84,10 +84,10 @@ sidebarLayout(
                       'netColoring',
                       'Color scheme',
                       choiceNames = list(
-                        'Volpert','Charge','Radicals','C/N/O','Mass'
+                        'Volpert','Charge','Radicals','Composition','Mass'
                       ),
                       choiceValues = list(
-                        'volpert','charge','radicals','C/N/O','Mass'
+                        'volpert','charge','radicals','compo','mass'
                       )
                     ),
                     sliderInput(
@@ -109,11 +109,6 @@ sidebarLayout(
                   ),
                   column(
                     width = 9,
-                    # plotOutput(
-                    # forceNetworkOutput(
-                    #   "plotScheme",
-                    #   height = plotHeight
-                    # )
                     visNetworkOutput(
                       "netScheme",
                       height = plotHeight

@@ -1362,7 +1362,9 @@ output$netScheme <- renderVisNetwork({
     data$nodes,
     group = grp,                # Nodes coloring
     value = igraph::degree(g),  # Nodes size
-    title = data$nodes$label    # Popup text
+    title = data$nodes$label,   # Popup text
+    label = data$nodes$label   # Labels
+    # font  = list(size = input$fontSizeNet)
   )
   edges = data$edges
   col = paste0("rgba(100,100,100,", input$linkDensNet, ")")
@@ -1383,17 +1385,19 @@ output$netScheme <- renderVisNetwork({
       color  = col) %>%
     visPhysics(
       solver = "forceAtlas2Based",
+      timestep = 0.25,
       forceAtlas2Based = list(
         gravitationalConstant = input$forceNetCharge,
-        avoidOverlap = 0.2,
-        damping = 0.95
+        avoidOverlap = 0.5,
+        damping = 0.75
       ),
       minVelocity = 20,
       stabilization = list(
-        enabled = TRUE,
-        iterations = 10,
+      enabled = TRUE,
+        iterations = 1000,
         fit = TRUE
-      )) %>%
+      )
+      ) %>%
     visExport() %>%
     visOptions(
       clickToUse = FALSE,
@@ -1509,8 +1513,9 @@ output$plotScheme <- renderForceNetwork({
   graph_d3$nodes[['size']] = igraph::degree(g) * 5
   if('digraph'   %in% input$netCtrl)
     graph_d3$nodes[['size']][1:nbReacs] = 1
-  if('digraph'   %in% input$netCtrl &
-     'showNames' %in% input$netCtrl)
+  if('digraph'   %in% input$netCtrl #&
+     # 'showNames' %in% input$netCtrl
+  )
     graph_d3$nodes[['name']] = helpNames
 
   cs = JS("d3.scaleOrdinal(d3.schemeCategory10);")
@@ -1537,8 +1542,8 @@ output$plotScheme <- renderForceNetwork({
     clickAction = alert,
     linkColour = lc,
     legend   = 'legend' %in% input$netCtrl,
-    charge   = input$forceNetCharge,
-    fontSize = input$fontSizeNet
+    charge   = input$forceNetCharge #,
+    # fontSize = input$fontSizeNet
   )
 
 })

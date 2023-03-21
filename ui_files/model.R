@@ -56,21 +56,21 @@ sidebarLayout(
                       'netCtrl',
                       '',
                       choiceNames = list(
-                        'Digraph','Full names','Legend'
+                        'Digraph','Legend'
                       ),
                       choiceValues = list(
-                        'digraph','showNames','legend'
+                        'digraph','legend'
                       ),
                       inline = TRUE,
-                      selected = c('showNames','legend')
+                      selected = 'legend'
                     ),
                     sliderInput(
                       'forceNetCharge',
                       'Nodes attraction',
-                      min   = -100,
-                      max   =    0,
+                      min   = -200,
+                      max   =  -10,
                       step  =   10,
-                      value =  -50
+                      value =  -30
                     ),
                     sliderInput(
                       'vlpMax',
@@ -90,21 +90,21 @@ sidebarLayout(
                         'volpert','charge','radicals','compo','mass'
                       )
                     ),
-                    sliderInput(
-                      'fontSizeNet',
-                      'Labels size',
-                      min   = 6,
-                      max   = 24,
-                      step  = 1,
-                      value = 12
-                    ),
+                    # sliderInput(
+                    #   'fontSizeNet',
+                    #   'Labels size',
+                    #   min   = 6,
+                    #   max   = 24,
+                    #   step  = 1,
+                    #   value = 12
+                    # ),
                     sliderInput(
                       'linkDensNet',
                       'Links opacity',
                       min   = 0,
                       max   = 1,
                       step  = 0.1,
-                      value = 0.5
+                      value = 0.2
                     )
                   ),
                   column(

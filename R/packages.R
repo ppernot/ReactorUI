@@ -40,4 +40,4 @@ for  (lib in libs) {
 # }
 
 # Parallelism by future/promises
-plan(multiprocess)
+plan(sequential)

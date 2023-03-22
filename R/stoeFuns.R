@@ -64,6 +64,7 @@ spCharge = function(species) {
   charge = rep(0,length(species))
   ions   = grepl("\\+$",species)
   charge[ions] = 1
-  charge[which(species == 'E')] = -1
+  if(any(species == 'E'))
+    charge[which(species == 'E')] = -1
   return(charge)
 }

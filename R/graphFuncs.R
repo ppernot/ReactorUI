@@ -1029,10 +1029,11 @@ volpertIndex <- function (rootSpecies, species, L, R) {
   vlpInd
 }
 
-plotMS <- function(x, y, yLow, ySup, xlim, ylim,
-                   w, col, colt=col, species, xlab= 'm/z',
-                   main='', ppScale=FALSE, errBar = FALSE,
-                   text.cex = 1) {
+plotMS <- function(
+  x, y, yLow, ySup, xlim, ylim, w, col, colt=col,
+  species = 1:y, xlab= 'm/z', main='',
+  ppScale=FALSE, errBar = FALSE,
+  text.cex = 1) {
 
   plot(x, y, type = 'n',
        xlim = xlim, xlab = xlab, cex.axis=0.75,
@@ -1040,7 +1041,11 @@ plotMS <- function(x, y, yLow, ySup, xlim, ylim,
        main = main)
 
   # Axis
-  ti = seq(floor(xlim[1]), ceiling(xlim[2]), by=1)
+  if(diff(range(xlim)) <= 20)
+    step = 1
+  else
+    step = 5
+  ti = seq(floor(xlim[1]), ceiling(xlim[2]), by = step)
   axis(side = 1, at = ti, labels = ti, cex.axis=0.75)
   grid()
 

@@ -542,6 +542,22 @@ setGroups = function(species, netColoring, vlpI) {
           }
         }
       }
+    if(ns >= 4)
+      for(i in 1:(ns-3)) { # 3 elements
+        e1 = elt[i]
+        for(j in (i+1):(ns-2)) {
+          e2 = elt[j]
+          for(k in (j+1):(ns-1)) {
+            e3 = elt[k]
+            for(l in (k+1):ns) {
+              e4 = elt[l]
+              sel = cop[,i] & cop[,j] & cop[,k] & cop[,l]
+              if(any(sel))
+                grp[sel] = paste0(e1,'&',e2,'&',e3,'&',e4)
+            }
+          }
+        }
+      }
 
   }  else if (netColoring == 'mass') {
     nbh = nbHeavyAtoms(species)

@@ -1,3 +1,5 @@
+speciesCategories = reactiveVal(NULL)
+
 # Functions ####
 getConc  = function(concThresh = -50) {
 
@@ -264,8 +266,21 @@ getIntegStats = function() {
 selectSpecies <- function(species, categs) {
   # Select species to plot from categsPlot
 
-  compo   = t(apply(as.matrix(species,ncol=1),1,get.atoms))
+  # ## Remove E
+  # sel = species == "E"
+  # if(any(sel))
+  #   species = species[!sel]
+
+  ## Get compositions
+  compo   = t(apply(as.matrix(species,ncol=1), 1, get.atoms))
   colnames(compo)=elements
+
+  # ## Set composition of dummies to 0 (it is NA by default)
+  # sel = species %in% spDummy
+  # if(any(sel))
+  #   compo[sel,] = 0
+
+
 
   # Remove dummy species
   sel0 = ! species %in% spDummy
@@ -346,24 +361,140 @@ selectSpecies <- function(species, categs) {
   }
 
 }
-assignColorsToSpecies <- function(colSel, species, sel, nf,
-                                  cols, col_tr, col_tr2,
-                                  threshTransp = 50) {
+generateCategories = function(species) {
+
+  ## Remove E
+  sel = species == "E"
+  if(any(sel))
+    species = species[!sel]
+
+  ## Get compositions
+  compo = t(apply(as.matrix(species,ncol=1), 1, get.atoms))
+  colnames(compo)=elements
+
+  ## Set composition of dummies to 0 (it is NA by default)
+  sel = species %in% spDummy
+  if(any(sel))
+    compo[sel,] = 0
+
+  ### Get charge
+  charges = spCharge(species)
+
+  ## Identify radicals
+  radic = (apply(compo,1,numElec)-spCharge(species)) %% 2
+  radic[is.na(radic)] = 0
+
+  ## Define species groups according to composition
+  grp = rep('Misc.',length(species))
+  sel = colSums(compo) != 0
+  ns  = sum(sel)
+  elt = elements[sel]
+  com = compo[,sel]
+  cop = com != 0
+  for(i in 1:ns) { # 1 element
+    e1 = elt[i]
+    grp[cop[,i]] = e1
+  }
+  if(ns >= 2)
+    for(i in 1:(ns-1)) { # 2 elements
+      e1 = elt[i]
+      for(j in (i+1):ns) {
+        e2 = elt[j]
+        sel = cop[,i] & cop[,j]
+        if(any(sel))
+          grp[sel] = paste0(e1,'&',e2)
+      }
+    }
+  if(ns >= 3)
+    for(i in 1:(ns-2)) { # 3 elements
+      e1 = elt[i]
+      for(j in (i+1):(ns-1)) {
+        e2 = elt[j]
+        for(k in (j+1):ns) {
+          e3 = elt[k]
+          sel = cop[,i] & cop[,j] & cop[,k]
+          if(any(sel))
+            grp[sel] = paste0(e1,'&',e2,'&',e3)
+        }
+      }
+    }
+  if(ns >= 4)
+    for(i in 1:(ns-3)) { # 3 elements
+      e1 = elt[i]
+      for(j in (i+1):(ns-2)) {
+        e2 = elt[j]
+        for(k in (j+1):(ns-1)) {
+          e3 = elt[k]
+          for(l in (k+1):ns) {
+            e4 = elt[l]
+            sel = cop[,i] & cop[,j] & cop[,k] & cop[,l]
+            if(any(sel))
+              grp[sel] = paste0(e1,'&',e2,'&',e3,'&',e4)
+          }
+        }
+      }
+    }
+
+  ## Mass
+  mass = apply(compo, 1, massFormula)
+
+  ## Nb of heavy atoms
+  nbh = nbHeavyAtoms(species)
+  nbh[is.na(nbh)] = 0
+
+  list(
+     charge = charges,
+     radic  = radic,
+     compo  = grp,
+     mass   = mass,
+     heavy  = nbh
+  )
+
+}
+assignColorsToSpecies <- function(
+  colSel, colByCompo, species, compo, sel, nf=1,
+  cols, col_tr, col_tr2, threshTransp = 50)
+{
   # Manage transparency wrt nb MC runs
   if(nf <= threshTransp)
     col_tr = col_tr2 # Darker
-
+print(compo)
   if(colSel) {
     # Assign colors to species to avoid changes
-    nrep     = ceiling(length(species)/length(cols))
-    colsSp   = rep(cols  ,times = nrep)
-    col_trSp = rep(col_tr,times = nrep)
+    if(colByCompo) {
+      nc = unique(compo)
+      ic = c()
+      for (i in 1:length(species))
+        ic[i] = which(nc == compo[i])
+      nrep      = ceiling(length(nc)/length(cols))
+      colsAll   = rep(cols  ,times = nrep)
+      cols_trAll = rep(col_tr,times = nrep)
+      colsSp    = colsAll[ic]
+      col_trSp  = cols_trAll[ic]
+    } else {
+      nrep     = ceiling(length(species)/length(cols))
+      colsSp   = rep(cols  ,times = nrep)
+      col_trSp = rep(col_tr,times = nrep)
+    }
+
   } else {
     # Use sequential colors for selection
-    colsSp = col_trSp = rep(NA,length(species))
-    nrep          = ceiling(length(species[sel])/length(cols))
-    colsSp[sel]   = rep(cols  ,times = nrep)
-    col_trSp[sel] = rep(col_tr,times = nrep)
+    if(colByCompo) {
+      nc = unique(compo[sel])
+      ic = c()
+      for (i in 1:length(species[sel]))
+        ic[i] = which(nc == compo[sel][i])
+      nrep      = ceiling(length(nc)/length(cols))
+      colsAll   = rep(cols  ,times = nrep)
+      cols_trAll = rep(col_tr,times = nrep)
+      colsSp    = colsAll[ic]
+      col_trSp  = cols_trAll[ic]
+    } else {
+      colsSp = col_trSp = rep(NA,length(species))
+      nrep          = ceiling(length(species[sel])/length(cols))
+      colsSp[sel]   = rep(cols  ,times = nrep)
+      col_trSp[sel] = rep(col_tr,times = nrep)
+    }
   }
 
   return (
@@ -469,8 +600,8 @@ observeEvent(
 )
 
 output$loadMsg <- renderPrint({
-  if(is.null(concList()) | is.null(ratesList()))
-    return(NULL)
+  req(concList())
+  req(ratesList())
 
   # Extract conc et al.
   for (n in names(concList()))
@@ -490,26 +621,108 @@ output$loadMsg <- renderPrint({
       nRates,' reactions\n',
       nPhotoRates,' photo-processes\n')
 
+  speciesCategories(generateCategories(species))
+
 })
 
 # Kinetics ####
+output$categsPlot <- renderUI({
+  req(concList())
+  req(speciesCategories())
+
+  # Begin UI construction
+  ui = list(
+    br(),
+    strong("Selection"),
+    hr(style="border-color: #666;")
+  )
+  ii = 3
+
+  ### Get charge
+  ch = sort(unique(speciesCategories()$charge))
+  if(length(ch) > 1) {
+    ii = ii + 1
+    ui[[ii]] = selectInput(
+      'anaCharges',
+      'Charge',
+      choices = c("All" = "", ch),
+      multiple = TRUE
+    )
+  }
+
+  ## Identify radicals
+  if(sum(speciesCategories()$radic) != 0) {
+    ii = ii + 1
+    ui[[ii]] = checkboxInput(
+      'anaRadicals',
+      'Radicals',
+      value = FALSE
+    )
+  }
+
+  ## Define species groups according to composition
+  gr = sort(unique(speciesCategories()$compo))
+  if(length(gr) > 1) {
+    ii = ii + 1
+    ui[[ii]] = selectInput(
+      'anaCompos',
+      'Composition',
+      choices  = c("All" = "", gr),
+      multiple = TRUE
+    )
+  }
+
+  ## Nb of heavy atoms
+  nn = sort(unique(speciesCategories()$heavy))
+  if(length(nn) > 1) {
+    ii = ii + 1
+    ui[[ii]] = selectInput(
+      'anaMass',
+      'Nb Heavy atoms',
+      choices  = c("All" = "", nn),
+      multiple = TRUE
+    )
+  }
+
+  ui
+})
 rangesKinetics <- reactiveValues(x = NULL, y = NULL)
 output$kinetics <- renderPlot({
-  if(is.null(concList()))
-    return(NULL)
+  req(concList())
+  req(speciesCategories())
 
   # Extract conc et al.
   for (n in names(concList()))
     assign(n,rlist::list.extract(concList(),n))
+  for (n in names(speciesCategories()))
+    assign(n,rlist::list.extract(speciesCategories(),n))
 
   # Species list to plot
-  sel = selectSpecies(species, input$categsPlot)
-  if(sum(sel) == 0)
+  sel = rep(TRUE,length(species))
+
+  if(!is.null(input$anaCharges)) {
+    if(input$anaCharges != "All")
+      sel = sel & charge %in% input$anaCharges
+  }
+  if(!is.null(input$anaRadicals)) {
+    if(input$anaRadicals)
+      sel = sel & radic == input$anaRadicals
+  }
+  if(!is.null(input$anaCompos)) {
+    if(input$anaCompos != "All")
+      sel = sel & compo %in% input$anaCompos
+  }
+  if(!is.null(input$anaMass)) {
+    if(input$anaMass != "All")
+      sel = sel & heavy %in% input$anaMass
+  }
+
+  if(!any(sel))
     showNotification(
       h4('Your selection is empty !'),
       type = 'warning'
     )
-  req(sum(sel) > 0)
+  req(any(sel))
 
   # Define zoom range
   if (is.null(rangesKinetics$x)) {
@@ -518,12 +731,7 @@ output$kinetics <- renderPlot({
     xlim <- rangesKinetics$x
   }
   if (is.null(rangesKinetics$y)) {
-    # ylim = range(c(mfLow[, sel], mfSup[, sel]), na.rm = TRUE)
     ylim = range(c(mfLow[, sel], 1), na.rm = TRUE)
-    # ylim <- c(
-    #   max(-30, min(mfLow[,sel])),
-    #   min(0  , max(mfSup[,sel]))
-    # )
   } else {
     ylim <- rangesKinetics$y
   }
@@ -534,7 +742,8 @@ output$kinetics <- renderPlot({
 
   # Generate colors per species
   colors = assignColorsToSpecies(
-    input$colSel, species, sel, nf=1,
+    input$colSel, input$colByCompo,
+    species, compo, sel, 1,
     cols, col_tr, col_tr2)
 
   # Show uncertainty bands ?
@@ -542,7 +751,7 @@ output$kinetics <- renderPlot({
 
   # Plot
   par(mfrow = c(1, 1),
-      cex = cex, cex.main = cex, mar = c(mar[1:3],3.5),
+      cex = cex, cex.main = 1.5, mar = c(mar[1:3],3.5),
       mgp = mgp, tcl = tcl, pty = pty, lwd = lwd)
 
   plot(time, time,
@@ -550,7 +759,7 @@ output$kinetics <- renderPlot({
        log  = 'x',
        main = ifelse(!showBands,
                      'Mean values',
-                     'Mean and 95 % Proba. Intervals'),
+                     'Mean values and 95 % Proba. Intervals'),
        xlab = 'Time / s',
        xlim = xlim,
        xaxs = 'i',
@@ -590,10 +799,6 @@ output$kinetics <- renderPlot({
   matplot(time, mfMean[,sel], type='l', lty = 1,
           col = colors$colsSp[sel],
           lwd = 1.2*lwd, add = TRUE)
-  # text(x = time[nt], y= mfMean[nt,sel],
-  #      labels = species[sel],
-  #      col=colors$colsSp[sel],
-  #      pos = 4, offset=0.2, cex=cex.leg)
 
   mtext(at  = mfMean[nt,sel],
        text = species[sel],
@@ -622,25 +827,95 @@ observeEvent(
 )
 
 # Pseudo MS ####
+output$categsPlotMS <- renderUI({
+req(concList())
+req(speciesCategories())
+
+# Begin UI construction
+ui = list(
+  br(),
+  strong("Selection"),
+  hr(style="border-color: #666;")
+)
+ii = 3
+
+### Get charge
+# ch = sort(unique(speciesCategories()$charge))
+# if(length(ch) > 1) {
+#   ii = ii + 1
+#   ui[[ii]] = selectInput(
+#     'anaChargesMS',
+#     'Charge',
+#     choices = c("All" = "", ch),
+#     multiple = TRUE
+#   )
+# }
+
+## Identify radicals
+if(sum(speciesCategories()$radic) != 0) {
+  ii = ii + 1
+  ui[[ii]] = checkboxInput(
+    'anaRadicalsMS',
+    'Radicals',
+    value = FALSE
+  )
+}
+
+## Define species groups according to composition
+gr = sort(unique(speciesCategories()$compo))
+if(length(gr) > 1) {
+  ii = ii + 1
+  ui[[ii]] = selectInput(
+    'anaComposMS',
+    'Composition',
+    choices  = c("All" = "", gr),
+    multiple = TRUE
+  )
+}
+
+## Nb of heavy atoms
+nn = sort(unique(speciesCategories()$heavy))
+if(length(nn) > 1) {
+  ii = ii + 1
+  ui[[ii]] = selectInput(
+    'anaMassMS',
+    'Nb Heavy atoms',
+    choices  = c("All" = "", nn),
+    multiple = TRUE
+  )
+}
+
+ui
+})
 output$pseudoMS <- renderPlot({
-  if(is.null(concList()))
-    return(NULL)
+  req(concList())
+  req(speciesCategories())
 
   # Extract conc et al.
   for (n in names(concList()))
     assign(n,rlist::list.extract(concList(),n))
+  for (n in names(speciesCategories()))
+    assign(n,rlist::list.extract(speciesCategories(),n))
 
   # Species list to plot
-  selNeu = selectSpecies(species,
-                         c("neutrals", input$categsPlotMS))
-  selIon = selectSpecies(species,
-                         c("ions",    input$categsPlotMS))
+  sel = rep(TRUE,length(species))
 
-  # Stoechiometry & Mass
-  compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
-  colnames(compo)=elements
-  mass  = apply(compo,1,massFormula)
-  names(mass) = species
+  if(!is.null(input$anaRadicalsMS)) {
+    if(input$anaRadicalsMS)
+      sel = sel & radic == input$anaRadicalsMS
+  }
+  if(!is.null(input$anaComposMS)) {
+    if(input$anaComposMS != "All")
+      sel = sel & compo %in% input$anaComposMS
+  }
+  if(!is.null(input$anaMassMS)) {
+    if(input$anaMassMS != "All")
+      sel = sel & heavy %in% input$anaMassMS
+  }
+
+  # Species list to plot
+  selNeu = sel & charge == 0
+  selIon = sel & charge != 0
 
   # Extract graphical params
   for (n in names(gPars))
@@ -648,11 +923,11 @@ output$pseudoMS <- renderPlot({
 
   # Generate colors per species
   colorsNeu = assignColorsToSpecies(
-    TRUE, species, selNeu,
-    nf=1, cols, col_tr, col_tr2)
+    TRUE, TRUE, species, compo, selNeu, 1,
+    cols, col_tr, col_tr2)
   colorsIon = assignColorsToSpecies(
-    TRUE, species, selIon,
-    nf=1, cols, col_tr, col_tr2)
+    TRUE, TRUE, species, compo, selIon, 1,
+    cols, col_tr, col_tr2)
 
   # Function to define bars width
   # (width decreases as mole fraction increases)
@@ -675,38 +950,46 @@ output$pseudoMS <- renderPlot({
       mgp = mgp, tcl = tcl, pty = 'm', lwd = lwd, lend = 2)
 
   # Neutrals
-  x    = mass[selNeu]
-  y    = mfMean[nt, selNeu]
-  yLow = mfLow[nt, selNeu]
-  ySup = mfSup[nt, selNeu]
-  w    = lineWidth(y,input$threshMS) * input$widthMS
-  col  = colorsNeu$colsSp[selNeu]
-  colt = colorsNeu$col_trSp[selNeu]
+  if(any(selNeu)) {
+    x    = mass[selNeu]
+    y    = mfMean[nt, selNeu]
+    yLow = mfLow[nt, selNeu]
+    ySup = mfSup[nt, selNeu]
+    w    = lineWidth(y,input$threshMS) * input$widthMS
+    col  = colorsNeu$colsSp[selNeu]
+    colt = colorsNeu$col_trSp[selNeu]
 
-  plotMS( x, y, yLow, ySup, xlim, ylim, w, col, colt,
-          species[selNeu],xlab ='mass',
-          ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
-          main = paste0('Neutrals / Time = 10^',
-                        round(log10(t0)),' s' ),
-          text.cex = input$MStext.cex/5 )
+    plotMS( x, y, yLow, ySup, xlim, ylim, w, col, colt,
+            species[selNeu], xlab ='Mass [u]',
+            ppScale = input$ppScaleMS,
+            errBar = input$mcPlotMS,
+            main = paste0('Neutrals / Time = 10^',
+                          round(log10(t0)),' s' ),
+            text.cex = input$MStext.cex/5 )
+  } else {
+    plot(1,1,typ='n',xaxt='n',yaxt = 'n', xlab = '', ylab = '')
+  }
 
   #Ions
-  x    = mass[selIon]
-  y    = mfMean[nt, selIon]
-  yLow = mfLow[nt, selIon]
-  ySup = mfSup[nt, selIon]
-  w    = lineWidth(y,input$threshMS) * input$widthMS
-  col  = colorsIon$colsSp[selIon]
-  colt = colorsIon$col_trSp[selIon]
+  if(any(selIon)) {
+    x    = mass[selIon]
+    y    = mfMean[nt, selIon]
+    yLow = mfLow[nt, selIon]
+    ySup = mfSup[nt, selIon]
+    w    = lineWidth(y,input$threshMS) * input$widthMS
+    col  = colorsIon$colsSp[selIon]
+    colt = colorsIon$col_trSp[selIon]
 
-
-  plotMS( x, y, yLow, ySup, xlim, ylim,
-          w, col, colt, species[selIon],
-          ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
-          main = paste0('Ions / Time = 10^',
-                        round(log10(t0)),' s' ),
-          text.cex = input$MStext.cex/5
-          )
+    plotMS( x, y, yLow, ySup, xlim, ylim,
+            w, col, colt, species[selIon],
+            ppScale = input$ppScaleMS, errBar = input$mcPlotMS,
+            main = paste0('Ions / Time = 10^',
+                          round(log10(t0)),' s' ),
+            text.cex = input$MStext.cex/5
+    )
+  } else {
+    plot(1,1,typ='n',xaxt='n',yaxt = 'n', xlab = '', ylab = '')
+  }
 
 })
 
@@ -956,7 +1239,7 @@ output$sanityInteg <- renderPlot({
 
   # Generate colors per stat
   colors = assignColorsToSpecies(
-    input$colSel, statNames, sel, nf=1,
+    input$colSel, FALSE, statNames, NULL, sel, nf=1,
     cols, col_tr, col_tr2)
 
   # Show uncertainty bands ?
@@ -1061,7 +1344,7 @@ output$sanitySR <- renderPlot({
 
   # Generate colors per stat
   colors = assignColorsToSpecies(
-    input$colSel, statNames, sel, nf=1,
+    input$colSel, FALSE, statNames, NULL, sel, nf=1,
     cols, col_tr, col_tr2)
 
   # Show uncertainty bands ?

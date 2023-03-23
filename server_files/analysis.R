@@ -18,7 +18,6 @@ getConc  = function(concThresh = -50) {
     full.names = TRUE
   )
 
-  # x = read.table(files[1], header=TRUE, skip=0)
   x = as.data.frame(
     data.table::fread(files[1], header=TRUE, skip=0)
   )
@@ -36,7 +35,6 @@ getConc  = function(concThresh = -50) {
   nt   = length(time)
   conc = moleFrac = array(0, dim = c(nf, nt, nsp))
   for (i in seq_along(files[1:nf])) {
-    # tab  = read.table(files[i], header=TRUE, skip=0)
     tab  = as.data.frame(
       data.table::fread(files[i], header = TRUE, skip = 0)
     )
@@ -57,8 +55,6 @@ getConc  = function(concThresh = -50) {
 
   # Pretreat moleFrac for plots
   moleFrac = ifelse(moleFrac == 0, NA, log10(moleFrac))
-  # moleFrac = ifelse(moleFrac<=concThresh, NA, moleFrac)
-  # --> Tresholding now done by plotting function
 
   yMean = apply(moleFrac,c(2,3),
                 function(x) mean(x,na.rm=TRUE))
@@ -70,9 +66,9 @@ getConc  = function(concThresh = -50) {
                 function(x) quantile(x,probs = 0.975,na.rm=TRUE))
 
   # Separate neutrals and ions
-  charge = rep(0,length(species))
-  ions   = grepl("\\+$",species)
-  neus = !ions
+  charge = spCharge(species)
+  ions   = charge != 0
+  neus   = !ions
 
   # Calculate mass
   compo = t(apply(as.matrix(species,ncol=1),1,get.atoms))
@@ -364,9 +360,9 @@ selectSpecies <- function(species, categs) {
 generateCategories = function(species) {
 
   ## Remove E
-  sel = species == "E"
-  if(any(sel))
-    species = species[!sel]
+  # sel = species == "E"
+  # if(any(sel))
+  #   species = species[!sel]
 
   ## Get compositions
   compo = t(apply(as.matrix(species,ncol=1), 1, get.atoms))
@@ -437,10 +433,16 @@ generateCategories = function(species) {
 
   ## Mass
   mass = apply(compo, 1, massFormula)
+  if(any(species %in% spDummy)){
+    dummyMass   = round(max(mass,na.rm=TRUE) + 2 )
+    mass[species %in% spDummy] = dummyMass
+  }
 
   ## Nb of heavy atoms
   nbh = nbHeavyAtoms(species)
-  nbh[is.na(nbh)] = 0
+  if(any(species %in% spDummy))
+    nbh[species %in% spDummy] = max(nbh) + 1
+  # nbh[is.na(nbh)] = 0
 
   list(
      charge = charges,
@@ -458,13 +460,13 @@ assignColorsToSpecies <- function(
   # Manage transparency wrt nb MC runs
   if(nf <= threshTransp)
     col_tr = col_tr2 # Darker
-print(compo)
+
   if(colSel) {
     # Assign colors to species to avoid changes
     if(colByCompo) {
       nc = unique(compo)
       ic = c()
-      for (i in 1:length(species))
+      for (i in 1:length(compo))
         ic[i] = which(nc == compo[i])
       nrep      = ceiling(length(nc)/length(cols))
       colsAll   = rep(cols  ,times = nrep)
@@ -482,7 +484,7 @@ print(compo)
     if(colByCompo) {
       nc = unique(compo[sel])
       ic = c()
-      for (i in 1:length(species[sel]))
+      for (i in 1:length(compo[sel]))
         ic[i] = which(nc == compo[sel][i])
       nrep      = ceiling(length(nc)/length(cols))
       colsAll   = rep(cols  ,times = nrep)

@@ -53,7 +53,7 @@ kinParse = function(
   ## Photo processes
   photoData = file.path(photoSourceDir,'..','PhotoScheme.dat')
   for (filename in photoData) {
-    if(file.exists(filename)){ # PhotoIonScheme.dat is optional
+    if(file.exists(filename)){ # PhotoIonScheme.dat is optional and obsolete
       scheme  = read.fwf(file=filename, widths= rep(11,12))
       scheme  = t(apply(scheme,1,function(x) gsub(" ","",x)))
       for (i in 1:nrow(scheme)) {
@@ -64,8 +64,9 @@ kinParse = function(
         products[[nbReac]]  = terms[!is.na(terms) & terms!="" & terms!="HV"]
         terms=scheme[i,7:12]
         spr = unique(unlist(c(reactants[[nbReac]],products[[nbReac]])))
-        if(ionsKill) {# Remove all ions in network by forbidding photo-ionization
-          anyIons = any(spCharge(spr) != 0)
+        if(ionsKill) {
+          # Remove all ions in network by forbidding photo-ionization
+          anyIons = any(spCharge(spr) != 0); print(c(nbReac,anyIons))
           if(anyIons) {
             nbReac = nbReac - 1
             next
@@ -628,6 +629,16 @@ output$chemDBVersions <- renderUI({
     photoDir = file.path(chemDBDir(), 'PhotoProcs_latest')
     allReso  = list.dirs(path = photoDir,recursive = FALSE)
     allReso  = basename(allReso)
+
+    if(!is.null(chemDBDirLoc())) {
+      phoVers  = allVersions[grepl('Local_PhotoProcs', allVersions)]
+      # Use latest verseion
+      photoDir = file.path(
+        chemDBDirLoc(),
+        sub('Local_','',phoVers[length(phoVers)]) )
+      reso     = list.dirs(path = photoDir,recursive = FALSE)
+      allReso  = unique(c(allReso,basename(reso)))
+    }
 
     # Define working versions
     phoVers = photoVersion

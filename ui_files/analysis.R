@@ -68,6 +68,11 @@ sidebarLayout(
             column(
               width = 3,
               wellPanel(
+                uiOutput(
+                  "categsPlot"
+                ),
+                strong("Plot"),
+                hr(),
                 checkboxInput(
                   "mcPlot",
                   "Show error bands",
@@ -87,9 +92,6 @@ sidebarLayout(
                   "ppscale",
                   "Draw PPM scale",
                   value = FALSE
-                ),
-                uiOutput(
-                  "categsPlot"
                 )
               )
             ),
@@ -117,6 +119,11 @@ sidebarLayout(
             column(
               width = 3,
               wellPanel(
+                uiOutput(
+                  "categsPlotMS"
+                ),
+                strong("Plot"),
+                hr(),
                 checkboxInput(
                   "mcPlotMS",
                   "Show error bars",
@@ -126,9 +133,6 @@ sidebarLayout(
                   "ppScaleMS",
                   "Draw PPM scale",
                   value = FALSE
-                ),
-                uiOutput(
-                  "categsPlotMS"
                 ),
                 sliderInput(
                   "timeMS",
@@ -183,6 +187,28 @@ sidebarLayout(
             column(
               width = 3,
               wellPanel(
+                fluidRow(
+                  column(6,
+                         textInput(
+                           "SASpecies",
+                           "Target",
+                           width = "100%",
+                           value = NULL,
+                           placeholder = "Species"
+                         )
+                  ),
+                  column(6,
+                         actionButton(
+                           'doSA',
+                           'Run SA',
+                           icon = icon('gear')
+                         ),
+                         tags$style(
+                           type = 'text/css',
+                           "#doSA { width:100%; margin-top: 27px;}"
+                         )
+                  )
+                ),
                 radioButtons(
                   "anaType",
                   "Sensitivity indices",
@@ -192,19 +218,6 @@ sidebarLayout(
                     "dHSIC"        = "hsic"
                   )
                 ),
-                textInput(
-                  "SASpecies",
-                  "Choose species",
-                  width = "50%",
-                  value = NULL,
-                  placeholder = "Type species"
-                ),
-                actionButton(
-                  'doSA',
-                  'Run SA',
-                  icon = icon('gear')
-                ),
-                hr(),
                 radioButtons(
                   "SAPlotType",
                   "Plot Type",

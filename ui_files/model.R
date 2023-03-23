@@ -2,7 +2,7 @@ sidebarLayout(
   sidebarPanel(
     width = sideWidth,
     h4("Model control"),
-    hr( style="border-color: #666;"),
+    # hr( style="border-color: #666;"),
     verbatimTextOutput("contentsNmlMsg")
   ),
   mainPanel(
@@ -84,7 +84,7 @@ sidebarLayout(
                       'netColoring',
                       'Color scheme',
                       choiceNames = list(
-                        'Volpert','Charge','Radicals','Composition','Mass'
+                        'Volpert','Charge','Radicals','Composition','Heavy atoms'
                       ),
                       choiceValues = list(
                         'volpert','charge','radicals','compo','mass'

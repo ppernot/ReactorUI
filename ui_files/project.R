@@ -34,7 +34,25 @@ sidebarLayout(
           'Save Project',
           icon = icon('gear')
         )
-
+      ),
+      br(),br(),br(),
+      wellPanel(
+        h4("About"),
+        hr(),
+        h5("Author      : P. Pernot"),
+        h5("Affiliation : ",a(href="https://www.cnrs.fr/","CNRS")),
+        h5(paste0("Version     : ",version)),
+        # h5("Date        : 2022/09/19"),
+        br(),
+        a(href="https://github.com/ppernot/ReactorUI","How to cite..."),
+        br(),
+        a(href="https://github.com/ppernot/ReactorUI","code@github"),
+        br(),
+        a(href="https://github.com/ppernot/ReactorUI/issues",
+          "Bugs report, Features request"),
+        br(),
+        a(href="https://ppernot.github.io/ReactorUI",
+          "User's manual")
       )
     )
   ),

@@ -1,3 +1,5 @@
+version = 1.5
+
 # Options ####
 Sys.setlocale(
   category = "LC_NUMERIC",

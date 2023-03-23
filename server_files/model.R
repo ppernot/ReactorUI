@@ -510,7 +510,8 @@ setGroups = function(species, netColoring, vlpI) {
 
   } else if (netColoring == 'compo') {
     # Define species groups according to composition
-    grp = rep('Misc.',length(species))
+    lnk = '.'
+    grp = rep('Dummy',length(species))
     sel = colSums(compo) != 0
     ns  = sum(sel)
     elt = elements[sel]
@@ -527,7 +528,7 @@ setGroups = function(species, netColoring, vlpI) {
           e2 = elt[j]
           sel = cop[,i] & cop[,j]
           if(any(sel))
-            grp[sel] = paste0(e1,'&',e2)
+            grp[sel] = paste0(e1,lnk,e2)
         }
       }
     if(ns >= 3)
@@ -539,7 +540,7 @@ setGroups = function(species, netColoring, vlpI) {
             e3 = elt[k]
             sel = cop[,i] & cop[,j] & cop[,k]
             if(any(sel))
-              grp[sel] = paste0(e1,'&',e2,'&',e3)
+              grp[sel] = paste0(e1,lnk,e2,lnk,e3)
           }
         }
       }
@@ -554,7 +555,7 @@ setGroups = function(species, netColoring, vlpI) {
               e4 = elt[l]
               sel = cop[,i] & cop[,j] & cop[,k] & cop[,l]
               if(any(sel))
-                grp[sel] = paste0(e1,'&',e2,'&',e3,'&',e4)
+                grp[sel] = paste0(e1,lnk,e2,lnk,e3,lnk,e4)
             }
           }
         }
@@ -562,8 +563,9 @@ setGroups = function(species, netColoring, vlpI) {
 
   }  else if (netColoring == 'mass') {
     nbh = nbHeavyAtoms(species)
-    nbh[is.na(nbh)] = 0
-    grp = paste0('C',nbh)
+    nbh[species %in% spDummy] = max(nbh, na.rm = TRUE) + 2
+    # nbh[is.na(nbh)] = 0
+    grp = nbh
 
   }
   return(grp)

@@ -1036,16 +1036,17 @@ plotMS <- function(
   text.cex = 1) {
 
   plot(x, y, type = 'n',
-       xlim = xlim, xlab = xlab, cex.axis=0.75,
+       xlim = xlim, xlab = xlab, cex.axis=0.75, xaxt = 'n',
        ylim = ylim, ylab = 'Mole fraction', yaxs ='i',
        main = main)
 
   # Axis
-  if(diff(range(xlim)) <= 20)
+  if(diff(range(xlim)) <= 20) {
     step = 1
-  else
+  } else {
     step = 5
-  ti = seq(floor(xlim[1]), ceiling(xlim[2]), by = step)
+  }
+  ti = seq(floor(xlim[1]/step)*step, ceiling(xlim[2]/step)*step, by = step)
   axis(side = 1, at = ti, labels = ti, cex.axis=0.75)
   grid()
 

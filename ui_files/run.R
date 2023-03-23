@@ -2,7 +2,7 @@ sidebarLayout(
   sidebarPanel(
     width = sideWidth,
     h4("Run Reactor"),
-    hr( style="border-color: #666;"),
+    hr(),
     uiOutput("nMCRunSelect"),
     tabsetPanel(
       tabPanel(

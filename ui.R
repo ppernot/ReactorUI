@@ -11,6 +11,13 @@ function(request) {
     theme = shinythemes::shinytheme(
       c("cosmo", "cerulean", "spacelab", "yeti")[3]
     ),
+    tags$head(tags$style(HTML("
+      hr {
+        height: 1px;
+        margin-top: 0.0em;
+        background: #666;
+      }"
+    ))),
     tabPanel(
       title = "Project",
       source_ui("project.R")
@@ -30,14 +37,14 @@ function(request) {
     tabPanel(
       title = "Fluxes",
       source_ui("fluxes.R")
-    ),
+    )#,
     # tabPanel(
     #   title = "Downloads",
     #   source_ui("downloads.R")
     # ),
-    tabPanel(
-      title = "About",
-      source_ui("about.R")
-    )
+    # tabPanel(
+    #   title = "About",
+    #   source_ui("about.R")
+    # )
   )
 }

@@ -381,7 +381,8 @@ generateCategories = function(species) {
   radic[is.na(radic)] = 0
 
   ## Define species groups according to composition
-  grp = rep('Misc.',length(species))
+  lnk = '.'
+  grp = rep('Dummy',length(species))
   sel = colSums(compo) != 0
   ns  = sum(sel)
   elt = elements[sel]
@@ -398,7 +399,7 @@ generateCategories = function(species) {
         e2 = elt[j]
         sel = cop[,i] & cop[,j]
         if(any(sel))
-          grp[sel] = paste0(e1,'&',e2)
+          grp[sel] = paste0(e1,lnk,e2)
       }
     }
   if(ns >= 3)
@@ -410,7 +411,7 @@ generateCategories = function(species) {
           e3 = elt[k]
           sel = cop[,i] & cop[,j] & cop[,k]
           if(any(sel))
-            grp[sel] = paste0(e1,'&',e2,'&',e3)
+            grp[sel] = paste0(e1,lnk,e2,lnk,e3)
         }
       }
     }
@@ -425,7 +426,7 @@ generateCategories = function(species) {
             e4 = elt[l]
             sel = cop[,i] & cop[,j] & cop[,k] & cop[,l]
             if(any(sel))
-              grp[sel] = paste0(e1,'&',e2,'&',e3,'&',e4)
+              grp[sel] = paste0(e1,lnk,e2,lnk,e3,lnk,e4)
           }
         }
       }
@@ -433,15 +434,15 @@ generateCategories = function(species) {
 
   ## Mass
   mass = apply(compo, 1, massFormula)
-  if(any(species %in% spDummy)){
-    dummyMass   = round(max(mass,na.rm=TRUE) + 2 )
+  if (any(species %in% spDummy)) {
+    dummyMass   = round(max(mass, na.rm = TRUE) + 2)
     mass[species %in% spDummy] = dummyMass
   }
 
   ## Nb of heavy atoms
   nbh = nbHeavyAtoms(species)
-  if(any(species %in% spDummy))
-    nbh[species %in% spDummy] = max(nbh) + 1
+  if (any(species %in% spDummy))
+    nbh[species %in% spDummy] = max(nbh, na.rm = TRUE) + 2
   # nbh[is.na(nbh)] = 0
 
   list(
@@ -636,7 +637,7 @@ output$categsPlot <- renderUI({
   ui = list(
     br(),
     strong("Selection"),
-    hr(style="border-color: #666;")
+    hr()
   )
   ii = 3
 
@@ -837,7 +838,7 @@ req(speciesCategories())
 ui = list(
   br(),
   strong("Selection"),
-  hr(style="border-color: #666;")
+  hr()
 )
 ii = 3
 

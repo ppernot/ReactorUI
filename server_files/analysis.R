@@ -1,5 +1,3 @@
-speciesCategories = reactiveVal(NULL)
-
 # Functions ####
 getConc  = function(concThresh = -50) {
 

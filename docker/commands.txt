@@ -4,7 +4,7 @@ SETUP :
 
 BUILD :
     1/ cd Titan-APSIS
-    2/ docker build -t ppernot1/reactorui:v1.5 -t ppernot1/reactorui:latest -f ReactorUI/docker/Dockerfile .
+    2/ docker build -t ppernot1/reactorui:v1.6 -t ppernot1/reactorui:latest -f ReactorUI/docker/Dockerfile .
     3/ docker push --all-tags ppernot1/reactorui
 
 RUN :

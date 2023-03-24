@@ -70,6 +70,7 @@ generateUpdatedControl = function() {
   writeLines(namelist, oldCtrl)
 }
 output$nMCRunSelect <- renderUI({
+  req(projectDir())
 
   # Max runs to max MC data samples
   InputMCDir = file.path(projectDir(),'MC_Input','Reactions')
@@ -242,6 +243,7 @@ observeEvent(
 running = reactiveVal(NULL)
 observeEvent(
   input$reactorRun, {
+    req(reacData())
 
     # Generate updated control.dat
     generateUpdatedControl()

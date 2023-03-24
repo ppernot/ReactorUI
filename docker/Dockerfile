@@ -39,7 +39,7 @@ COPY ReactorUI/server_files /ReactorUI/server_files/
 COPY ReactorUI/R /ReactorUI/R/
 
 # Chemical database
-# ADD Reactor_Runs/ChemDB.tar.gz /
+ADD Reactor_Runs/ChemDB.tar.gz /
 
 # Add mounting point for local ChemDB
 RUN mkdir /ChemDBLocal

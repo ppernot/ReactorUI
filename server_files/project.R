@@ -14,6 +14,7 @@ statsList    = reactiveVal(NULL)
 fluxesList   = reactiveVal(NULL) # flMean, flSd...
 graphsList   = reactiveVal(NULL) # connectivity matrices :linksR, linksR2
 stoechList   = reactiveVal(NULL) # stoechiometry matrices: L, R
+speciesCategories = reactiveVal(NULL)
 
 # Open ####
 shinyFiles::shinyDirChoose(
@@ -41,6 +42,7 @@ observeEvent(
   fluxesList(NULL)
   graphsList(NULL)
   stoechList(NULL)
+  speciesCategories(NULL)
 
   if(input$newProj) {
 

@@ -310,47 +310,46 @@ observeEvent(
         file.remove(allFiles)
       }
 
-      running(
-        try(
-          system2(
-            command = file.path(projectDir(),'Scripts','MCRun_Loc1.sh'),
-            args    = c(first,nrun,projectDir()),
-            stdout  = stdout,
-            stderr  = stderr,
-            wait    = FALSE ),
-          silent = TRUE
-        )
-      )
-
-      # # Tried to use progressbar by managing the loop internally,
-      # # PB: have to put "wait = TRUE" to avoid process mingling
-      # #     and the output of the runs is not displayed in RT
-      # withProgress(
-      #   message = 'Reactor',
-      #   {
-      #     for (iMC in first:(first+nrun)) {
-      #       incProgress(
-      #         1/nrun,
-      #         detail = paste('Run #', iMC, '/', nrun))
-      #       running(
-      #         try(
-      #           system2(
-      #             command = paste0(projectDir(),'/Scripts/OneRun_Loc.sh'),
-      #             args    = c(iMC,projectDir()),
-      #             stdout  = stdout,
-      #             stderr  = stderr,
-      #             wait    = TRUE ), # PB: does not display code output
-      #           silent = TRUE
-      #         )
-      #       )
-      #     }
-      #   }
+      ## 2023/03: removed parallel running causing files conflicts in docker
+      # running(
+      #   try(
+      #     system2(
+      #       command = file.path(projectDir(),'Scripts','MCRun_Loc1.sh'),
+      #       args    = c(first,nrun,projectDir()),
+      #       stdout  = stdout,
+      #       stderr  = stderr,
+      #       wait    = FALSE ),
+      #     silent = TRUE
+      #   )
       # )
+
+      ## 2023/03: switched to sequential running and progressbar
+      withProgress(
+        message = 'Reactor',
+        {
+          for (iMC in first:(first+nrun)) {
+            incProgress(
+              1/(nrun+1),
+              detail = paste('Run #', iMC, '/', nrun+1))
+            running(
+              try(
+                system2(
+                  command = paste0(projectDir(),'/Scripts/OneRun_Loc.sh'),
+                  args    = c(iMC,projectDir()),
+                  stdout  = stdout,
+                  stderr  = stderr,
+                  wait    = TRUE ), # PB: does not display code output
+                silent = TRUE
+              )
+            )
+          }
+        }
+      )
     }
   }
 )
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# PB: reactiveFileReader works hapazardly in container
+# PB: reactiveFileReader works hapazardly in docker container
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 stdErr = reactiveFileReader(
   intervalMillis = 500,

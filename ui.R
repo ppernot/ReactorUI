@@ -6,11 +6,11 @@ function(request) {
     )$value
   }
 
-  navbarPage(strong("Reactor"),
+  navbarPage(strong(paste0("Reactor ",version)),
     theme = shinythemes::shinytheme(
       c("cosmo", "cerulean", "spacelab", "yeti")[3]
     ),
-    selected = "Project", # The tag section takes the first entry
+    selected = "Project", # The tags section takes the first entry !?!?
     tags$head(
       tags$style(
         HTML("hr { height: 1px; margin-top: 0.0em; background: #666;}")

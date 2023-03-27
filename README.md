@@ -18,9 +18,13 @@ and
 > (Version 1.3). <https://doi.org/10.5281/zenodo.3946078>
    
 
-## New Release (v_1.3)
+## New Release (v_1.6)
 
-* Enables the use of a local chemical DB (for nominal run)
+* Improves the handling of non-CHON elements in graphics
+
+* Enables the use of a local chemical DB
+
+* Misc. stability improvements
 
     
 ## Docker container

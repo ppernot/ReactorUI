@@ -10,29 +10,30 @@ spDummy     = c('E', 'He',
                 'Products')
 
 # Functions
-filterFormula <- function(sp) {
-  # Filter out non-stoechimetric notations
-  # to enable composition calculation in get.atoms()
-  sp1 = sub("^l-", "", sub("^c-", "", sub("^t-", "", sp)))
-  sp1 = sub("^l", "", sub("^c", "", sub("^t", "", sub("^i", "", sp1))))
-  sp1 = sub("\\(.*\\)", "", sp1)
-  sp1 = sub("^X", "", sp1)
-  sp1 = sub("^1", "", sp1)
-  sp1 = sub("^3", "", sp1)
-  sp1 = sub("C3P", "C", sp1)
-  sp1 = sub("N4S", "N", sp1)
-  sp1 = sub("N2D", "N", sp1)
-  sp1 = sub("N1D", "N", sp1)
-  sp1 = sub("N2P", "N", sp1)
-  sp1 = sub("N3P", "N", sp1)
-  sp1 = sub("O1S", "O", sp1)
-  sp1 = sub("O1D", "O", sp1)
-  sp1 = sub("O3P", "O", sp1)
-  sp1 = sub("S1D", "S", sp1)
-  sp1 = sub("S3P", "S", sp1)
-  sp1 = sub("\\+", "", sp1)
-  return(sp1)
-}
+# filterFormula <- function(sp) {
+#   # Filter out non-stoechimetric notations
+#   # to enable composition calculation in get.atoms()
+#   sp1 = sub("^l-", "", sub("^c-", "", sub("^t-", "", sp)))
+#   sp1 = sub("^l", "", sub("^c", "", sub("^t", "", sub("^i", "", sp1))))
+#   sp1 = sub("\\(.*\\)", "", sp1)
+#   sp1 = sub("^X",   "", sp1)
+#   sp1 = sub("^1",   "", sp1)
+#   sp1 = sub("^3",   "", sp1)
+#   sp1 = sub("C3P", "C", sp1)
+#   sp1 = sub("N4S", "N", sp1)
+#   sp1 = sub("N2D", "N", sp1)
+#   sp1 = sub("N1D", "N", sp1)
+#   sp1 = sub("N2P", "N", sp1)
+#   sp1 = sub("N3P", "N", sp1)
+#   sp1 = sub("O1S", "O", sp1)
+#   sp1 = sub("O1D", "O", sp1)
+#   sp1 = sub("O3P", "O", sp1)
+#   sp1 = sub("S1S", "S", sp1)
+#   sp1 = sub("S1D", "S", sp1)
+#   sp1 = sub("S3P", "S", sp1)
+#   sp1 = sub("\\+",  "", sp1)
+#   return(sp1)
+# }
 nbHeavyAtoms <- function(spList) {
   # Number of non-hydrogen atoms in formula
   compo = t(sapply(spList, get.atoms))

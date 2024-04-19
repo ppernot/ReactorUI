@@ -82,31 +82,35 @@ getConc  = function(concThresh = -50) {
 
   # Save Neutrals
   df = data.frame(
+    species = species[neus],
     mass  = mass[neus],
     mean  = mmol[neus],
     sd    = cnv * mmol[neus] * ySd[nt,neus],
     low95 = 10^yLow95[nt,neus],
     sup95 = 10^ySup95[nt,neus],
-    row.names = species[neus]
+    row.names = NULL
   )
   io = order(mass[neus],na.last = TRUE)
   write.csv(
     df[io,],
+    row.names = FALSE,
     file = file.path(dirOut,'MoleFracNeutrals_tFinal.csv')
   )
 
   # Save Ions
   df = data.frame(
+    species = species[ions],
     mass  = mass[ions],
     mean  = mmol[ions],
     sd    = cnv * mmol[ions] * ySd[nt,ions],
     low95 = 10^yLow95[nt,ions],
     sup95 = 10^ySup95[nt,ions],
-    row.names = species[ions]
+    row.names = NULL
   )
   io = order(mass[ions],na.last = TRUE)
   write.csv(
     df[io,],
+    row.names = FALSE,
     file = file.path(dirOut,'MoleFracIons_tFinal.csv')
   )
 

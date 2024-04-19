@@ -5,16 +5,6 @@ WORKDIR /
 # Mounting point for local Projects folder
 RUN mkdir /Projects
 
-# Unpack misc scripts
-ADD Reactor_Runs/ReacCodes.tar.gz /
-
-# Install code
-COPY Reactor /Reactor/
-WORKDIR /Reactor
-RUN  ./compil \
-  && mv reactor /ReactorCodes
-WORKDIR /
-
 # Install packages
 
 ## renv
@@ -37,6 +27,17 @@ COPY ReactorUI/server.R /ReactorUI/
 COPY ReactorUI/ui_files /ReactorUI/ui_files/
 COPY ReactorUI/server_files /ReactorUI/server_files/
 COPY ReactorUI/R /ReactorUI/R/
+
+# Unpack misc scripts
+WORKDIR /
+ADD Reactor_Runs/ReacCodes.tar.gz /
+
+# Install code
+COPY Reactor /Reactor/
+WORKDIR /Reactor
+RUN  ./compil \
+  && mv reactor /ReactorCodes
+WORKDIR /
 
 # Chemical database
 ADD Reactor_Runs/ChemDB.tar.gz /

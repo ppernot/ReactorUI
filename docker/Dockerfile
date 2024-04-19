@@ -27,6 +27,7 @@ COPY ReactorUI/server.R /ReactorUI/
 COPY ReactorUI/ui_files /ReactorUI/ui_files/
 COPY ReactorUI/server_files /ReactorUI/server_files/
 COPY ReactorUI/R /ReactorUI/R/
+COPY ReactorUI/data /ReactorUI/data/
 
 # Unpack misc scripts
 WORKDIR /

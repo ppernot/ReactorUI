@@ -1,15 +1,36 @@
 # Set global variables
 
-elements    = c("H", "C", "N", "O", "S", "Ar")
-numElecElem = c( 1 ,  6 ,  7 ,  8 , 16 ,  18 )
-massElem    = mass(elements)
-spDummy     = c('E', 'He',
-                "SOOT",'SOOTC','SOOTN','SOOTC+','SOOTS','SOOTO',
-                'CxHy+','CxHy','CxHyNz+','CxHyNz',
-                'C4H2X','HC3NX','HC5NX',
-                'Products')
+## Now stored in ../data
+# elements    = c("H", "C", "N", "O", "S", "Ar")
+# numElecElem = c( 1 ,  6 ,  7 ,  8 , 16 ,  18 )
+# massElem    = mass(elements)
+# spDummy     = c('E', 'He',
+#                 "SOOT",'SOOTC','SOOTN','SOOTC+','SOOTS','SOOTO',
+#                 'CxHy+','CxHy','CxHyNz+','CxHyNz',
+#                 'C4H2X','HC3NX','HC5NX',
+#                 'Products')
+
+# Stoechimetric data
+elTable       = read.csv(file.path('data','elements.csv'), header = FALSE)
+elements      = unlist(elTable[1,])
+numElecElem   = as.numeric(unlist(elTable[2,]))
+massElem      = CHNOSZ::mass(elements)
+spDummy       = unlist(read.csv(file.path('data','dummySpecies.csv'),
+                                header = FALSE))
+stoechFilters = read.csv(file.path('data','stoechFilters.csv'),
+                         header = FALSE,
+                         allowEscapes = TRUE)
 
 # Functions
+filterFormula <- function (sp) {
+  # Normalize chemical formula for mass estimation
+  if(is.null(stoechFilters))
+    stop(">>> Need stoechFilters in global Env. !")
+  sp1 = sp
+  for(i in 1:nrow(stoechFilters))
+    sp1 = sub(stoechFilters[i,1], stoechFilters[i,2], sp1)
+  return(sp1)
+}
 # filterFormula <- function(sp) {
 #   # Filter out non-stoechimetric notations
 #   # to enable composition calculation in get.atoms()

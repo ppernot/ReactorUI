@@ -28,15 +28,15 @@ sidebarLayout(
                   ),
                   column(
                     width = 9,
-                    # withSpinner(
+                    shinycssloaders::withSpinner(
                       tagAppendAttributes(
                         verbatimTextOutput(
                           "summaryScheme"
                         ),
                         style="white-space:pre-wrap; text-align: left;
                                overflow-y:scroll; max-height: 450px;"
-                      # ),
-                      # type=4
+                      ),
+                      type=4
                     )
                   )
                 )
@@ -131,13 +131,13 @@ sidebarLayout(
                   ),
                   column(
                     width = 9,
-                    # withSpinner(
+                    shinycssloaders::withSpinner(
                       dataTableOutput(
                         "tabScheme",
                         height = "auto"
-                      ) #,
-                    #   type=4
-                    # )
+                      ),
+                      type=4
+                    )
                   )
                 )
               ),

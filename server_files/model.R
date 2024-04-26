@@ -618,6 +618,8 @@ output$chemDBVersions <- renderUI({
 
     # Gather available DB versions
     allAvailable = list.dirs(path = chemDBDir(),recursive = FALSE)
+    nbsf = which( allAvailable != 'BeamSpectrumFiles')
+    allAvailable = allAvailable[nbsf]
     allVersions  = paste0('Public_',basename(allAvailable))
 
     if(!is.null(chemDBDirLoc())) {
@@ -628,9 +630,12 @@ output$chemDBVersions <- renderUI({
     }
 
     # Available spectral resolutions
-    photoDir = file.path(chemDBDir(), 'PhotoProcs_latest')
-    allReso  = list.dirs(path = photoDir,recursive = FALSE)
-    allReso  = basename(allReso)
+    phoVers  = allVersions[grepl('Public_PhotoProcs', allVersions)]
+    photoDir = file.path(
+      chemDBDir(),
+      sub('Public_','',phoVers[length(phoVers)]) )
+    reso     = list.dirs(path = photoDir,recursive = FALSE)
+    allReso  = unique(basename(reso))
 
     if(!is.null(chemDBDirLoc())) {
       phoVers  = allVersions[grepl('Local_PhotoProcs', allVersions)]
@@ -734,6 +739,20 @@ output$checkChanges <- renderPrint({
     ll$photoVersion = phoVers
     chemDBData(ll)
   }
+  # Update available resolutions list
+  if(grepl('Public_',phoVers)) {
+    photoDir = file.path(chemDBDir(), sub('Public_','',phoVers) )
+  } else {
+    photoDir = file.path(chemDBDirLoc(), sub('Local_','',phoVers) )
+  }
+  reso     = list.dirs(path = photoDir,recursive = FALSE)
+  allReso  = unique(basename(reso))
+  shiny::updateSelectInput(
+    session,
+    'speReso',
+    choices  = allReso,
+    selected = input$speReso
+  )
 
   req(input$neuVers)
   neuVers = input$neuVers
@@ -1789,7 +1808,6 @@ getSpectrumReso = function(file) {
   return(reso)
 }
 loadSpectrumFile = function(source, path, checkReso = TRUE) {
-
   if(checkReso) {
     # Check resolution
     speReso = reacData()$spectralResolution
@@ -1877,15 +1895,30 @@ output$irradUI <- renderUI({
   }
 
   # List of existing spectrum files with correct resolution
-  source =  file.path( projectDir(),
-    '..','..','ChemDBPublic','BeamSpectrumFiles',
-    paste0(speReso,'nm'))
-  files =  list.files(
+  source = file.path(chemDBDir(), 'BeamSpectrumFiles',
+                      paste0(speReso,'nm'))
+  files = list.files(
     path = source,
     pattern = '.txt',
     full.names = TRUE
   )
-  names(files)= file.path(paste0(speReso,'nm'),basename(files))
+  names(files) = file.path(
+    paste0('Public_',speReso,'nm'),
+    basename(files))
+
+  if(!is.null(chemDBDirLoc())) {
+    source = file.path(chemDBDirLoc(), 'BeamSpectrumFiles',
+                       paste0(speReso,'nm'))
+    fil = list.files(
+      path = source,
+      pattern = '.txt',
+      full.names = TRUE
+    )
+    names(fil) = file.path(
+      paste0('Local_',speReso,'nm'),
+      basename(fil))
+    files = c(files, fil)
+  }
 
   tagList(
     fileInput(
@@ -1899,14 +1932,14 @@ output$irradUI <- renderUI({
     selectizeInput(
       "bsfSelect",
       label = "Predefined files",
-      choices =c(
+      choices = c(
         "Choose one:" = "",
         files)
     )
   )
 
 })
-outputOptions(output, "irradUI",suspendWhenHidden = FALSE)
+outputOptions(output, "irradUI", suspendWhenHidden = FALSE)
 observeEvent(input$beamSpectrumFileName, {
   source = input$beamSpectrumFileName
   loadSpectrumFile(

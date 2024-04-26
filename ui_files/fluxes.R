@@ -107,26 +107,26 @@ sidebarLayout(
             )
           )
         ),
-        tabPanel(
-          title=h4("ViewFlow-D3"),
-          br(),
-          # withSpinner(
-          forceNetworkOutput(
-            "viewFlowD3",
-            height = 700
-            # ),
-            # type=4
-          )
-        ),
+        # tabPanel(
+        #   title=h4("ViewFlow-D3"),
+        #   br(),
+        #   shinycssloaders::withSpinner(
+        #   forceNetworkOutput(
+        #     "viewFlowD3",
+        #     height = 700
+        #     ),
+        #     type=4
+        #   )
+        # ),
         tabPanel(
           title=h4("ViewFlow (WIP)"),
           br(),
-          # withSpinner(
+          shinycssloaders::withSpinner(
             plotOutput(
               "viewFlow",
               height = 700
-            # ),
-            # type=4
+            ),
+            type=4
           )
         ),
         id="fluxesTabset"

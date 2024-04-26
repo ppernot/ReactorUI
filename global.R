@@ -1,4 +1,4 @@
-version = 1.7
+version = "1.7a"
 
 # Options ####
 Sys.setlocale(
@@ -150,7 +150,7 @@ listParsReacUnits <- c(
   wallFactor   = 'unitless'
 )
 
-spectrumData_default = list(
-  beamSpectrumFileName =
-    '../../ChemDBPublic/BeamSpectrumFiles/1nm/stellarflux.txt'
-)
+# spectrumData_default = list(
+#   beamSpectrumFileName =
+#     '../../ChemDBPublic/BeamSpectrumFiles/1nm/stellarflux.txt'
+# )

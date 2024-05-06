@@ -911,7 +911,7 @@ output$chemistrySimplify <- renderUI({
 
   ui
 })
-# outputOptions(output, "chemistrySimplify",suspendWhenHidden = FALSE)
+outputOptions(output, "chemistrySimplify",suspendWhenHidden = FALSE)
 # Generate network ####
 observeEvent(
   input$generateNetwork,

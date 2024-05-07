@@ -15,7 +15,7 @@ sidebarLayout(
           verbatimTextOutput(
             "loadMsg"
           ),
-          type=4
+          type = 7
         )
       )
     )
@@ -30,8 +30,11 @@ sidebarLayout(
             tabsetPanel(
               tabPanel(
                 "Outputs",
-                verbatimTextOutput(
-                  "sanityOutputs"
+                shinycssloaders::withSpinner(
+                  verbatimTextOutput(
+                    "sanityOutputs"
+                  ),
+                  type = 7
                 )
               ),
               tabPanel(
@@ -107,7 +110,7 @@ sidebarLayout(
                     resetOnNew = TRUE
                   )
                 ),
-                type=4
+                type = 7
               )
             )
           )
@@ -175,7 +178,7 @@ sidebarLayout(
                   "pseudoMS",
                   height = plotHeight
                 ),
-                type=4
+                type = 7
               )
             )
           )
@@ -235,7 +238,7 @@ sidebarLayout(
                   "sensitivity",
                   height = plotHeight
                 ),
-                type=4
+                type = 7
               )
             )
           )

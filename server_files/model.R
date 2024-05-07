@@ -66,7 +66,7 @@ kinParse = function(
         spr = unique(unlist(c(reactants[[nbReac]],products[[nbReac]])))
         if(ionsKill) {
           # Remove all ions in network by forbidding photo-ionization
-          anyIons = any(spCharge(spr) != 0); print(c(nbReac,anyIons))
+          anyIons = any(spCharge(spr) != 0) #; print(c(nbReac,anyIons))
           if(anyIons) {
             nbReac = nbReac - 1
             next

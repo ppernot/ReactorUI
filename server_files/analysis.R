@@ -140,49 +140,78 @@ getRates = function() {
   nf = length(files)
 
   ## Get MC rates
-  x = as.data.frame(
-    data.table::fread(files[1], header=FALSE, skip=0)
-  )
-  nRates=length(x)
-  rates=matrix(NA,nrow=nf,ncol=nRates)
-  for(i in seq_along(files) ) {
-    tab = as.data.frame(
-      data.table::fread(files[i], header=FALSE,
-                     skip=0, colClasses='numeric')
+  x = as.vector(
+    data.table::fread(
+      files[1],
+      header = FALSE,
+      skip = 0,
+      data.table = FALSE
+    ))
+  nRates = length(x)
+
+  rates = matrix(NA_real_, nrow = nf, ncol = nRates)
+  for (i in seq_along(files)) {
+    x = data.table::fread(
+      files[i],
+      header = FALSE,
+      skip = 0,
+      data.table = FALSE,
+      colClasses = 'numeric'
     )
-    rates[i,] = t(tab)
+    rates[i,] = as.vector(unlist(x[1,]))
   }
+
   ## Get reac names
   reacs = readLines(
     file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
+  if(length(reacs) != nRates)
+    return(
+      list(
+        alert = 'reac_list.dat inconsistent
+                 with reacs_rates samples'
+      )
+    )
   colnames(rates) = reacs
 
   # Load photorates sample files
   files = list.files(
-    path=paste0(ctrlPars$projectDir,'/MC_Output'),
-    pattern='photo_rates_',
-    full.names=TRUE)
+    path = paste0(ctrlPars$projectDir, '/MC_Output'),
+    pattern = 'photo_rates_',
+    full.names = TRUE
+  )
   nf = length(files)
 
   ## Get MC photo rates
-  x = as.data.frame(
-    data.table::fread(files[1], header=FALSE, skip=0)
+  x = data.table::fread(
+    files[1],
+    header = FALSE,
+    skip = 0,
+    data.table = FALSE
   )
-  nPhotoRates=length(x)
-  photoRates=matrix(NA,nrow=nf,ncol=nPhotoRates)
+  nPhotoRates = length(x)
+
+  photoRates = matrix(NA, nrow = nf, ncol = nPhotoRates)
   for(i in seq_along(files) ) {
-    tab = as.data.frame(
-      data.table::fread(files[i], header=FALSE,
-                     skip=0,
-                     colClasses=c('numeric')
-      )
+    x = data.table::fread(
+      files[i],
+      header=FALSE,
+      skip=0,
+      colClasses=c('numeric'),
+      data.table = FALSE
     )
-    photoRates[i,] = t(tab)
+    photoRates[i,] = as.vector(unlist(x[1,]))
   }
 
   ## Get reac names
   reacs = readLines(
     file.path(ctrlPars$projectDir,'Run','photo_list.dat'))
+  if(length(reacs) != nPhotoRates)
+    return(
+      list(
+        alert = 'photo_list.dat inconsistent
+                 with photo_rates samples'
+      )
+    )
   colnames(photoRates)= reacs
 
   return(
@@ -191,7 +220,8 @@ getRates = function() {
       nRates      = nRates,
       rates       = rates,
       nPhotoRates = nPhotoRates,
-      photoRates  = photoRates
+      photoRates  = photoRates,
+      alert       = NULL
     )
   )
 }
@@ -218,6 +248,7 @@ getIntegStats = function() {
                         skip=0, colClasses='numeric')
     )
     y = as.matrix(tab[,-1])
+    # print(c(i,length(files),dim(stats),dim(y)))
     if (nrow(y) < ntime) {
       stats[i,1:ntime,1:nstat] = NA
       stats[i,1:nrow(y),1:nstat] = y
@@ -448,11 +479,11 @@ generateCategories = function(species) {
   # nbh[is.na(nbh)] = 0
 
   list(
-     charge = charges,
-     radic  = radic,
-     compo  = grp,
-     mass   = mass,
-     heavy  = nbh
+    charge = charges,
+    radic  = radic,
+    compo  = grp,
+    mass   = mass,
+    heavy  = nbh
   )
 
 }
@@ -504,8 +535,8 @@ assignColorsToSpecies <- function(
 
   return (
     list(
-     colsSp   = colsSp,
-     col_trSp = col_trSp
+      colsSp   = colsSp,
+      col_trSp = col_trSp
     )
   )
 }
@@ -607,6 +638,15 @@ observeEvent(
 output$loadMsg <- renderPrint({
   req(concList())
   req(ratesList())
+
+  if( !is.null(ratesList()$alert) )
+    id = shiny::showNotification(
+      h4(ratesList()$alert),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+  req(is.null(ratesList()$alert))
 
   # Extract conc et al.
   for (n in names(concList()))
@@ -806,12 +846,12 @@ output$kinetics <- renderPlot({
           lwd = 1.2*lwd, add = TRUE)
 
   mtext(at  = mfMean[nt,sel],
-       text = species[sel],
-       side = 4,
-       col  = colors$colsSp[sel],
-       las  = 1,
-       adj  = 0,
-       line = 0.2)
+        text = species[sel],
+        side = 4,
+        col  = colors$colsSp[sel],
+        las  = 1,
+        adj  = 0,
+        line = 0.2)
   box()
 
 })
@@ -833,64 +873,64 @@ observeEvent(
 
 # Pseudo MS ####
 output$categsPlotMS <- renderUI({
-req(concList())
-req(speciesCategories())
+  req(concList())
+  req(speciesCategories())
 
-# Begin UI construction
-ui = list(
-  br(),
-  strong("Selection"),
-  hr()
-)
-ii = 3
-
-### Get charge
-# ch = sort(unique(speciesCategories()$charge))
-# if(length(ch) > 1) {
-#   ii = ii + 1
-#   ui[[ii]] = selectInput(
-#     'anaChargesMS',
-#     'Charge',
-#     choices = c("All" = "", ch),
-#     multiple = TRUE
-#   )
-# }
-
-## Identify radicals
-if(sum(speciesCategories()$radic) != 0) {
-  ii = ii + 1
-  ui[[ii]] = checkboxInput(
-    'anaRadicalsMS',
-    'Radicals',
-    value = FALSE
+  # Begin UI construction
+  ui = list(
+    br(),
+    strong("Selection"),
+    hr()
   )
-}
+  ii = 3
 
-## Define species groups according to composition
-gr = sort(unique(speciesCategories()$compo))
-if(length(gr) > 1) {
-  ii = ii + 1
-  ui[[ii]] = selectInput(
-    'anaComposMS',
-    'Composition',
-    choices  = c("All" = "", gr),
-    multiple = TRUE
-  )
-}
+  ### Get charge
+  # ch = sort(unique(speciesCategories()$charge))
+  # if(length(ch) > 1) {
+  #   ii = ii + 1
+  #   ui[[ii]] = selectInput(
+  #     'anaChargesMS',
+  #     'Charge',
+  #     choices = c("All" = "", ch),
+  #     multiple = TRUE
+  #   )
+  # }
 
-## Nb of heavy atoms
-nn = sort(unique(speciesCategories()$heavy))
-if(length(nn) > 1) {
-  ii = ii + 1
-  ui[[ii]] = selectInput(
-    'anaMassMS',
-    'Nb Heavy atoms',
-    choices  = c("All" = "", nn),
-    multiple = TRUE
-  )
-}
+  ## Identify radicals
+  if(sum(speciesCategories()$radic) != 0) {
+    ii = ii + 1
+    ui[[ii]] = checkboxInput(
+      'anaRadicalsMS',
+      'Radicals',
+      value = FALSE
+    )
+  }
 
-ui
+  ## Define species groups according to composition
+  gr = sort(unique(speciesCategories()$compo))
+  if(length(gr) > 1) {
+    ii = ii + 1
+    ui[[ii]] = selectInput(
+      'anaComposMS',
+      'Composition',
+      choices  = c("All" = "", gr),
+      multiple = TRUE
+    )
+  }
+
+  ## Nb of heavy atoms
+  nn = sort(unique(speciesCategories()$heavy))
+  if(length(nn) > 1) {
+    ii = ii + 1
+    ui[[ii]] = selectInput(
+      'anaMassMS',
+      'Nb Heavy atoms',
+      choices  = c("All" = "", nn),
+      multiple = TRUE
+    )
+  }
+
+  ui
 })
 output$pseudoMS <- renderPlot({
   req(concList())
@@ -1004,10 +1044,9 @@ observeEvent(
   ignoreInit = TRUE,
   input$doSA,
   {
-    if(is.null(concList()) |
-       is.null(ratesList()) )
-      return(NULL)
-
+    req(concList())
+    req(ratesList())
+    req(is.null(ratesList()$alert))
     MRList(NULL)
 
     # Extract conc et al.
@@ -1203,11 +1242,9 @@ output$sensitivity <- renderPlot({
 # Sanity ####
 rangesSanityInteg <- reactiveValues(x = NULL, y = NULL)
 output$sanityInteg <- renderPlot({
-  if(is.null(concList()))
-    return(NULL)
-
-  if(is.null(statsList()))
-    statsList(getIntegStats())
+  # req(concList())
+  req(statsList())
+  # statsList(getIntegStats())
 
   # Extract stats
   for (n in names(statsList()))
@@ -1224,7 +1261,6 @@ output$sanityInteg <- renderPlot({
   # Extract graphical params
   for (n in names(gPars))
     assign(n,rlist::list.extract(gPars,n))
-
 
   sel = rep(TRUE, nStat)
   sel[3] = FALSE # do not show NSTEPS (=NACCPT+NREJCT)
@@ -1413,16 +1449,15 @@ observeEvent(
 )
 
 output$sanityOutputs <- renderPrint({
-  if(is.null(concList())   |
-     is.null(ratesList())
-  )
-    return(NULL)
+  req(concList())
+  req(ratesList())
+  req(is.null(ratesList()$alert))
 
   # Extract data from lists
   for (n in names(concList()))
     assign(n,rlist::list.extract(concList(),n))
-
-  if(alert)
+  concAlert = alert
+  if(concAlert)
     cat(' Warning: some simulations stopped prematurely.\n',
         'Probably a spectral radius convergence problem... \n\n')
 
@@ -1509,6 +1544,6 @@ output$sanityOutputs <- renderPrint({
     print(df)
   }
 
-  if(sTot == 0 & !alert)
+  if(sTot == 0 & !concAlert)
     cat('=> No anomaly detected...\n')
 })

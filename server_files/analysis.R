@@ -19,7 +19,7 @@ getConc  = function(concThresh = -50) {
   x = as.data.frame(
     data.table::fread(files[1], header=TRUE, skip=0)
   )
-  time=x[-1,1]
+  time = x[-1,1]
 
   # Species list
   line  = readLines(con=files[1], n=1)
@@ -33,17 +33,30 @@ getConc  = function(concThresh = -50) {
   nt   = length(time)
   conc = moleFrac = array(0, dim = c(nf, nt, nsp))
   for (i in seq_along(files[1:nf])) {
-    tab  = as.data.frame(
-      data.table::fread(files[i], header = TRUE, skip = 0)
+    tab  = data.table::fread(
+      files[i],
+      header = TRUE,
+      skip = 0,
+      data.table = FALSE
     )
     time = tab[-1, 1]
     y    = as.matrix(tab[-1, -1])
+    if(ncol(y) != nsp) {
+      alert2 = paste0('fracmol_',i,' is inconsistent ',
+                      'with previous samples')
+      return(
+        list(
+          alert  = alert,
+          alert2 = alert2
+        )
+      )
+    }
     if (nrow(y) < nt) {
       alert = TRUE
-      conc[i, 1:nt, 1:nsp]          = NA
-      conc[i, 1:nrow(y), 1:nsp]     = y
-      moleFrac[i, 1:nt, 1:nsp]      = NA
-      moleFrac[i, 1:nrow(y), 1:nsp] = y / rowSums(y)
+      conc[i, 1:nt, 1:nsp]          = NA_real_
+      conc[i, 1:nrow(y), 1:ncol(y)]     = y
+      moleFrac[i, 1:nt, 1:nsp]      = NA_real_
+      moleFrac[i, 1:nrow(y), 1:ncol(y)] = y / rowSums(y)
 
     } else {
       conc[i, 1:nt, 1:nsp]     = y[1:nt, 1:nsp]
@@ -127,7 +140,8 @@ getConc  = function(concThresh = -50) {
       mfSd     = ySd,
       mfLow    = yLow95,
       mfSup    = ySup95,
-      alert    = alert
+      alert    = alert,
+      alert2   = NULL
     )
   )
 }
@@ -158,6 +172,13 @@ getRates = function() {
       data.table = FALSE,
       colClasses = 'numeric'
     )
+    if(length(x) != nRates)
+      return(
+        list(
+          alert = paste0('reac_rates_',i,' is inconsistent ',
+                         'with previous samples')
+        )
+      )
     rates[i,] = as.vector(unlist(x[1,]))
   }
 
@@ -199,6 +220,13 @@ getRates = function() {
       colClasses=c('numeric'),
       data.table = FALSE
     )
+    if(length(x) != nPhotoRates)
+      return(
+        list(
+          alert = paste0('photo_rates_',i,' is inconsistent ',
+                         'with previous samples')
+        )
+      )
     photoRates[i,] = as.vector(unlist(x[1,]))
   }
 
@@ -213,6 +241,8 @@ getRates = function() {
       )
     )
   colnames(photoRates)= reacs
+
+  print('getRates done')
 
   return(
     list(
@@ -243,12 +273,22 @@ getIntegStats = function() {
   ntime = nrow(x)
   stats = array(0,dim=c(nf,ntime,nstat))
   for(i in seq_along(files) ) {
-    tab = as.data.frame(
-      data.table::fread(files[i], header=FALSE,
-                        skip=0, colClasses='numeric')
+    x = data.table::fread(
+      files[i],
+      header=FALSE,
+      skip=0,
+      colClasses='numeric',
+      data.table = FALSE
     )
-    y = as.matrix(tab[,-1])
-    # print(c(i,length(files),dim(stats),dim(y)))
+    y = as.matrix(x[,-1])
+    if(ncol(y) != nstat)
+      return(
+        list(
+          alert  = alert,
+          alert2 = paste0('integ_stats_',i,' is inconsistent ',
+                          'with previous samples')
+        )
+      )
     if (nrow(y) < ntime) {
       stats[i,1:ntime,1:nstat] = NA
       stats[i,1:nrow(y),1:nstat] = y
@@ -276,6 +316,8 @@ getIntegStats = function() {
     colnames(ySup95) =
     statNames
 
+  print('getIntegStats done')
+
   return(
     list(
       nfStat   = nf,
@@ -288,7 +330,8 @@ getIntegStats = function() {
       statSd   = ySd,
       statLow  = yLow95,
       statSup  = ySup95,
-      alert    = alert
+      alert    = alert,
+      alert2   = NULL
     )
   )
 }
@@ -637,8 +680,16 @@ observeEvent(
 
 output$loadMsg <- renderPrint({
   req(concList())
-  req(ratesList())
+  if( !is.null(concList()$alert2) )
+    id = shiny::showNotification(
+      h4(concList()$alert2),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+  req(is.null(concList()$alert2))
 
+  req(ratesList())
   if( !is.null(ratesList()$alert) )
     id = shiny::showNotification(
       h4(ratesList()$alert),
@@ -673,6 +724,7 @@ output$loadMsg <- renderPrint({
 # Kinetics ####
 output$categsPlot <- renderUI({
   req(concList())
+  req(is.null(concList()$alert2))
   req(speciesCategories())
 
   # Begin UI construction
@@ -734,6 +786,7 @@ output$categsPlot <- renderUI({
 rangesKinetics <- reactiveValues(x = NULL, y = NULL)
 output$kinetics <- renderPlot({
   req(concList())
+  req(is.null(concList()$alert2))
   req(speciesCategories())
 
   # Extract conc et al.
@@ -874,6 +927,7 @@ observeEvent(
 # Pseudo MS ####
 output$categsPlotMS <- renderUI({
   req(concList())
+  req(is.null(concList()$alert2))
   req(speciesCategories())
 
   # Begin UI construction
@@ -934,6 +988,7 @@ output$categsPlotMS <- renderUI({
 })
 output$pseudoMS <- renderPlot({
   req(concList())
+  req(is.null(concList()$alert2))
   req(speciesCategories())
 
   # Extract conc et al.
@@ -1045,6 +1100,7 @@ observeEvent(
   input$doSA,
   {
     req(concList())
+    req(is.null(concList()$alert2))
     req(ratesList())
     req(is.null(ratesList()$alert))
     MRList(NULL)
@@ -1242,9 +1298,15 @@ output$sensitivity <- renderPlot({
 # Sanity ####
 rangesSanityInteg <- reactiveValues(x = NULL, y = NULL)
 output$sanityInteg <- renderPlot({
-  # req(concList())
   req(statsList())
-  # statsList(getIntegStats())
+  if( !is.null(statsList()$alert2) )
+    id = shiny::showNotification(
+      h4(statsList()$alert2),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'error'
+    )
+  req(is.null(statsList()$alert2))
 
   # Extract stats
   for (n in names(statsList()))
@@ -1450,6 +1512,7 @@ observeEvent(
 
 output$sanityOutputs <- renderPrint({
   req(concList())
+  req(is.null(concList()$alert2))
   req(ratesList())
   req(is.null(ratesList()$alert))
 

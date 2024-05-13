@@ -242,7 +242,7 @@ getRates = function() {
     )
   colnames(photoRates)= reacs
 
-  print('getRates done')
+  # print('getRates done')
 
   return(
     list(
@@ -316,7 +316,7 @@ getIntegStats = function() {
     colnames(ySup95) =
     statNames
 
-  print('getIntegStats done')
+  # print('getIntegStats done')
 
   return(
     list(
@@ -462,7 +462,7 @@ generateCategories = function(species) {
   sel = colSums(compo) != 0
   ns  = sum(sel)
   elt = elements[sel]
-  com = compo[,sel]
+  com = compo[, sel, drop = FALSE]
   cop = com != 0
   for(i in 1:ns) { # 1 element
     e1 = elt[i]

@@ -656,6 +656,10 @@ observeEvent(
   ignoreInit = TRUE,
   input$loadMC, {
 
+    concList(NULL)
+    ratesList(NULL)
+    statsList(NULL)
+
     id = shiny::showNotification(
       h4('Loading concentrations, be patient...'),
       closeButton = FALSE,
@@ -1125,7 +1129,7 @@ observeEvent(
     conc = ifelse(conc==0, NA, log10(conc))
     sdc  = apply(conc,2,function(x) sd(x))
     selC = sdc!=0 & is.finite(sdc)
-    C = conc[,selC]
+    C = conc[,selC, drop = FALSE]
     colnames(C) = species[selC]
 
     # Reaction rates
@@ -1138,7 +1142,8 @@ observeEvent(
     photoRates = ifelse(photoRates==0, NA, log10(photoRates))
     sdc = apply(photoRates,2,function(x) sd(x))
     selPR = sdc!=0 & is.finite(sdc)
-    S = cbind(photoRates[,selPR],rates[,selR])
+    S = cbind(photoRates[,selPR,drop = FALSE],
+              rates[,selR,drop = FALSE])
 
     SASpecies = input$SASpecies
     if(SASpecies != "") { # Check validity

@@ -36,7 +36,7 @@ sidebarLayout(
                         style="white-space:pre-wrap; text-align: left;
                                overflow-y:scroll; max-height: 450px;"
                       ),
-                      type=4
+                      type = 7
                     )
                   )
                 )
@@ -136,7 +136,7 @@ sidebarLayout(
                         "tabScheme",
                         height = "auto"
                       ),
-                      type=4
+                      type = 7
                     )
                   )
                 )
@@ -201,7 +201,42 @@ sidebarLayout(
         tabPanel(
           title=h4("ChemDB Versions"),
           br(),
-          uiOutput("chemDBVersions"),
+          fixedRow(
+            column(
+              width = 4,
+              selectInput(
+                'phoVers',
+                label    = 'PhotoProcs',
+                choices  = list(0,1),
+                selected = 0,
+                width    = '350px'
+              ),
+              selectInput(
+                'neuVers',
+                label    = 'Neutrals',
+                choices  = list(0,1),
+                selected = 0,
+                width    = '350px'
+              ),
+              selectInput(
+                'ionVers',
+                label    = 'Ions',
+                choices  = list(0,1),
+                selected = 0,
+                width    = '350px'
+              )
+            ),
+            column(
+              width = 4,
+              selectInput(
+                'speReso',
+                label    = 'Spectral Resolution',
+                choices  = list(0,1),
+                selected = 0,
+                width    = '350px'
+              )
+            )
+          ),
           verbatimTextOutput("checkChanges")
         )
       )

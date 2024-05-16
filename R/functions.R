@@ -172,3 +172,27 @@ readCtrl <- function(dir) {
 
   return(ctrlList)
 }
+# Generate ID from vector of strings
+txt_collapse <- function(x, collapse = " "){
+  if(!is.list(x)){
+    x <- as.character(x)
+    x <- x[!is.na(x)]
+    if(length(x) == 0){
+      return(NA_character_)
+    }else if(length(x) > 1){
+      x <- paste(x, collapse = collapse)
+    }
+  }else{
+    x <- sapply(x, FUN = function(x, collapse){
+      x <- as.character(x)
+      x <- x[!is.na(x)]
+      if(length(x) == 0){
+        return(NA_character_)
+      }else if(length(x) > 1){
+        x <- paste(x, collapse = collapse)
+      }
+      x
+    }, collapse = collapse)
+  }
+  x
+}

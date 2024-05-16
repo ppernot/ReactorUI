@@ -45,6 +45,8 @@ generateUpdatedControl = function() {
     } else {
       val = form(ll[[n]])
     }
+    if(is.na(val))
+      val = REAC_DATA_default[[n]]
     namelist = paste0(namelist,
                       ' ', n, '=',  val, ',\n')
   }
@@ -54,6 +56,8 @@ generateUpdatedControl = function() {
   namelist = paste0(namelist,'\n','&DB_DATA\n')
   for (n in names(ll)) {
     val = form(ll[[n]])
+    if(is.na(val))
+      val = DB_DATA_default[[n]]
     namelist = paste0(namelist,
                       ' ', n, '=',  val, ',\n')
   }
@@ -297,6 +301,8 @@ observeEvent(
             size = 's'
           ))
           nrun = nrunMax
+          if(nrun < 0)
+            return()
         }
       } else {
         first = 0
@@ -330,7 +336,7 @@ observeEvent(
           for (iMC in first:(first+nrun)) {
             incProgress(
               1/(nrun+1),
-              detail = paste('Run #', iMC, '/', nrun+1))
+              detail = paste('Run #', iMC, '/', first+nrun+1))
             running(
               try(
                 system2(

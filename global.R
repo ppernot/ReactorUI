@@ -1,4 +1,4 @@
-version = "1.7c"
+version = "1.7d"
 
 # Options ####
 Sys.setlocale(

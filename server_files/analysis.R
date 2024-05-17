@@ -466,14 +466,15 @@ generateCategories = function(species) {
   cop = com != 0
   for(i in 1:ns) { # 1 element
     e1 = elt[i]
-    grp[cop[,i]] = e1
+    grp[cop[, i, drop = FALSE]] = e1
   }
   if(ns >= 2)
     for(i in 1:(ns-1)) { # 2 elements
       e1 = elt[i]
       for(j in (i+1):ns) {
         e2 = elt[j]
-        sel = cop[,i] & cop[,j]
+        sel = cop[, i, drop = FALSE] &
+          cop[, j, drop = FALSE]
         if(any(sel))
           grp[sel] = paste0(e1,lnk,e2)
       }
@@ -485,7 +486,9 @@ generateCategories = function(species) {
         e2 = elt[j]
         for(k in (j+1):ns) {
           e3 = elt[k]
-          sel = cop[,i] & cop[,j] & cop[,k]
+          sel = cop[, i, drop = FALSE] &
+            cop[, j, drop = FALSE] &
+            cop[, k, drop = FALSE]
           if(any(sel))
             grp[sel] = paste0(e1,lnk,e2,lnk,e3)
         }
@@ -500,7 +503,10 @@ generateCategories = function(species) {
           e3 = elt[k]
           for(l in (k+1):ns) {
             e4 = elt[l]
-            sel = cop[,i] & cop[,j] & cop[,k] & cop[,l]
+            sel = cop[, i, drop = FALSE] &
+              cop[, j, drop = FALSE] &
+              cop[, k, drop = FALSE] &
+              cop[, l, drop = FALSE]
             if(any(sel))
               grp[sel] = paste0(e1,lnk,e2,lnk,e3,lnk,e4)
           }

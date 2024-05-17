@@ -181,9 +181,18 @@ generateNetwork <- function(
         ncol = length(spInit)
         )
       ) & type == 'photo'
+  if(!any(lReacs)) {
+    return(
+      list(
+        alert = paste('No photo-process for initial species :',
+                      paste0(spInit, collapse = ',')
+        )
+      )
+    )
+  }
   reacList = reacs[lReacs]
 
-  spProds  = species[colSums(R[lReacs,]) != 0 ]
+  spProds  = species[colSums(R[lReacs,,drop = FALSE]) != 0 ]
   spProds  = spProds[!(spProds %in% spInit)]
 
   vlpInd  = rep(NA,length(species))
@@ -193,12 +202,13 @@ generateNetwork <- function(
   ncount = 1
   while ( length(spProds) != 0 ) {
     spInit   = c(spInit,spProds)
-    lReacsU  = rowSums(L[,spInit] == 1) & type == 'photo'
-    lReacsB  = rowSums(L[,! colnames(L) %in% spInit]) == 0 &
+    lReacsU  = rowSums(L[,spInit, drop = FALSE] == 1) &
+      type == 'photo'
+    lReacsB  = rowSums(L[,! colnames(L) %in% spInit, drop = FALSE]) == 0 &
       type != 'photo'
     lReacs   = lReacsU | lReacsB
     reacList = c(reacList,reacs[lReacs])
-    spProds  = species[colSums(R[lReacs,]) != 0]
+    spProds  = species[colSums(R[lReacs,,drop = FALSE]) != 0]
     spProds  = spProds[!(spProds %in% spInit)]
     ncount   = ncount + 1
     vlpInd[spProds] = ncount
@@ -209,12 +219,11 @@ generateNetwork <- function(
   nbSpecies = length(species)
   mass      = mass[species]
   vlpInd    = vlpInd[species]
-
   reacList  = sort(unique(reacList))
   nbReac    = length(reacList)
-  L         = L[reacList, species]
-  R         = R[reacList, species]
-  D         = D[reacList, species]
+  L         = L[reacList, species, drop = FALSE]
+  R         = R[reacList, species, drop = FALSE]
+  D         = D[reacList, species, drop = FALSE]
   params    = params[reacList]
   type      = type[reacList]
   locnum    = locnum[reacList]
@@ -223,10 +232,9 @@ generateNetwork <- function(
 
   # Short tags
   nbPhoto = sum(type == 'photo')
-  reacTags    = c(
-    paste0('Ph', 1:nbPhoto),
-    paste0('R',  1:(nbReac-nbPhoto))
-  )
+  reacTags = paste0('Ph', 1:nbPhoto)
+  if(nbReac > nbPhoto)
+    reacTags = c( reacTags, paste0('R', 1:(nbReac-nbPhoto)) )
   rownames(L) = reacTags
   rownames(R) = reacTags
   rownames(D) = reacTags
@@ -253,10 +261,10 @@ generateNetwork <- function(
         for(sp in dummifiedSinks) {
           isp      = which(species == sp)
           ita      = which(species == target)
-          L        = L[ ,-isp]
+          L        = L[ ,-isp, drop = FALSE]
           ireacs   = which(R[ ,isp] != 0)
-          R[ ,ita] = R[ ,ita] + R[ ,isp]
-          R        = R[ ,-isp]
+          R[ ,ita] = R[ ,ita, drop = FALSE] + R[ ,isp, drop = FALSE]
+          R        = R[ ,-isp, drop = FALSE]
           species  = species[-isp]
           mass     = mass[-isp]
           vlpInd   = vlpInd[-isp]
@@ -968,7 +976,7 @@ observe({
       closeButton = TRUE,
       type = 'error'
     )
-    reacScheme0(NULL)
+    reacScheme(NULL)
 
   } else {
     ll = reacScheme0()

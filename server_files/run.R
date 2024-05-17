@@ -310,7 +310,7 @@ observeEvent(
         # Clean existing runs to avoid mixing with older runs
         allFiles = list.files(
           path = file.path(projectDir(),'MC_Output'),
-          pattern = '.dat',
+          pattern = '.gz',
           full.names = TRUE
         )
         file.remove(allFiles)

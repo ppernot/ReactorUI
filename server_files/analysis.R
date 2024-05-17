@@ -146,6 +146,10 @@ getConc  = function(concThresh = -50) {
   )
 }
 getRates = function() {
+
+  nRates = 0
+  rates  = NULL
+
   # Load react. rates sample files
   files = list.files(
     path    = paste0(ctrlPars$projectDir,'/MC_Output'),
@@ -153,46 +157,52 @@ getRates = function() {
     full.names=TRUE)
   nf = length(files)
 
-  ## Get MC rates
-  x = as.vector(
-    data.table::fread(
-      files[1],
-      header = FALSE,
-      skip = 0,
-      data.table = FALSE
-    ))
-  nRates = length(x)
+  if(nf != 0 ) {
+    ## Get MC rates
+    x = as.vector(
+      data.table::fread(
+        files[1],
+        header = FALSE,
+        skip = 0,
+        data.table = FALSE
+      ))
+    nRates = length(x)
 
-  rates = matrix(NA_real_, nrow = nf, ncol = nRates)
-  for (i in seq_along(files)) {
-    x = data.table::fread(
-      files[i],
-      header = FALSE,
-      skip = 0,
-      data.table = FALSE,
-      colClasses = 'numeric'
-    )
-    if(length(x) != nRates)
+    rates = matrix(NA_real_, nrow = nf, ncol = nRates)
+    for (i in seq_along(files)) {
+      x = data.table::fread(
+        files[i],
+        header = FALSE,
+        skip = 0,
+        data.table = FALSE,
+        colClasses = 'numeric'
+      )
+      if(length(x) != nRates)
+        return(
+          list(
+            alert = paste0('reac_rates_',i,' is inconsistent ',
+                           'with previous samples')
+          )
+        )
+      rates[i,] = as.vector(unlist(x[1,]))
+    }
+
+    ## Get reac names
+    reacs = readLines(
+      file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
+    if(length(reacs) != nRates)
       return(
         list(
-          alert = paste0('reac_rates_',i,' is inconsistent ',
-                         'with previous samples')
+          alert = 'reac_list.dat inconsistent
+                 with reacs_rates samples'
         )
       )
-    rates[i,] = as.vector(unlist(x[1,]))
+    colnames(rates) = reacs
+
   }
 
-  ## Get reac names
-  reacs = readLines(
-    file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
-  if(length(reacs) != nRates)
-    return(
-      list(
-        alert = 'reac_list.dat inconsistent
-                 with reacs_rates samples'
-      )
-    )
-  colnames(rates) = reacs
+  nPhotoRates = 0
+  photoRates  = NULL
 
   # Load photorates sample files
   files = list.files(
@@ -202,47 +212,47 @@ getRates = function() {
   )
   nf = length(files)
 
-  ## Get MC photo rates
-  x = data.table::fread(
-    files[1],
-    header = FALSE,
-    skip = 0,
-    data.table = FALSE
-  )
-  nPhotoRates = length(x)
-
-  photoRates = matrix(NA, nrow = nf, ncol = nPhotoRates)
-  for(i in seq_along(files) ) {
+  if(nf != 0) {
+    ## Get MC photo rates
     x = data.table::fread(
-      files[i],
-      header=FALSE,
-      skip=0,
-      colClasses=c('numeric'),
+      files[1],
+      header = FALSE,
+      skip = 0,
       data.table = FALSE
     )
-    if(length(x) != nPhotoRates)
+    nPhotoRates = length(x)
+
+    photoRates = matrix(NA, nrow = nf, ncol = nPhotoRates)
+    for(i in seq_along(files) ) {
+      x = data.table::fread(
+        files[i],
+        header=FALSE,
+        skip=0,
+        colClasses=c('numeric'),
+        data.table = FALSE
+      )
+      if(length(x) != nPhotoRates)
+        return(
+          list(
+            alert = paste0('photo_rates_',i,' is inconsistent ',
+                           'with previous samples')
+          )
+        )
+      photoRates[i,] = as.vector(unlist(x[1,]))
+    }
+
+    ## Get reac names
+    reacs = readLines(
+      file.path(ctrlPars$projectDir,'Run','photo_list.dat'))
+    if(length(reacs) != nPhotoRates)
       return(
         list(
-          alert = paste0('photo_rates_',i,' is inconsistent ',
-                         'with previous samples')
+          alert = 'photo_list.dat inconsistent
+                 with photo_rates samples'
         )
       )
-    photoRates[i,] = as.vector(unlist(x[1,]))
+    colnames(photoRates)= reacs
   }
-
-  ## Get reac names
-  reacs = readLines(
-    file.path(ctrlPars$projectDir,'Run','photo_list.dat'))
-  if(length(reacs) != nPhotoRates)
-    return(
-      list(
-        alert = 'photo_list.dat inconsistent
-                 with photo_rates samples'
-      )
-    )
-  colnames(photoRates)= reacs
-
-  # print('getRates done')
 
   return(
     list(
@@ -1142,14 +1152,27 @@ observeEvent(
     for (n in names(ratesList()))
       assign(n,rlist::list.extract(ratesList(),n))
 
-    rates = ifelse(rates==0, NA, log10(rates))
-    sdc = apply(rates,2,function(x) sd(x))
-    selR = sdc!=0 & is.finite(sdc)
-    photoRates = ifelse(photoRates==0, NA, log10(photoRates))
-    sdc = apply(photoRates,2,function(x) sd(x))
-    selPR = sdc!=0 & is.finite(sdc)
-    S = cbind(photoRates[,selPR,drop = FALSE],
-              rates[,selR,drop = FALSE])
+    test = nRates + nPhotoRates != 0
+    if(!test)
+      showNotification(
+        h4('No reaction rates data !'),
+        type = 'error'
+      )
+    req(test)
+
+    S = c()
+    if(nRates != 0) {
+      rates = ifelse(rates==0, NA, log10(rates))
+      sdc = apply(rates,2,function(x) sd(x))
+      selR = sdc!=0 & is.finite(sdc)
+      S = rates[,selR,drop = FALSE]
+    }
+    if(nPhotoRates != 0) {
+      photoRates = ifelse(photoRates==0, NA, log10(photoRates))
+      sdc = apply(photoRates,2,function(x) sd(x))
+      selPR = sdc!=0 & is.finite(sdc)
+      S = cbind(photoRates[,selPR,drop = FALSE], S)
+    }
 
     SASpecies = input$SASpecies
     if(SASpecies != "") { # Check validity
@@ -1157,7 +1180,7 @@ observeEvent(
       if(!test) # Rq: validate() would not display message !?!?!?
         showNotification(
           h4('Invalid species name, or insufficient data for SA !'),
-          type = 'warning'
+          type = 'error'
         )
       req(test)
     }

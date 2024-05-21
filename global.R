@@ -12,6 +12,8 @@ options(
   max.print = 10000,
   shiny.autoload.r = NULL)
 
+DEBUG = TRUE
+
 # options(shiny.json.digits=32)
 # enableBookmarking("server")
 

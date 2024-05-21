@@ -1,6 +1,9 @@
 # Functions ####
 getConc  = function(concThresh = -50) {
 
+  if(DEBUG)
+    print('Start getConc')
+
   # Read Ctrl file to get spInit
   ctrlList = readCtrl(ctrlPars$projectDir)
   csp = ctrlList$REAC_DATA$reactantsComposition
@@ -127,6 +130,9 @@ getConc  = function(concThresh = -50) {
     file = file.path(dirOut,'MoleFracIons_tFinal.csv')
   )
 
+  if(DEBUG)
+    print('Exit getConc')
+
   return(
     list(
       nf       = nf,
@@ -146,6 +152,9 @@ getConc  = function(concThresh = -50) {
   )
 }
 getRates = function() {
+
+  if(DEBUG)
+    print('Start getRates')
 
   nRates = 0
   rates  = NULL
@@ -178,29 +187,41 @@ getRates = function() {
           data.table = FALSE,
           colClasses = 'numeric'
         )
-        if(length(x) != nRates)
+        if(length(x) != nRates) {
+          if(DEBUG)
+            print('Exit getRates')
           return(
             list(
               alert = paste0('reac_rates_',i,' is inconsistent ',
                              'with previous samples')
             )
           )
+        }
         rates[i,] = as.vector(unlist(x[1,]))
       }
 
       ## Get reac names
       reacs = readLines(
         file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
-      if(length(reacs) != nRates)
+      if(length(reacs) != nRates) {
+        if(DEBUG)
+          print('Exit getRates')
         return(
           list(
-            alert = 'reac_list.dat inconsistent
-                 with reacs_rates samples'
+            alert = paste0(
+              'reac_list.dat (',length(reacs),
+              ') inconsistent with reacs_rates samples (',
+              nRates,').')
           )
         )
+
+      }
       colnames(rates) = reacs
     }
   }
+
+  if(DEBUG)
+    print('> rates done...')
 
   nPhotoRates = 0
   photoRates  = NULL
@@ -233,6 +254,8 @@ getRates = function() {
         data.table = FALSE
       )
       if(length(x) != nPhotoRates) {
+        if(DEBUG)
+          print('Exit getRates')
         return(
           list(
             alert = paste0('photo_rates_',i,' is inconsistent ',
@@ -241,21 +264,29 @@ getRates = function() {
         )
       }
       photoRates[i,] = as.vector(unlist(x[1,]))
-      cat(i, photoRates[i,],'\n')
     }
 
     ## Get reac names
     reacs = readLines(
       file.path(ctrlPars$projectDir,'Run','photo_list.dat'))
-    if(length(reacs) != nPhotoRates)
+    if(length(reacs) != nPhotoRates) {
+      if(DEBUG)
+        print('Exit getRates')
       return(
         list(
           alert = 'photo_list.dat inconsistent
                  with photo_rates samples'
         )
       )
+    }
     colnames(photoRates)= reacs
   }
+
+  if(DEBUG)
+    print('> photoRates done...')
+
+  if(DEBUG)
+    print('Exit getRates')
 
   return(
     list(
@@ -269,6 +300,10 @@ getRates = function() {
   )
 }
 getIntegStats = function() {
+
+  if(DEBUG)
+    print('Start getIntegStats')
+
   # Load integrator stats
   files = list.files(
     path    = paste0(ctrlPars$projectDir,'/MC_Output'),
@@ -276,60 +311,76 @@ getIntegStats = function() {
     full.names=TRUE)
   nf = length(files)
 
-  ## Get MC values
-  alert = FALSE
-  x = as.data.frame(
-    data.table::fread(files[1], header=FALSE, skip=0)
-  )
-  time = x[,1]
-  nstat = ncol(x)-1
-  ntime = nrow(x)
-  stats = array(0,dim=c(nf,ntime,nstat))
-  for(i in seq_along(files) ) {
-    x = data.table::fread(
-      files[i],
-      header=FALSE,
-      skip=0,
-      colClasses='numeric',
-      data.table = FALSE
+  if(nf != 0) {
+    ## Get MC values
+    alert = FALSE
+    x = as.data.frame(
+      data.table::fread(files[1], header=FALSE, skip=0)
     )
-    y = as.matrix(x[,-1])
-    if(ncol(y) != nstat)
-      return(
-        list(
-          alert  = alert,
-          alert2 = paste0('integ_stats_',i,' is inconsistent ',
-                          'with previous samples')
-        )
+    time = x[,1]
+    nstat = ncol(x)-1
+    ntime = nrow(x)
+    stats = array(0,dim=c(nf,ntime,nstat))
+    for(i in seq_along(files) ) {
+      x = data.table::fread(
+        files[i],
+        header=FALSE,
+        skip=0,
+        colClasses='numeric',
+        data.table = FALSE
       )
-    if (nrow(y) < ntime) {
-      stats[i,1:ntime,1:nstat] = NA
-      stats[i,1:nrow(y),1:nstat] = y
-      alert = TRUE
-    } else {
-      stats[i,1:ntime,1:nstat] = y
+      y = as.matrix(x[,-1])
+      if(ncol(y) != nstat) {
+        if(DEBUG)
+          print('Exit getIntegStats')
+        return(
+          list(
+            alert  = alert,
+            alert2 = paste0('integ_stats_',i,' is inconsistent ',
+                            'with previous samples')
+          )
+        )
+      }
+      if (nrow(y) < ntime) {
+        stats[i,1:ntime,1:nstat] = NA
+        stats[i,1:nrow(y),1:nstat] = y
+        alert = TRUE
+      } else {
+        stats[i,1:ntime,1:nstat] = y
+      }
     }
+
+    yMean = apply(stats,c(2,3),
+                  function(x) mean(x,na.rm=TRUE))
+    ySd   = apply(stats,c(2,3),
+                  function(x) sd(x,na.rm=TRUE))
+    yLow95= apply(stats,c(2,3),
+                  function(x) quantile(x,probs = 0.025,na.rm=TRUE))
+    ySup95= apply(stats,c(2,3),
+                  function(x) quantile(x,probs = 0.975,na.rm=TRUE))
+
+    statNames = c('NFE', 'NFI', 'NSTEPS', 'NACCPT',
+                  'NREJCT', 'NFESIG', 'MAXM', 'SPRAD')[1:nstat]
+
+    colnames(yMean) =
+      colnames(ySd) =
+      colnames(yLow95) =
+      colnames(ySup95) =
+      statNames
+
+  } else {
+    if(DEBUG)
+      print('Exit getIntegStats')
+    return(
+      list(
+        alert  = TRUE,
+        alert2 = paste0('No integ_stats samples !')
+      )
+    )
   }
 
-  yMean = apply(stats,c(2,3),
-                function(x) mean(x,na.rm=TRUE))
-  ySd   = apply(stats,c(2,3),
-                function(x) sd(x,na.rm=TRUE))
-  yLow95= apply(stats,c(2,3),
-                function(x) quantile(x,probs = 0.025,na.rm=TRUE))
-  ySup95= apply(stats,c(2,3),
-                function(x) quantile(x,probs = 0.975,na.rm=TRUE))
-
-  statNames = c('NFE', 'NFI', 'NSTEPS', 'NACCPT',
-                'NREJCT', 'NFESIG', 'MAXM', 'SPRAD')[1:nstat]
-
-  colnames(yMean) =
-    colnames(ySd) =
-    colnames(yLow95) =
-    colnames(ySup95) =
-    statNames
-
-  # print('getIntegStats done')
+  if(DEBUG)
+    print('Exit getIntegStats')
 
   return(
     list(
@@ -350,6 +401,9 @@ getIntegStats = function() {
 }
 selectSpecies <- function(species, categs) {
   # Select species to plot from categsPlot
+
+  if(DEBUG)
+    print('Start selectSpecies')
 
   # ## Remove E
   # sel = species == "E"
@@ -441,12 +495,18 @@ selectSpecies <- function(species, categs) {
     }
     selHeavy = sel
 
+    if(DEBUG)
+      print('Exit selectSpecies')
+
     return(sel0 & selCharge & selRadic & selElem & selHeavy)
 
   }
 
 }
 generateCategories = function(species) {
+
+  if(DEBUG)
+    print('Start generateCategories')
 
   ## Remove E
   # sel = species == "E"
@@ -702,6 +762,7 @@ observeEvent(
 )
 
 output$loadMsg <- renderPrint({
+
   req(concList())
   if( !is.null(concList()$alert2) )
     id = shiny::showNotification(
@@ -721,6 +782,9 @@ output$loadMsg <- renderPrint({
       type = 'error'
     )
   req(is.null(ratesList()$alert))
+
+  if(DEBUG)
+    print('Start loadMsg')
 
   # Extract conc et al.
   for (n in names(concList()))
@@ -749,6 +813,9 @@ output$categsPlot <- renderUI({
   req(concList())
   req(is.null(concList()$alert2))
   req(speciesCategories())
+
+  if(DEBUG)
+    print('Start categsPlot')
 
   # Begin UI construction
   ui = list(
@@ -811,6 +878,9 @@ output$kinetics <- renderPlot({
   req(concList())
   req(is.null(concList()$alert2))
   req(speciesCategories())
+
+  if(DEBUG)
+    print('Start kinetics')
 
   # Extract conc et al.
   for (n in names(concList()))
@@ -953,6 +1023,9 @@ output$categsPlotMS <- renderUI({
   req(is.null(concList()$alert2))
   req(speciesCategories())
 
+  if(DEBUG)
+    print('Start categsPlotMS')
+
   # Begin UI construction
   ui = list(
     br(),
@@ -1013,6 +1086,9 @@ output$pseudoMS <- renderPlot({
   req(concList())
   req(is.null(concList()$alert2))
   req(speciesCategories())
+
+  if(DEBUG)
+    print('Start pseudoMS')
 
   # Extract conc et al.
   for (n in names(concList()))
@@ -1128,6 +1204,9 @@ observeEvent(
     req(is.null(ratesList()$alert))
     MRList(NULL)
 
+    if(DEBUG)
+      print('Start SA')
+
     # Extract conc et al.
     for (n in names(concList()))
       assign(n,rlist::list.extract(concList(),n))
@@ -1172,6 +1251,9 @@ observeEvent(
     # Reaction rates
     for (n in names(ratesList()))
       assign(n,rlist::list.extract(ratesList(),n))
+
+    if(DEBUG)
+      print(shiny::reactiveValuesToList(ratesList()))
 
     testR = nRates + nPhotoRates != 0
     if(!testR)
@@ -1369,7 +1451,10 @@ output$sanityInteg <- renderPlot({
     )
   req(is.null(statsList()$alert2))
 
-  # Extract stats
+  if(DEBUG)
+    print('Start sanityInteg')
+
+    # Extract stats
   for (n in names(statsList()))
     assign(n,rlist::list.extract(statsList(),n))
 
@@ -1470,9 +1555,12 @@ rangesSanitySR <- reactiveValues(x = NULL, y = NULL)
 output$sanitySR <- renderPlot({
   if(is.null(concList()))
     return(invisible())
-
   if(is.null(statsList()))
     statsList(getIntegStats())
+  req(is.null(statsList()$alert2))
+
+  if(DEBUG)
+    print('Start sanitySR')
 
   # Extract stats
   for (n in names(statsList()))
@@ -1576,6 +1664,18 @@ output$sanityOutputs <- renderPrint({
   req(is.null(concList()$alert2))
   req(ratesList())
   req(is.null(ratesList()$alert))
+  req(statsList())
+  if( !is.null(statsList()$alert2) )
+    id = shiny::showNotification(
+      h4(statsList()$alert2),
+      closeButton = TRUE,
+      duration = NULL,
+      type = 'warning'
+    )
+  # req(is.null(statsList()$alert2))
+
+  if(DEBUG)
+    print('Start sanityOutputs')
 
   # Extract data from lists
   for (n in names(concList()))
@@ -1592,6 +1692,8 @@ output$sanityOutputs <- renderPrint({
   sTot = 0
 
   # Analyze final concentrations
+  if(DEBUG)
+    print('> analyse conc')
   conc = conc[, nt, ]
   if(nMC == 1) {
     conc = matrix(conc,nrow=1)
@@ -1623,6 +1725,8 @@ output$sanityOutputs <- renderPrint({
   }
 
   if(nPhotoRates != 0) {
+    if(DEBUG)
+      print('> analyse photoRates')
     sdc = apply(photoRates,2,function(x) sd(x))
     sel = which(sdc==0 & !is.finite(sdc))
     sTot = sTot + length(sel)
@@ -1648,6 +1752,8 @@ output$sanityOutputs <- renderPrint({
   }
 
   if(nRates != 0) {
+    if(DEBUG)
+      print('> analyse rates')
     sdc = apply(rates,2,function(x) sd(x))
     sel = which(sdc==0 & !is.finite(sdc))
     sTot = sTot + length(sel)

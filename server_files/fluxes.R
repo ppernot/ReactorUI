@@ -118,6 +118,9 @@ traceBack = function(sp1,
 # Functions ####
 getLR = function () {
 
+  if(DEBUG)
+    print('Start getLR')
+
   SP = readLines(
     con = file.path(ctrlPars$projectDir,'Run','species_aux.dat'),
     n = 4
@@ -163,6 +166,9 @@ getLR = function () {
   L = rbind(L,Lr)
   R = D + L
 
+  if(DEBUG)
+    print('Exit getLR')
+
   return(
     list(
       L = L,
@@ -172,6 +178,9 @@ getLR = function () {
 
 }
 calcFluxes = function(coList,reList,stList) {
+
+  if(DEBUG)
+    print('Start calcFluxes')
 
   # Extract conc et al.
   for (n in names(coList))
@@ -184,6 +193,15 @@ calcFluxes = function(coList,reList,stList) {
     assign(n,rlist::list.extract(stList,n))
 
   # MC fluxes
+  test = nfRates > 0
+  if(!test)
+    showNotification(
+      h4('Not enough MC samples !'),
+      duration = NULL,
+      type = 'warning'
+    )
+  req(test)
+
   allRates   = cbind(photoRates,rates)
   reacNames  = colnames(allRates)
   nbReacs    = ncol(allRates)
@@ -194,7 +212,7 @@ calcFluxes = function(coList,reList,stList) {
   conc = matrix(conc[, nt, ], nrow = nMC, ncol = nbSpecies)
 
   ## Compute flux
-  flux = matrix(NA,nrow=nMC,ncol=nbReacs)
+  flux = matrix(NA, nrow = nMC, ncol = nbReacs)
   for (i in 1:nMC)
     flux[i, ] = allRates[i, ] *
     apply(L, 1, function(x) prod(conc[i, ] ^ x))
@@ -218,6 +236,9 @@ calcFluxes = function(coList,reList,stList) {
   names(flF)    = reacNames
   names(flLow)  = reacNames
   names(flSup)  = reacNames
+
+  if(DEBUG)
+    print('Exit calcFluxes')
 
   return(
     list(
@@ -245,6 +266,15 @@ observeEvent(
       )
       on.exit(removeNotification(id), add = TRUE)
       concList( getConc() )
+      req(concList())
+      if( !is.null(concList()$alert2) )
+        id = shiny::showNotification(
+          h4(concList()$alert2),
+          closeButton = TRUE,
+          duration = NULL,
+          type = 'error'
+        )
+      req(is.null(concList()$alert2))
     }
 
     if(is.null(ratesList())){
@@ -256,6 +286,15 @@ observeEvent(
       )
       on.exit(removeNotification(id), add = TRUE)
       ratesList( getRates() )
+      req(ratesList())
+      if( !is.null(ratesList()$alert) )
+        id = shiny::showNotification(
+          h4(ratesList()$alert),
+          closeButton = TRUE,
+          duration = NULL,
+          type = 'error'
+        )
+      req(is.null(ratesList()$alert))
     }
 
     if(is.null(stoechList()))
@@ -273,12 +312,11 @@ observeEvent(
 )
 
 output$viewFlow <- renderPlot({
-  if(is.null(concList()) |
-     is.null(ratesList()) |
-     is.null(fluxesList()) |
-     is.null(stoechList()) |
-     is.null(input$flSpec)  )
-    return(NULL)
+  req(concList(),
+     ratesList(),
+     fluxesList(),
+     stoechList(),
+     input$flSpec)
 
   # Extract data from lists
   for (n in names(concList()))
@@ -337,13 +375,6 @@ output$viewFlow <- renderPlot({
     layout_with_gem(g) # Default
   )
   plot(g, layout=layout)
-
-  # legend(
-  #   'topright',cex=1,bty='n',
-  #   legend=reacTypeNames,
-  #   lty=1,lwd=2,
-  #   col=[1:length(reacTypeNames)]
-  # )
 
 })
 
@@ -616,13 +647,10 @@ output$viewFlowD3 <- renderForceNetwork({
 })
 # Budget ####
 output$viewBudget <- renderPrint({
-  if(is.null(concList())   |
-     is.null(ratesList())  |
-     is.null(fluxesList()) |
-     is.null(stoechList())
-  )
-    return(NULL)
-
+  req(concList(),
+     ratesList(),
+     fluxesList(),
+     stoechList())
 
   # Extract data from lists
   for (n in names(concList()))
@@ -660,12 +688,10 @@ output$viewBudget <- renderPrint({
 })
 
 output$viewTarget <- renderPrint({
-  if(is.null(concList())   |
-     is.null(ratesList())  |
-     is.null(fluxesList()) |
-     is.null(stoechList())
-  )
-    return(NULL)
+  req(concList(),
+      ratesList(),
+      fluxesList(),
+      stoechList())
 
   # Extract data from lists
   for (n in names(concList()))

@@ -2126,7 +2126,8 @@ output$reactorUI <- renderUI({
   )
 })
 output$reactorParams <- renderPrint({
-  req( input$reactorLength )
+  for (n in listParsReac)
+    req( !is.na(input[[n]]) )
 
   for (n in listParsReac)
     cat(n, " = ", input[[n]], "\n")

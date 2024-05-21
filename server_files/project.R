@@ -135,6 +135,8 @@ observeEvent(
     shiny::updateSelectInput(session, ctrl,
                              choices = c(0, 1),
                              selected = 0)
+  for(ctrl in listParsReac)
+    shiny::updateNumericInput(session, ctrl, value = NA)
 
   if(input$newProj) {
 
@@ -216,7 +218,7 @@ observeEvent(
     # Check for newer version of reactor
     from = file.path(dir, '..', '..', 'ReactorCodes', 'reactor')
     to   = file.path(dir, 'Run', 'reactor')
-    if(file.mtime(from) > file.mtime(to)) {
+    if(file.mtime(from) > file.mtime(to) & !DEBUG) {
       showModal(modalDialog(
         'Do you want to update ?',
         title = '>>>> Newer version of reactor available <<<< ',
@@ -270,8 +272,6 @@ observeEvent(
         is.character(ctrlPars$projectDir))
       rlist::list.save(ctrlPars, 'ctrlParams.yaml')
   }
-
-
 
 })
 # Update reactor at user's request

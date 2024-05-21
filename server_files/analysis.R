@@ -168,37 +168,38 @@ getRates = function() {
       ))
     nRates = length(x)
 
-    rates = matrix(NA_real_, nrow = nf, ncol = nRates)
-    for (i in seq_along(files)) {
-      x = data.table::fread(
-        files[i],
-        header = FALSE,
-        skip = 0,
-        data.table = FALSE,
-        colClasses = 'numeric'
-      )
-      if(length(x) != nRates)
+    if(nRates != 0) { # Empty files when no reactions
+      rates = matrix(NA_real_, nrow = nf, ncol = nRates)
+      for (i in seq_along(files)) {
+        x = data.table::fread(
+          files[i],
+          header = FALSE,
+          skip = 0,
+          data.table = FALSE,
+          colClasses = 'numeric'
+        )
+        if(length(x) != nRates)
+          return(
+            list(
+              alert = paste0('reac_rates_',i,' is inconsistent ',
+                             'with previous samples')
+            )
+          )
+        rates[i,] = as.vector(unlist(x[1,]))
+      }
+
+      ## Get reac names
+      reacs = readLines(
+        file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
+      if(length(reacs) != nRates)
         return(
           list(
-            alert = paste0('reac_rates_',i,' is inconsistent ',
-                           'with previous samples')
+            alert = 'reac_list.dat inconsistent
+                 with reacs_rates samples'
           )
         )
-      rates[i,] = as.vector(unlist(x[1,]))
+      colnames(rates) = reacs
     }
-
-    ## Get reac names
-    reacs = readLines(
-      file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
-    if(length(reacs) != nRates)
-      return(
-        list(
-          alert = 'reac_list.dat inconsistent
-                 with reacs_rates samples'
-        )
-      )
-    colnames(rates) = reacs
-
   }
 
   nPhotoRates = 0
@@ -226,19 +227,21 @@ getRates = function() {
     for(i in seq_along(files) ) {
       x = data.table::fread(
         files[i],
-        header=FALSE,
-        skip=0,
-        colClasses=c('numeric'),
+        header = FALSE,
+        skip = 0,
+        colClasses = c('numeric'),
         data.table = FALSE
       )
-      if(length(x) != nPhotoRates)
+      if(length(x) != nPhotoRates) {
         return(
           list(
             alert = paste0('photo_rates_',i,' is inconsistent ',
                            'with previous samples')
           )
         )
+      }
       photoRates[i,] = as.vector(unlist(x[1,]))
+      cat(i, photoRates[i,],'\n')
     }
 
     ## Get reac names
@@ -1142,49 +1145,73 @@ observeEvent(
     conc = conc[,nt,]
 
     # Filter out undesirable values
-    conc = ifelse(conc==0, NA, log10(conc))
-    sdc  = apply(conc,2,function(x) sd(x))
-    selC = sdc!=0 & is.finite(sdc)
+    conc = ifelse(conc == 0, NA, log10(conc))
+    sdc  = apply(conc, 2, function(x) sd(x))
+    selC = sdc != 0 & is.finite(sdc)
+    testC = any(selC)
+    if(!testC)
+      showNotification(
+        h4('All concentrations have null variance !'),
+        duration = NULL,
+        type = 'error'
+      )
     C = conc[,selC, drop = FALSE]
     colnames(C) = species[selC]
 
-    # Reaction rates
-    for (n in names(ratesList()))
-      assign(n,rlist::list.extract(ratesList(),n))
-
-    test = nRates + nPhotoRates != 0
-    if(!test)
-      showNotification(
-        h4('No reaction rates data !'),
-        type = 'error'
-      )
-    req(test)
-
-    S = c()
-    if(nRates != 0) {
-      rates = ifelse(rates==0, NA, log10(rates))
-      sdc = apply(rates,2,function(x) sd(x))
-      selR = sdc!=0 & is.finite(sdc)
-      S = rates[,selR,drop = FALSE]
-    }
-    if(nPhotoRates != 0) {
-      photoRates = ifelse(photoRates==0, NA, log10(photoRates))
-      sdc = apply(photoRates,2,function(x) sd(x))
-      selPR = sdc!=0 & is.finite(sdc)
-      S = cbind(photoRates[,selPR,drop = FALSE], S)
-    }
-
     SASpecies = input$SASpecies
-    if(SASpecies != "") { # Check validity
+    if(SASpecies != "" & testC) { # Check validity
       test = SASpecies %in% colnames(C)
-      if(!test) # Rq: validate() would not display message !?!?!?
+      if(!test)
         showNotification(
-          h4('Invalid species name, or insufficient data for SA !'),
+          h4('Invalid species name !'),
           type = 'error'
         )
       req(test)
     }
 
+    # Reaction rates
+    for (n in names(ratesList()))
+      assign(n,rlist::list.extract(ratesList(),n))
+
+    testR = nRates + nPhotoRates != 0
+    if(!testR)
+      showNotification(
+        h4('No reaction rates data !'),
+        duration = NULL,
+        type = 'error'
+      )
+
+    S = c()
+    testR2 = testR3 = TRUE
+    if(nRates != 0) {
+      rates = ifelse(rates==0, NA, log10(rates))
+      sdc = apply(rates,2,function(x) sd(x))
+      selR = sdc != 0 & is.finite(sdc)
+      testR2 = any(selR)
+      if(!testR2)
+        showNotification(
+          h4('All reaction rates have null variance !'),
+          duration = NULL,
+          type = 'error'
+        )
+      S = rates[,selR,drop = FALSE]
+    }
+    if(nPhotoRates != 0) {
+      photoRates = ifelse(photoRates==0, NA, log10(photoRates))
+      sdc = apply(photoRates,2,function(x) sd(x))
+      selPR = sdc != 0 & is.finite(sdc)
+      testR3 = any(selPR)
+      if(!testR3)
+        showNotification(
+          h4('All photo rates have null variance !'),
+          duration = NULL,
+          type = 'error'
+        )
+      S = cbind(photoRates[,selPR,drop = FALSE], S)
+    }
+    req(testC, testR, testR2, testR3)
+
+    # Analysis
     ntop = min(20,ncol(S))
 
     if (input$anaType == 'spearman') {
@@ -1313,19 +1340,19 @@ output$sensitivity <- renderPlot({
     colbr[MR<0] = col_tr2[3]
 
     xlim = c(0,1.2*max(MR))
-    if(sum(MR<0) != 0 )
+    if(sum(MR<0) != 0)
       xlim = c(-1,1)
 
     barplot(MR,
-            horiz     = TRUE, las=1,
-            xlim      = xlim,
-            beside    = FALSE,
-            col       = colbr,
-            border    = NA,
-            main      = ''
+            horiz  = TRUE, las=1,
+            xlim   = xlim,
+            beside = FALSE,
+            col    = colbr,
+            border = NA,
+            main   = ''
     )
     grid(ny=0); box()
-    mtext(main,side = 3, line = 0)
+    mtext(main, side = 3, line = 0)
   }
 
 })
@@ -1595,50 +1622,54 @@ output$sanityOutputs <- renderPrint({
     print(df)
   }
 
-  sdc = apply(photoRates,2,function(x) sd(x))
-  sel = which(sdc==0 & !is.finite(sdc))
-  sTot = sTot + length(sel)
-  if(length(sel) != 0) {
-    cat('\n\n')
-    cat(' Photorates with suspicious samples\n',
-        '-----------------------------------\n\n')
-    sd0 = nzero = ninf = c()
-    for (ii in 1:length(sel)) {
-      i = sel[ii]
-      sd0[ii]   = sdc[i] == 0
-      nzero[ii] = paste0(sum(photoRates[,i] == 0),'/',nMC)
-      ninf[ii]  = paste0(sum(!is.finite(photoRates[,i])),'/',nMC)
+  if(nPhotoRates != 0) {
+    sdc = apply(photoRates,2,function(x) sd(x))
+    sel = which(sdc==0 & !is.finite(sdc))
+    sTot = sTot + length(sel)
+    if(length(sel) != 0) {
+      cat('\n\n')
+      cat(' Photorates with suspicious samples\n',
+          '-----------------------------------\n\n')
+      sd0 = nzero = ninf = c()
+      for (ii in 1:length(sel)) {
+        i = sel[ii]
+        sd0[ii]   = sdc[i] == 0
+        nzero[ii] = paste0(sum(photoRates[,i] == 0),'/',nMC)
+        ninf[ii]  = paste0(sum(!is.finite(photoRates[,i])),'/',nMC)
+      }
+      df = data.frame(
+        'Name'  = colnames(photoRates)[sel],
+        'Var=0' = sd0,
+        'Nzero' = nzero,
+        'Ninf'  = ninf
+      )
+      print(df)
     }
-    df = data.frame(
-      'Name'  = colnames(photoRates)[sel],
-      'Var=0' = sd0,
-      'Nzero' = nzero,
-      'Ninf'  = ninf
-    )
-    print(df)
   }
 
-  sdc = apply(rates,2,function(x) sd(x))
-  sel = which(sdc==0 & !is.finite(sdc))
-  sTot = sTot + length(sel)
-  if(length(sel) != 0) {
-    cat('\n\n')
-    cat(' Reaction rates with suspicious samples\n',
-        '---------------------------------------\n\n')
-    sd0 = nzero = ninf = c()
-    for (ii in 1:length(sel)) {
-      i = sel[ii]
-      sd0[ii]   = sdc[i] == 0
-      nzero[ii] = paste0(sum(rates[,i] == 0),'/',nMC)
-      ninf[ii]  = paste0(sum(!is.finite(rates[,i])),'/',nMC)
+  if(nRates != 0) {
+    sdc = apply(rates,2,function(x) sd(x))
+    sel = which(sdc==0 & !is.finite(sdc))
+    sTot = sTot + length(sel)
+    if(length(sel) != 0) {
+      cat('\n\n')
+      cat(' Reaction rates with suspicious samples\n',
+          '---------------------------------------\n\n')
+      sd0 = nzero = ninf = c()
+      for (ii in 1:length(sel)) {
+        i = sel[ii]
+        sd0[ii]   = sdc[i] == 0
+        nzero[ii] = paste0(sum(rates[,i] == 0),'/',nMC)
+        ninf[ii]  = paste0(sum(!is.finite(rates[,i])),'/',nMC)
+      }
+      df = data.frame(
+        'Name'  = colnames(rates)[sel],
+        'Var=0' = sd0,
+        'Nzero' = nzero,
+        'Ninf'  = ninf
+      )
+      print(df)
     }
-    df = data.frame(
-      'Name'  = colnames(rates)[sel],
-      'Var=0' = sd0,
-      'Nzero' = nzero,
-      'Ninf'  = ninf
-    )
-    print(df)
   }
 
   if(sTot == 0 & !concAlert)

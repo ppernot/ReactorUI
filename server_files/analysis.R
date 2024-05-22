@@ -907,7 +907,6 @@ output$kinetics <- renderPlot({
     if(input$anaMass != "All")
       sel = sel & heavy %in% input$anaMass
   }
-
   if(!any(sel))
     showNotification(
       h4('Your selection is empty !'),
@@ -991,7 +990,19 @@ output$kinetics <- renderPlot({
           col = colors$colsSp[sel],
           lwd = 1.2*lwd, add = TRUE)
 
-  mtext(at  = mfMean[nt,sel],
+  ypos = c()
+  ymat = mfMean[, sel, drop = FALSE]
+  for(i in 1:ncol(ymat)) {
+    if(is.finite(ymat[nt,i])) {
+      ypos[i] = ymat[nt,i]
+    } else {
+      # Use last finite value
+      ry = rev(ymat[,i])
+      it = which(is.finite(ry))[1]
+      ypos[i] = ry[it]
+    }
+  }
+  mtext(at   = ypos,
         text = species[sel],
         side = 4,
         col  = colors$colsSp[sel],
@@ -1251,9 +1262,6 @@ observeEvent(
     # Reaction rates
     for (n in names(ratesList()))
       assign(n,rlist::list.extract(ratesList(),n))
-
-    if(DEBUG)
-      print(shiny::reactiveValuesToList(ratesList()))
 
     testR = nRates + nPhotoRates != 0
     if(!testR)

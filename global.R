@@ -1,4 +1,4 @@
-version = "1.7d"
+version = "1.7e"
 
 # Options ####
 Sys.setlocale(
@@ -12,7 +12,8 @@ options(
   max.print = 10000,
   shiny.autoload.r = NULL)
 
-DEBUG = TRUE
+DEBUG = FALSE
+# debounceDelay = 750 # millisec
 
 # options(shiny.json.digits=32)
 # enableBookmarking("server")

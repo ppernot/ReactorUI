@@ -210,10 +210,26 @@ observeEvent(
     else
       REAC_DATA = ctrlList$REAC_DATA
 
+    ## Fill missing values
+    for(m in names(REAC_DATA_default))
+      if(is.null(REAC_DATA[[m]])) {
+        REAC_DATA[[m]] = REAC_DATA_default[[m]]
+      } else if(is.na(REAC_DATA[[m]])) {
+        REAC_DATA[[m]] = REAC_DATA_default[[m]]
+      }
+
     if(is.null(ctrlList$DB_DATA))
       DB_DATA = DB_DATA_default
     else
       DB_DATA = ctrlList$DB_DATA
+
+    ## Fill missing values
+    for(m in names(DB_DATA_default))
+      if(is.null(DB_DATA[[m]])) {
+        DB_DATA[[m]] = DB_DATA_default[[m]]
+      } else if(is.na(DB_DATA[[m]])) {
+        DB_DATA[[m]] = DB_DATA_default[[m]]
+      }
 
     # Check for newer version of reactor
     from = file.path(dir, '..', '..', 'ReactorCodes', 'reactor')

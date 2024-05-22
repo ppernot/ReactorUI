@@ -2,7 +2,7 @@ docker kill reactorui
 docker rm reactorui
 
 cd ~/Bureau/Titan-APSIS/
-docker build -t ppernot1/reactorui:v1.7d -t ppernot1/reactorui:latest -f ReactorUI/docker/Dockerfile .
+docker build -t ppernot1/reactorui:v1.7e -t ppernot1/reactorui:latest -f ReactorUI/docker/Dockerfile .
 
 cd ~/Bureau/Titan-APSIS/Reactor_Runs/Projects/
 

@@ -2129,14 +2129,23 @@ output$reactorParams <- renderPrint({
   for (n in listParsReac)
     req( !is.na(input[[n]]) )
 
-  for (n in listParsReac)
-    cat(n, " = ", input[[n]], "\n")
+  # for (n in listParsReac)
+  #   req(
+  #     !is.na(
+  #       reactive({input[[n]]}) %>% debounce(debounceDelay)
+  #     )
+  #   )
 
-  # Update data
-  ll = reacData()
-  for (n in listParsReac)
-    ll[[n]] = input[[n]]
-  reacData(ll)
+  isolate({
+    for (n in listParsReac)
+      cat(n, " = ", input[[n]], "\n")
+
+    # Update data
+    ll = reacData()
+    for (n in listParsReac)
+      ll[[n]] = input[[n]]
+    reacData(ll)
+  })
 
 })
 

@@ -5,16 +5,19 @@ getConc  = function(concThresh = -50) {
     print('Start getConc')
 
   # Read Ctrl file to get spInit
-  ctrlList = readCtrl(ctrlPars$projectDir)
+  # ctrlList = readCtrl(ctrlPars$projectDir)
+  ctrlList = readCtrl(projectDir())
   csp = ctrlList$REAC_DATA$reactantsComposition
   sel = which(is.finite(csp))
   rsp = ctrlList$REAC_DATA$reactantsSpecies
+  if(DEBUG)
+    print(rsp)
   rsp = strsplit(rsp,',')[[1]][sel]
   spInit = rsp
 
   # Load 1 sample files
   files = list.files(
-    path = file.path(ctrlPars$projectDir,'MC_Output'),
+    path = file.path(projectDir(),'MC_Output'),
     pattern = "fracmol_",
     full.names = TRUE
   )
@@ -45,6 +48,8 @@ getConc  = function(concThresh = -50) {
     time = tab[-1, 1]
     y    = as.matrix(tab[-1, -1])
     if(ncol(y) != nsp) {
+      if(DEBUG)
+        print('Abort getConc')
       alert2 = paste0('fracmol_',i,' is inconsistent ',
                       'with previous samples')
       return(
@@ -90,7 +95,7 @@ getConc  = function(concThresh = -50) {
   mass  = apply(compo,1,massFormula)
 
   # Save final mole fractions to disk
-  dirOut = file.path(ctrlPars$projectDir, 'Outputs')
+  dirOut = file.path(projectDir(), 'Outputs')
   if(!dir.exists(dirOut))
     dir.create(dirOut, showWarnings = FALSE)
   cnv = log10(exp(1))
@@ -161,7 +166,7 @@ getRates = function() {
 
   # Load react. rates sample files
   files = list.files(
-    path    = paste0(ctrlPars$projectDir,'/MC_Output'),
+    path    = paste0(projectDir(),'/MC_Output'),
     pattern = 'reacs_rates_',
     full.names=TRUE)
   nf = length(files)
@@ -202,7 +207,7 @@ getRates = function() {
 
       ## Get reac names
       reacs = readLines(
-        file.path(ctrlPars$projectDir,'Run','reac_list.dat'))
+        file.path(projectDir(),'Run','reac_list.dat'))
       if(length(reacs) != nRates) {
         if(DEBUG)
           print('Exit getRates')
@@ -228,7 +233,7 @@ getRates = function() {
 
   # Load photorates sample files
   files = list.files(
-    path = paste0(ctrlPars$projectDir, '/MC_Output'),
+    path = paste0(projectDir(), '/MC_Output'),
     pattern = 'photo_rates_',
     full.names = TRUE
   )
@@ -268,7 +273,7 @@ getRates = function() {
 
     ## Get reac names
     reacs = readLines(
-      file.path(ctrlPars$projectDir,'Run','photo_list.dat'))
+      file.path(projectDir(),'Run','photo_list.dat'))
     if(length(reacs) != nPhotoRates) {
       if(DEBUG)
         print('Exit getRates')
@@ -306,7 +311,7 @@ getIntegStats = function() {
 
   # Load integrator stats
   files = list.files(
-    path    = paste0(ctrlPars$projectDir,'/MC_Output'),
+    path    = paste0(projectDir(),'/MC_Output'),
     pattern = 'integ_stats_',
     full.names=TRUE)
   nf = length(files)

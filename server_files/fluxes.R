@@ -122,14 +122,14 @@ getLR = function () {
     print('Start getLR')
 
   SP = readLines(
-    con = file.path(ctrlPars$projectDir,'Run','species_aux.dat'),
+    con = file.path(projectDir(),'Run','species_aux.dat'),
     n = 4
   )
   nbSpecies = as.numeric(SP[[1]])
 
   ## get D and L matrices
   DL  = readLines(
-    con = file.path(ctrlPars$projectDir,'Run','photo_DL.dat'),
+    con = file.path(projectDir(),'Run','photo_DL.dat'),
     n   = 4
   )
   nnz = as.numeric(DL[1])
@@ -146,7 +146,7 @@ getLR = function () {
     L[Lsp[i, 1], Lsp[i, 2]] = Lsp[i, 3]
 
   DL  = readLines(
-    con = file.path(ctrlPars$projectDir,'Run','reac_DL.dat'),
+    con = file.path(projectDir(),'Run','reac_DL.dat'),
     n   = 4
   )
   nnz = as.numeric(DL[1])
@@ -276,6 +276,11 @@ observeEvent(
         )
       req(is.null(concList()$alert2))
     }
+    if(length(concList()$spInit) > 1)
+      flSpec = concList()$spInit[1]
+    else
+      flSpec = concList()$spInit
+    shiny::updateTextInput(session, "flSpec", value = flSpec)
 
     if(is.null(ratesList())){
       id = shiny::showNotification(
@@ -311,72 +316,72 @@ observeEvent(
   }
 )
 
-output$viewFlow <- renderPlot({
-  req(concList(),
-     ratesList(),
-     fluxesList(),
-     stoechList(),
-     input$flSpec)
-
-  # Extract data from lists
-  for (n in names(concList()))
-    assign(n,rlist::list.extract(concList(),n))
-  for (n in names(ratesList()))
-    assign(n,rlist::list.extract(ratesList(),n))
-  for (n in names(fluxesList()))
-    assign(n,rlist::list.extract(fluxesList(),n))
-  for (n in names(stoechList()))
-    assign(n,rlist::list.extract(stoechList(),n))
-
-  test = input$flSpec %in% species
-  if(!test) # Rq: validate() would not display message !?!?!?
-    showNotification(
-      h4('Invalid species name !'),
-      type = 'warning'
-    )
-  req(test)
-
-  # Remove dummy species
-  sel  = ! species %in% spDummy
-  spec = species[sel]
-  LR   = L[,sel]
-  RR   = R[,sel]
-
-  reacTypeNames=c("Ph","R")
-  g = viewFlow(
-    input$flSpec,
-    LR,
-    RR,
-    spec,
-    reacs    = c(
-      paste0('Ph', 1:ncol(photoRates)),
-      paste0('R',  1:ncol(rates))
-    ),
-    # reacs    = names(flMean),
-    reacType = c(rep(1, ncol(photoRates)),
-                 rep(2, ncol(rates))),
-    reacTypeNames = reacTypeNames,
-    flMean = flMean,
-    spInit = spInit,
-    topShow = 10^input$topShow,
-    level = ifelse(input$level, 2, 1),
-    showLegend = TRUE,
-    curved = input$curvedArrow
-  )
-
-  layout = switch(
-    input$fluxGraphAlgo,
-    FR  = layout_with_fr(g),
-    LGL = layout_with_lgl(g,
-      root = input$flSpec,
-      repulserad = vcount(g)^3 * 10^input$topShow),
-    Bipartite = layout_as_bipartite(g,
-      vgap = 100 * 10^input$topShow),
-    layout_with_gem(g) # Default
-  )
-  plot(g, layout=layout)
-
-})
+# output$viewFlow <- renderPlot({
+#   req(concList(),
+#      ratesList(),
+#      fluxesList(),
+#      stoechList(),
+#      input$flSpec)
+#
+#   # Extract data from lists
+#   for (n in names(concList()))
+#     assign(n,rlist::list.extract(concList(),n))
+#   for (n in names(ratesList()))
+#     assign(n,rlist::list.extract(ratesList(),n))
+#   for (n in names(fluxesList()))
+#     assign(n,rlist::list.extract(fluxesList(),n))
+#   for (n in names(stoechList()))
+#     assign(n,rlist::list.extract(stoechList(),n))
+#
+#   test = input$flSpec %in% species
+#   if(!test) # Rq: validate() would not display message !?!?!?
+#     showNotification(
+#       h4('Invalid species name !'),
+#       type = 'warning'
+#     )
+#   req(test)
+#
+#   # Remove dummy species
+#   sel  = ! species %in% spDummy
+#   spec = species[sel]
+#   LR   = L[,sel]
+#   RR   = R[,sel]
+#
+#   reacTypeNames=c("Ph","R")
+#   g = viewFlow(
+#     input$flSpec,
+#     LR,
+#     RR,
+#     spec,
+#     reacs    = c(
+#       paste0('Ph', 1:ncol(photoRates)),
+#       paste0('R',  1:ncol(rates))
+#     ),
+#     # reacs    = names(flMean),
+#     reacType = c(rep(1, ncol(photoRates)),
+#                  rep(2, ncol(rates))),
+#     reacTypeNames = reacTypeNames,
+#     flMean = flMean,
+#     spInit = spInit,
+#     topShow = 10^input$topShow,
+#     level = ifelse(input$level, 2, 1),
+#     showLegend = TRUE,
+#     curved = input$curvedArrow
+#   )
+#
+#   layout = switch(
+#     input$fluxGraphAlgo,
+#     FR  = layout_with_fr(g),
+#     LGL = layout_with_lgl(g,
+#       root = input$flSpec,
+#       repulserad = vcount(g)^3 * 10^input$topShow),
+#     Bipartite = layout_as_bipartite(g,
+#       vgap = 100 * 10^input$topShow),
+#     layout_with_gem(g) # Default
+#   )
+#   plot(g, layout=layout)
+#
+# })
 
 # NetworkD3 ####
 my_igraph_to_networkd3 = function (g, group, what = "both") {
@@ -470,34 +475,7 @@ viewFlow = function(sp1,
     links[i, lSpecies] = links[i, lSpecies] + KR[i, 1:nbSpecies]
   }
 
-  if(sp1 != '') {
-
-  }
-  # if(!is.null(sp1)) {
-    # Build link matrix with first neighbors (reactants and products)
-    # links = addLinks(sp1, links, species, KL, KR, nbReacs, nbSpecies)
-
-    # if (level==2) {
-    #   # Add 2nd neighnors to link matrix ### DOES NOT WORK AS IS !!!
-    #   select = colSums(links[, lSpecies]) != 0 |
-    #            rowSums(links[lSpecies, ]) != 0
-    #   listSp = species[select]
-    #   for (sp2 in listSp)
-    #     if (!(sp2 %in% spInit))
-    #       links = addLinks(sp2, links, species, KL, KR, nbReacs, nbSpecies,
-    #                        wght = 1e-6)
-    # }
-  # }
-
-  # Select most important links if there are too many
   linksThresh = links
-  # if (sum(links != 0) > 50) {
-  #   lnkThresh = quantile(abs(links)[abs(links) > 0],
-  #                        probs = 1 - topShow,
-  #                        na.rm = TRUE)
-  #   linksThresh[abs(links) < lnkThresh] = 0
-  # }
-  # print(linksThresh)
 
   g = simplify(
     graph_from_adjacency_matrix(
@@ -510,8 +488,8 @@ viewFlow = function(sp1,
   reacColor=c(cols[6:9])
 
   V(g)$label = c(reacs,species)
-  V(g)$shape=c(rep("rectangle",nbReacs),rep("circle",nbSpecies))
-  V(g)$size = c(rep(20,nbReacs),rep(20,nbSpecies))
+  V(g)$shape = c(rep("rectangle",nbReacs),rep("circle",nbSpecies))
+  V(g)$size  = c(rep(20,nbReacs),rep(20,nbSpecies))
   V(g)$size2 = 6
   V(g)$color = c(reacColor[reacType],rep("gold",nbSpecies))
   V(g)$label.cex = c(rep(1,nbReacs),rep(1,nbSpecies))
@@ -522,6 +500,7 @@ viewFlow = function(sp1,
   wid = abs(E(g)$weight)
   wid = wid^0.1 # Empirical transfo for better scaling...
   wid = 0.12 + (wid-min(wid))/(max(wid)-min(wid))
+  wid[!is.finite(wid)] = 0.12
   E(g)$width = wid*5
   E(g)$color = ifelse(
     E(g)$weight > 0,
@@ -537,12 +516,13 @@ viewFlow = function(sp1,
   return(g)
 }
 output$viewFlowD3 <- renderForceNetwork({
-  if(is.null(concList()) |
-     is.null(ratesList()) |
-     is.null(fluxesList()) |
-     is.null(stoechList())
+  req(
+    concList(),
+    ratesList(),
+    fluxesList(),
+    stoechList(),
+    input$flSpec
   )
-    return(NULL)
 
   # Extract data from lists
   for (n in names(concList()))
@@ -554,19 +534,23 @@ output$viewFlowD3 <- renderForceNetwork({
   for (n in names(stoechList()))
     assign(n,rlist::list.extract(stoechList(),n))
 
-  if(!is.null(input$flSpec) & input$flSpec != '' ) {
-    test = input$flSpec %in% species
-    if(!test) # Rq: validate() would not display message !?!?!?
-      showNotification(
-        h4('Invalid species name !'),
-        type = 'warning'
-      )
-    req(test)
-  }
+  test = input$flSpec %in% species
+  if(!test)
+    showNotification(
+      h4('Invalid species name !'),
+      type = 'warning'
+    )
+  req(test)
 
   # Remove dummy species
   # sel  = ! species %in% spDummy
   sel = 1:length(species)
+  reacsn = paste0('Ph', 1:nPhotoRates)
+  if(nRates > 0)
+    reacsn = c(reacsn, paste0('R',1:nRates) )
+  reacst = rep(1, ncol(photoRates))
+  if(nRates > 0)
+    reacst = c(reacst, rep(2, ncol(rates)) )
 
   reacTypeNames = c("Ph", "R")
   g = viewFlow(
@@ -574,76 +558,117 @@ output$viewFlowD3 <- renderForceNetwork({
     L[, sel],
     R[, sel],
     species[sel],
-    reacs    = c(
-      paste0('Ph', 1:nPhotoRates),
-      paste0('R',  1:nRates)
-    ),
-    # reacs = make.unique(trimws(names(flMean))),
-    reacType = c(
-      rep(1, ncol(photoRates)),
-      rep(2, ncol(rates))
-    ),
+    reacs = reacsn,
+    reacType = reacst,
     reacTypeNames = reacTypeNames,
     flMean = flMean,
     spInit = spInit,
-    topShow = 10^input$topShow,
-    level = ifelse(input$level, 2, 1),
+    topShow = 10,
+    level = 2,
     showLegend = TRUE,
     curved = FALSE
   )
 
   grp = as.numeric(factor(V(g)$shape))-1
 
-  graph_d3 = my_igraph_to_networkd3(g, group = grp)
+  graph_d3 = my_igraph_to_networkd3(g, group = as.character(grp))
   graph_d3$nodes[['size']]  = log10(igraph::strength(g))^0.7
   graph_d3$nodes[['size']][1:(nPhotoRates+nRates)] = 1
-  # graph_d3$links[['value']] =
-  #   pmax(1,10*abs(E(g)$weight)/max(abs(E(g)$weight)))
 
-  # print(E(g)$weight)
-  # print(graph_d3$nodes)
-  # print(graph_d3$links, max = 1000)
+  # Loss/prod links colors & nodes list
+  names   = graph_d3$nodes[['name']]
+  sources = graph_d3$links[['source']]
+  targets = graph_d3$links[['target']]
 
-  # Loss/prod links colors
-  target = which(graph_d3$nodes[['name']] == input$flSpec)
-  linkOut = graph_d3$links[['source']] == target-1
-  for (i in which(linkOut) )
-     linkOut = linkOut |
-    graph_d3$links[['source']] == graph_d3$links[['target']][i]
-  linkIn  = graph_d3$links[['target']] == target-1
-  for (i in which(linkIn) )
-    linkIn = linkIn |
-    graph_d3$links[['target']] == graph_d3$links[['source']][i]
-  linkColour = rep('#BBB',length(linkIn))
+  selected = which(names == input$flSpec) - 1
+  implied = selected
+  linkOut = sources == selected
+  implied = c(implied, sources[linkOut])
+  for (i in which(linkOut) ) { # Augment to next neigbours
+    neigh = sources == targets[i]
+    implied = c(implied, sources[neigh])
+    linkOut = linkOut | neigh
+  }
+  for (i in which(linkOut) ) { # Augment to next neigbours
+    neigh = sources == targets[i]
+    implied = c(implied, sources[neigh])
+  }
+  # print(implied)
+  linkIn  = targets == selected
+  implied = c(implied, targets[linkIn])
+  for (i in which(linkIn) ) { # Augment to next neigbours
+    neigh = targets == sources[i]
+    implied = c(implied, targets[neigh])
+    linkIn = linkIn | neigh
+  }
+  for (i in which(linkIn) ) { # Augment to next neigbours
+    neigh = targets == sources[i]
+    implied = c(implied, targets[neigh])
+  }
+
+  # Colors for inactive and central elements
+  linkColour = rep('#DDD', length(sources))
   linkColour[linkIn]  = gPars$cols[2]
   linkColour[linkOut] = gPars$cols[5]
+  linkColour[linkIn & linkOut] = gPars$cols[7]
+  implied = sort(unique(implied)) + 1
+  out = which(! 1:length(names) %in% implied)
+  graph_d3$nodes[['group']][out] = "2"
+  graph_d3$nodes[['group']][selected + 1] = "3"
+
+  # Keep only colored nodes
+  if(input$graphSimplify) {
+    ## Reduce graph
+    gt         = graph_d3
+    nodes_in   = which(1:length(names) %in% implied) -1
+    gt$nodes   = graph_d3$nodes[nodes_in + 1,]
+    sel        = sources %in% nodes_in &
+                 targets %in% nodes_in
+    gt$links   = graph_d3$links[sel,]
+    linkColour = linkColour[sel]
+    ## Renumber sources and targets to account for reduced graph
+    nod0 = as.numeric(rownames(gt$nodes))-1
+    rownames(gt$nodes) = 1:length(nod0)
+    for(i in 1:nrow(gt$links)) {
+      vi = gt$links[['source']][i]
+      vo = which(nod0 == vi)
+      gt$links[['source']][i] = vo - 1
+      vi = gt$links[['target']][i]
+      vo = which(nod0 == vi)
+      gt$links[['target']][i] = vo - 1
+    }
+    rownames(gt$links) = 1:nrow(gt$links)
+  } else {
+    gt = graph_d3
+  }
+  rm(graph_d3)
 
   networkD3::forceNetwork(
-    Links    = graph_d3$links,
-    Nodes    = graph_d3$nodes,
+    Links    = gt$links,
+    Nodes    = gt$nodes,
     Source   = 'source',
     Target   = 'target',
     NodeID   = 'name',
     Group    = 'group',
     Value    = 'value',
     Nodesize = 'size',
+    fontSize = input$flFontSize,
     radiusCalculation = JS("d.nodesize + 3"),
     bounded  = FALSE,
     zoom     = TRUE,
     arrows   = TRUE,
+    linkColour = linkColour,
     linkDistance = if(input$scaleDistD3)
       JS("function(d){return 50 / Math.pow(d.value,0.5) }")
     else
       60,
-    opacity  = 0.9,
-    colourScale = JS("d3.scaleOrdinal(d3.schemeCategory10);"),
+    opacity  = 1,
+    colourScale = JS('d3.scaleOrdinal(["#e49444", "#5778a4", "#dddddd","#43a047"]).domain(["0", "1", "2","3"]);'),
     clickAction = 'alert(d.name );',
-    linkColour = linkColour,
     legend = FALSE,
     opacityNoHover = 0.9,
     charge = input$forceNetChargeFlux
   )
-
 })
 # Budget ####
 output$viewBudget <- renderPrint({
